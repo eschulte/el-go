@@ -61,10 +61,14 @@
        (nreverse res))))
 (def-edebug-spec parse-many (regexp string body))
 
-(defun parse-props (str)
-  (parse-many "[[:space:]]*\\([[:alpha:]]+\\(\\[[^;]+?\\]\\)+\\)" str
-    (multiple-value-bind (id rest) (parse-prop-ident (match-string 1 str))
-      (collect (cons id (parse-prop-vals rest))))))
+(defvar prop-val-re
+  "\\[\\(.*?[^\\]\\)\\]")
+
+(defvar parse-prop-re
+  (format "[[:space:]]*\\([[:alpha:]]+\\(%s\\)+\\)" prop-val-re))
+
+(defvar parse-node-re
+  (format "[[:space:]]*;\\(%s\\)+" parse-prop-re))
 
 (defun parse-prop-ident (str)
   (let ((end (if (and (<= ?A (aref str 1))
@@ -74,10 +78,17 @@
             (substring str end))))
 
 (defun parse-prop-vals (str)
-  (parse-many "\\[\\(.*?[^\\]\\)\\]" str
+  (parse-many parse-prop-re str
     (collect (match-string 1 str))))
 
-(defun parse-nodes ())
+(defun parse-props (str)
+  (parse-many parse-prop-re str
+    (multiple-value-bind (id rest) (parse-prop-ident (match-string 1 str))
+      (collect (cons id (parse-prop-vals rest))))))
+
+(defun parse-nodes (str)
+  (parse-many parse-node-re str
+    (collect (parse-props (match-string 1 str)))))
 
 
 ;;; Tests
@@ -94,4 +105,4 @@
   (let* ((str ";B[pq];W[dd];B[pc];W[eq];B[cp];W[cm];B[do];W[hq];B[qn];W[cj]")
          (nodes (parse-nodes str)))
     (should (= (length nodes) 10))
-    (should (tree-equal (car nodes) '("B" "pq") :test #'string=))))
+    (should (tree-equal (car nodes) '(("B" "pq")) :test #'string=))))
