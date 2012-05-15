@@ -70,11 +70,10 @@
 ;; - a board is just one interface into such a tree
 
 ;;; Code:
-(defun char-to-offset (char)
-  (if (< char ?a)
-      (+ 26 (- char ?A))
-    (- char ?a)))
+(require 'cl)
 
+
+;;; Parsing
 (defmacro parse-many (regexp string &rest body)
   (declare (indent 2))
   `(let (res (start 0))
@@ -138,6 +137,26 @@
   (with-temp-buffer
     (insert-file-contents-literally file)
     (parse-from-buffer (current-buffer))))
+
+
+;;; Processing
+(defvar sgf-property-alist nil
+  "A-list of property names and the function to interpret their values.")
+
+(defun process (raw)
+  (unless (listp raw) (error "sgf: can't process atomic sgf element."))
+  (if (listp (car raw))
+      (mapcar #'process raw)
+    (let ((func (cdr (assoc (car raw) sgf-property-alist))))
+      (if func (cons (car raw) (funcall func (cdr raw))) raw))))
+
+
+;;; Visualization
+;; - define a board format array
+;; - make buffer to show a board, and notes, etc...
+;; - keep a marker in an sgf file
+;; - write functions for building boards from sgf files (forwards and backwards)
+;; - sgf movement keys
 
 
 ;;; Tests
