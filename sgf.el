@@ -194,6 +194,16 @@
 ;; - keep an index into the sgf file
 ;; - write functions for building boards from sgf files (forwards and backwards)
 ;; - sgf movement keys
+
+(defvar *board* nil "Holds the board local to a GO buffer.")
+(make-variable-buffer-local '*board*)
+
+(defvar *sgf*   nil "Holds the sgf data structure local to a GO buffer.")
+(make-variable-buffer-local '*sgf*)
+
+(defvar *index* nil "Index into the sgf data structure local to a GO buffer.")
+(make-variable-buffer-local '*index*)
+
 (defun make-board (size) (make-vector (* size size) nil))
 
 (defun board-size (board) (round (sqrt (length board))))
@@ -245,6 +255,54 @@
         (body (board-body-to-string board)))
     (mapconcat #'identity (list header body header) "\n")))
 
+(defun update-display ()
+  (delete-region (point-min) (point-max))
+  (goto-char (point-min))
+  (insert
+   "\n"
+   (board-to-string *board*)
+   "\n\n")  
+  (let ((comment (cdr (assoc "C" (sgf-ref *sgf* *index*)))))
+    (when comment
+      (insert (make-string (+ 6 (* 2 (board-size *board*))) ?=)
+              "\n\n")
+      (let ((beg (point)))
+        (insert *comment*)
+        (fill-region beg (point)))))
+  (goto-char (point-min)))
+
+(defun display-sgf (game)
+  (let* ((root (car game))
+         (name (format "*%s*"
+                       (or (second (assoc "GN" root))
+                           (second (assoc "EV" root))
+                           "GO")))
+         (buffer (get-buffer-create name)))
+    (with-current-buffer buffer
+      (setf *sgf* game)
+      (setf *board* (make-board (cdr (assoc "S" root))))
+      (setf *index* '(1))
+      (update-display))
+    (pop-to-buffer buffer)))
+
+(defun sgf-ref (sgf index)
+  (let ((part sgf))
+    (while (car index)
+      (setq part (nth (car index) part))
+      (setq index (cdr index)))
+    part))
+
+(defun up ())
+(defun down ())
+(defun left ())
+(defun right (&optional num)
+  (interactive "p")
+  (incf (car (last *index*)) num)
+  (unless (sgf-ref *sgf* *index*)
+    (error "sgf: no more forward moves."))
+  (apply-move *board* (sgf-ref *sgf* *index*))
+  (update-display))
+
 
 ;;; Board manipulation functions
 (defun apply-move (board move)
@@ -252,6 +310,10 @@
         (cond ((string= "B" (car move)) :b)
               ((string= "W" (car move)) :w)
               (t (error "sgf: invalid move %s" (car move)))))
+  board)
+
+(defun revert-move (board move)
+  (setf (aref board (pos-to-index (cdr move) (board-size board))) nil)
   board)
 
 
@@ -367,3 +429,12 @@
       (apply-move board (car moves)))
     (board-to-string board)
     (should t)))
+
+(ert-deftest sgf-display-fresh-sgf-buffer ()
+  (let* ((joseki (car (read-from-file "sgf-files/3-4-joseki.sgf")))
+         (buffer (display-sgf joseki)))
+    (with-current-buffer buffer
+      (should *board*)
+      (should *sgf*)
+      (should *index*))
+    (should (kill-buffer buffer))))
