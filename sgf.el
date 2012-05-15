@@ -150,6 +150,42 @@
     (let ((func (cdr (assoc (car raw) sgf-property-alist))))
       (if func (cons (car raw) (funcall func (cdr raw))) raw))))
 
+(defun process-date (date-args)
+  (parse-time-string
+   (if (> 1 (length date-args))
+       (mapconcat #'number-to-string date-args " ")
+     (car date-args))))
+(add-to-list 'sgf-property-alist (cons "DT" #'process-date))
+
+(defun process-board-size (size-args)
+  (string-to-number (car size-args)))
+(add-to-list 'sgf-property-alist (cons "S" #'process-board-size))
+
+(defun process-position (position-string)
+  (flet ((char-to-pos (char)
+           (cond
+            ((or (< char ?A) (> char ?z)) (error "sgf: invalid char %s" char))
+            ((< char ?a) (+ 26 (- char ?A)))
+            (t (- char ?a)))))
+    (cons (char-to-pos (aref position-string 0))
+          (char-to-pos (aref position-string 1)))))
+
+(defun process-move (move-args)
+  (process-position (car move-args)))
+(add-to-list 'sgf-property-alist (cons "B" #'process-move))
+(add-to-list 'sgf-property-alist (cons "W" #'process-move))
+
+(defun process-label (label-args)
+  (mapcar (lambda (l-arg)
+            (message "l-arg:%s" l-arg)
+            (if (string-match "\\([[:alpha:]]+\\):\\(.*\\)" l-arg)
+                (cons (match-string 2 l-arg)
+                      (process-position (match-string 1 l-arg)))
+              (error "sgf: malformed label %S" l-arg)))
+          label-args))
+(add-to-list 'sgf-property-alist (cons "LB" #'process-label))
+(add-to-list 'sgf-property-alist (cons "LW" #'process-label))
+
 
 ;;; Visualization
 ;; - define a board format array
