@@ -61,14 +61,17 @@
        (nreverse res))))
 (def-edebug-spec parse-many (regexp string body))
 
-(defvar prop-val-re
+(defvar parse-prop-val-re
   "\\[\\(.*?[^\\]\\)\\]")
 
 (defvar parse-prop-re
-  (format "[[:space:]]*\\([[:alpha:]]+\\(%s\\)+\\)" prop-val-re))
+  (format "[[:space:]]*\\([[:alpha:]]+\\(%s\\)+\\)" parse-prop-val-re))
 
 (defvar parse-node-re
   (format "[[:space:]]*;\\(%s\\)+" parse-prop-re))
+
+(defvar parse-tree-part-re
+  (format "[[:space:]]*(\\(%s\\)[[:space:]]*\\([()]\\)" parse-node-re))
 
 (defun parse-prop-ident (str)
   (let ((end (if (and (<= ?A (aref str 1))
@@ -78,8 +81,12 @@
             (substring str end))))
 
 (defun parse-prop-vals (str)
-  (parse-many parse-prop-re str
+  (parse-many parse-prop-val-re str
     (collect (match-string 1 str))))
+
+(defun parse-prop (str)
+  (multiple-value-bind (id rest) (parse-prop-ident str)
+    (cons id (parse-prop-vals rest))))
 
 (defun parse-props (str)
   (parse-many parse-prop-re str
