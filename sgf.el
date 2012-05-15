@@ -208,7 +208,17 @@
 
 (defun board-size (board) (round (sqrt (length board))))
 
-(defun range (size) (number-sequence 0 (- size 1)))
+(defun range (a &optional b)
+  (block nil
+    (let (tmp)
+      (unless b
+        (cond ((> a 0) (decf a))
+              ((= a 0) (return nil))
+              ((> 0 a) (incf a)))
+        (setq b a a 0))
+      (if (> a b) (setq tmp a a b b tmp))
+      (let ((res (number-sequence a b)))
+        (if tmp (nreverse res) res)))))
 
 (defvar black-piece "X")
 
