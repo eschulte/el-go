@@ -164,9 +164,14 @@
 (defun process-position (position-string)
   (flet ((char-to-pos (char)
            (cond
-            ((or (< char ?A) (> char ?z)) (error "sgf: invalid char %s" char))
-            ((< char ?a) (+ 26 (- char ?A)))
-            (t (- char ?a)))))
+            ((or (< char ?A) (< ?z char))
+                         (error "sgf: invalid char %s" char))
+            ((< char ?I) (+ 26 (- char ?A)))
+            ((= char ?I) (error "sgf: \"I\" is an invalid char"))
+            ((< char ?a) (+ 27 (- char ?A)))
+            ((< char ?i) (- char $a))
+            ((= char ?i) (error "sgf: \"i\" is an invalid char"))
+            (t           (+ 1 (- char ?a))))))
     (cons (char-to-pos (aref position-string 0))
           (char-to-pos (aref position-string 1)))))
 
@@ -205,7 +210,11 @@
 (defun board-header (board)
   (let ((size (board-size board)))
     (concat "    "
-            (mapconcat (lambda (n) (string (+ ?A n)))
+            (mapconcat (lambda (n)
+                         (let ((char (+ ?A n)))
+                           (when (>= char ?I)
+                             (setq char (+ 1 char)))
+                           (string char)))
                        (range size) " "))))
 
 (defun board-pos-to-string (board pos)
@@ -296,7 +305,7 @@
 
 (ert-deftest sgf-empty-board-to-string-test ()
   (let ((board (make-vector (* 19 19) nil))
-        (string (concat "    A B C D E F G H I J K L M N O P Q R S\n"
+        (string (concat "    A B C D E F G H J K L M N O P Q R S T\n"
                         " 19 . . . . . . . . . . . . . . . . . . . 19\n"
                         " 18 . . . . . . . . . . . . . . . . . . . 18\n"
                         " 17 . . . . . . . . . . . . . . . . . . . 17\n"
@@ -316,5 +325,30 @@
                         "  3 . . . . . . . . . . . . . . . . . . .  3\n"
                         "  2 . . . . . . . . . . . . . . . . . . .  2\n"
                         "  1 . . . . . . . . . . . . . . . . . . .  1\n"
-                        "    A B C D E F G H I J K L M N O P Q R S")))
+                        "    A B C D E F G H J K L M N O P Q R S T")))
     (should (string= string (board-to-string board)))))
+
+(ert-deftest sgf-non-empty-board-to-string-test ()
+  (let ((board (make-vector (* 19 19) nil))
+        (string (concat "    A B C D E F G H J K L M N O P Q R S T\n"
+                        " 19 . . . . . . . . . . . . . . . . . . . 19\n"
+                        " 18 . . . . . . . . . . . . . . . . . . . 18\n"
+                        " 17 . . . . . . . . . . . . . . . . . . . 17\n"
+                        " 16 . . . + . . . . . + . . . . . + . . . 16\n"
+                        " 15 . . . . . . . . . . . . . . . . . . . 15\n"
+                        " 14 . . . . . . . . . . . . . . . . . . . 14\n"
+                        " 13 . . . . . . . . . . . . . . . . . . . 13\n"
+                        " 12 . . . . . . . . . . . . . . . . . . . 12\n"
+                        " 11 . . . . . . . . . . . . . . . . . . . 11\n"
+                        " 10 . . . + . . . . . + . . . . . + . . . 10\n"
+                        "  9 . . . . . . . . . . . . . . . . . . .  9\n"
+                        "  8 . . . . . . . . . . . . . . . . . . .  8\n"
+                        "  7 . . . . . . . . . . . . . . . . . . .  7\n"
+                        "  6 . . . . . . . . . . . . . . . . . . .  6\n"
+                        "  5 . . . . . . . . . . . . . . . . . . .  5\n"
+                        "  4 . . . + . . . . . + . . . . . + . . .  4\n"
+                        "  3 . . . . . . . . . . . . . . . . . . .  3\n"
+                        "  2 . . . . . . . . . . . . . . . . . . .  2\n"
+                        "  1 . . . . . . . . . . . . . . . . . . .  1\n"
+                        "    A B C D E F G H J K L M N O P Q R S T")))
+    (should t)))
