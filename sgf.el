@@ -194,33 +194,47 @@
 ;; - sgf movement keys
 
 ;; (defvar *board* (make-vector (* 19 19) nil))
-(defun board-to-string (board)
-  (let ((size (sqrt (length board))))
-    (flet ((header ()
-             (concat 
-              "    "
-              (let ((row ""))
-                (dotimes (n size row)
-                  (setq row (concat row (string (+ ?A n)) " "))))
-              "\n"))
-           (emph (n) (or (= 3 n)
+(defun board-size (board) (round (sqrt (length board))))
+
+(defun range (size) (number-sequence 0 (- size 1)))
+
+(defvar black-piece "X")
+
+(defvar white-piece "O")
+
+(defun board-header (board)
+  (let ((size (board-size board)))
+    (concat "    "
+            (mapconcat (lambda (n) (string (+ ?A n)))
+                       (range size) " "))))
+
+(defun board-pos-to-string (board pos)
+  (let ((size (board-size board)))
+    (flet ((emph (n) (or (= 3 n)
                          (= 4 (- size n))
-                         (= n (/ (- size 1) 2))))
-           (body ()
-             (let ((body ""))
-               (dotimes (m size body)
-                 (setq body
-                       (concat body
-                               (format "%3d" (- size m))
-                               (let ((row " "))
-                                 (dotimes (n size row)
-                                   (setq row (concat row
-                                                     (if (and (emph n) (emph m))
-                                                         "+ "
-                                                       ". ")))))
-                               (format "%2d" (- size m))
-                               "\n"))))))
-      (concat (header) (body) (header)))))
+                         (= n (/ (- size 1) 2)))))
+      (case (aref board (+ (car pos) (* (cdr pos) size)))
+        (:w white-piece)
+        (:b black-piece)
+        (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" "."))))))
+
+(defun board-row-to-string (board row)
+  (let* ((size (board-size board))
+         (label (format "%3d" (- size row)))
+         (row-body (mapconcat
+                    (lambda (n)
+                      (board-pos-to-string board (cons row n)))
+                    (range size) " ")))
+    (concat label " " row-body label)))
+
+(defun board-body-to-string (board)
+  (mapconcat (lambda (m) (board-row-to-string board m))
+             (range (board-size board)) "\n"))
+
+(defun board-to-string (board)
+  (let ((header (board-header board))
+        (body (board-body-to-string board)))
+    (mapconcat #'identity (list header body header) "\n")))
 
 
 ;;; Tests
@@ -279,3 +293,28 @@
 (ert-deftest sgf-parse-file-test ()
   (let ((game (car (parse-from-file "games/jp-ming-5.sgf"))))
     (should (= 247 (length game)))))
+
+(ert-deftest sgf-empty-board-to-string-test ()
+  (let ((board (make-vector (* 19 19) nil))
+        (string (concat "    A B C D E F G H I J K L M N O P Q R S\n"
+                        " 19 . . . . . . . . . . . . . . . . . . . 19\n"
+                        " 18 . . . . . . . . . . . . . . . . . . . 18\n"
+                        " 17 . . . . . . . . . . . . . . . . . . . 17\n"
+                        " 16 . . . + . . . . . + . . . . . + . . . 16\n"
+                        " 15 . . . . . . . . . . . . . . . . . . . 15\n"
+                        " 14 . . . . . . . . . . . . . . . . . . . 14\n"
+                        " 13 . . . . . . . . . . . . . . . . . . . 13\n"
+                        " 12 . . . . . . . . . . . . . . . . . . . 12\n"
+                        " 11 . . . . . . . . . . . . . . . . . . . 11\n"
+                        " 10 . . . + . . . . . + . . . . . + . . . 10\n"
+                        "  9 . . . . . . . . . . . . . . . . . . .  9\n"
+                        "  8 . . . . . . . . . . . . . . . . . . .  8\n"
+                        "  7 . . . . . . . . . . . . . . . . . . .  7\n"
+                        "  6 . . . . . . . . . . . . . . . . . . .  6\n"
+                        "  5 . . . . . . . . . . . . . . . . . . .  5\n"
+                        "  4 . . . + . . . . . + . . . . . + . . .  4\n"
+                        "  3 . . . . . . . . . . . . . . . . . . .  3\n"
+                        "  2 . . . . . . . . . . . . . . . . . . .  2\n"
+                        "  1 . . . . . . . . . . . . . . . . . . .  1\n"
+                        "    A B C D E F G H I J K L M N O P Q R S")))
+    (should (string= string (board-to-string board)))))
