@@ -51,13 +51,20 @@
       (+ 26 (- char ?A))
     (- char ?a)))
 
+(defmacro parse-many (regexp string &rest body)
+  (declare (indent 2))
+  `(let (res (start 0))
+     (flet ((collect (it) (push it res)))
+       (while (string-match ,regexp ,string start)
+         (setq start (match-end 0))
+         (save-match-data ,@body))
+       (nreverse res))))
+(def-edebug-spec parse-many (regexp string body))
+
 (defun parse-props (str)
-  (let (res (start 0))
-    (while (string-match "[[:space:]]*\\([[:alpha:]]+\\(\\[[^;]+?\\]\\)+\\)" str start)
-      (setq start (match-end 0))
-      (multiple-value-bind (id rest) (parse-prop-ident (match-string 1 str))
-        (push (cons id (parse-prop-vals rest)) res)))
-    (nreverse res)))
+  (parse-many "[[:space:]]*\\([[:alpha:]]+\\(\\[[^;]+?\\]\\)+\\)" str
+    (multiple-value-bind (id rest) (parse-prop-ident (match-string 1 str))
+      (collect (cons id (parse-prop-vals rest))))))
 
 (defun parse-prop-ident (str)
   (let ((end (if (and (<= ?A (aref str 1))
@@ -67,11 +74,8 @@
             (substring str end))))
 
 (defun parse-prop-vals (str)
-  (let (res (start 0))
-    (while (string-match "\\[\\(.*?[^\\]\\)\\]" str start)
-      (setq start (match-end 0))
-      (push (match-string 1 str) res))
-    (nreverse res)))
+  (parse-many "\\[\\(.*?[^\\]\\)\\]" str
+    (collect (match-string 1 str))))
 
 (defun parse-nodes ())
 
