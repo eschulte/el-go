@@ -62,16 +62,16 @@
 (def-edebug-spec parse-many (regexp string body))
 
 (defvar parse-prop-val-re
-  "\\[\\(.*?[^\\]\\)\\]")
+  "[[:space:]\n\r]*\\[\\([^\000]*?[^\\]\\)\\]")
 
 (defvar parse-prop-re
-  (format "[[:space:]]*\\([[:alpha:]]+\\(%s\\)+\\)" parse-prop-val-re))
+  (format "[[:space:]\n\r]*\\([[:alpha:]]+\\(%s\\)+\\)" parse-prop-val-re))
 
 (defvar parse-node-re
-  (format "[[:space:]]*;\\(%s\\)+" parse-prop-re))
+  (format "[[:space:]\n\r]*;\\(\\(%s\\)+\\)" parse-prop-re))
 
 (defvar parse-tree-part-re
-  (format "[[:space:]]*(\\(%s\\)[[:space:]]*\\([()]\\)" parse-node-re))
+  (format "[[:space:]\n\r]*(\\(%s\\)[[:space:]\n\r]*\\([()]\\)" parse-node-re))
 
 (defun parse-prop-ident (str)
   (let ((end (if (and (<= ?A (aref str 1))
@@ -97,6 +97,15 @@
   (parse-many parse-node-re str
     (collect (parse-props (match-string 1 str)))))
 
+(defun parse-trees (str)
+  (parse-many parse-tree-part-re str
+    (setq start (match-beginning 2))
+    (let ((cont-p (string= (match-string 2 str) "("))
+          (tree-part (parse-nodes (match-string 1 str))))
+      (if cont-p
+          (list tree-part res)
+        (cons tree-part res)))))
+
 
 ;;; Tests
 (require 'ert)
@@ -105,11 +114,24 @@
   (flet ((should= (a b) (should (tree-equal a b :test #'string=))))
     (should= (parse-props "B[pq]") '(("B" "pq")))
     (should= (parse-props "GM[1]") '(("GM" "1")))
+    (should= (parse-props "GM[1]\nB[pq]\tB[pq]")
+             '(("GM" "1") ("B" "pq") ("B" "pq")))
     (should (= (length (cdar (parse-props "TB[as][bs][cq][cr][ds][ep]")))
                6))))
 
-(ert-deftest sgf-parse-nodes-test ()
+(ert-deftest sgf-parse-multiple-small-nodes-test ()
   (let* ((str ";B[pq];W[dd];B[pc];W[eq];B[cp];W[cm];B[do];W[hq];B[qn];W[cj]")
          (nodes (parse-nodes str)))
     (should (= (length nodes) 10))
     (should (tree-equal (car nodes) '(("B" "pq")) :test #'string=))))
+
+(ert-deftest sgf-parse-one-large-node-test ()
+  (let* ((str ";GM[1]FF[4]
+    SZ[19]
+    GN[GNU Go 3.7.11 load and print]
+    DT[2008-12-14]
+    KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]AW[ja][oa]
+    [pa][db][eb]")
+         (node (car (parse-nodes str))))
+    (should (= (length node) 10))
+    (should (= (length (cdar (last node))) 5))))
