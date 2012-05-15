@@ -107,6 +107,14 @@
                     (cons tree-part res)))
         (setq cont-p (string= (match-string 2 str) "("))))))
 
+(defun parse-from-buffer (buffer)
+  (parse-trees (with-current-buffer buffer (buffer-string))))
+
+(defun parse-from-file (file)
+  (with-temp-buffer
+    (insert-file-contents-literally file)
+    (parse-from-buffer (current-buffer))))
+
 
 ;;; Tests
 (require 'ert)
@@ -160,3 +168,7 @@
     (should (= 2  (length tree)))
     (should (= 9 (length (car (first tree)))))
     (should (= 2 (length (second tree))))))
+
+(ert-deftest sgf-parse-file-test ()
+  (let ((game (car (parse-from-file "games/jp-ming-5.sgf"))))
+    (should (= 247 (length game)))))
