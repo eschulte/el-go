@@ -188,11 +188,39 @@
 
 
 ;;; Visualization
-;; - define a board format array
 ;; - make buffer to show a board, and notes, etc...
-;; - keep a marker in an sgf file
+;; - keep an index into the sgf file
 ;; - write functions for building boards from sgf files (forwards and backwards)
 ;; - sgf movement keys
+
+;; (defvar *board* (make-vector (* 19 19) nil))
+(defun board-to-string (board)
+  (let ((size (sqrt (length board))))
+    (flet ((header ()
+             (concat 
+              "    "
+              (let ((row ""))
+                (dotimes (n size row)
+                  (setq row (concat row (string (+ ?A n)) " "))))
+              "\n"))
+           (emph (n) (or (= 3 n)
+                         (= 4 (- size n))
+                         (= n (/ (- size 1) 2))))
+           (body ()
+             (let ((body ""))
+               (dotimes (m size body)
+                 (setq body
+                       (concat body
+                               (format "%3d" (- size m))
+                               (let ((row " "))
+                                 (dotimes (n size row)
+                                   (setq row (concat row
+                                                     (if (and (emph n) (emph m))
+                                                         "+ "
+                                                       ". ")))))
+                               (format "%2d" (- size m))
+                               "\n"))))))
+      (concat (header) (body) (header)))))
 
 
 ;;; Tests
