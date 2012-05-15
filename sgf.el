@@ -130,13 +130,13 @@
                     (cons tree-part res)))
         (setq cont-p (string= (match-string 2 str) "("))))))
 
-(defun parse-from-buffer (buffer)
-  (parse-trees (with-current-buffer buffer (buffer-string))))
+(defun read-from-buffer (buffer)
+  (process (parse-trees (with-current-buffer buffer (buffer-string)))))
 
-(defun parse-from-file (file)
+(defun read-from-file (file)
   (with-temp-buffer
     (insert-file-contents-literally file)
-    (parse-from-buffer (current-buffer))))
+    (read-from-buffer (current-buffer))))
 
 
 ;;; Processing
@@ -161,19 +161,20 @@
   (string-to-number (car size-args)))
 (add-to-list 'sgf-property-alist (cons "S" #'process-board-size))
 
+(defun char-to-pos (char)
+  (cond
+   ((or (< char ?A) (< ?z char))
+    (error "sgf: invalid char %s" char))
+   ((< char ?I) (+ 26 (- char ?A)))
+   ((= char ?I) (error "sgf: \"I\" is an invalid char"))
+   ((< char ?a) (+ 25 (- char ?A)))
+   ((< char ?i) (- char ?a))
+   ((= char ?i) (error "sgf: \"i\" is an invalid char"))
+   (t           (- (- char ?a) 1))))
+
 (defun process-position (position-string)
-  (flet ((char-to-pos (char)
-           (cond
-            ((or (< char ?A) (< ?z char))
-                         (error "sgf: invalid char %s" char))
-            ((< char ?I) (+ 26 (- char ?A)))
-            ((= char ?I) (error "sgf: \"I\" is an invalid char"))
-            ((< char ?a) (+ 27 (- char ?A)))
-            ((< char ?i) (- char $a))
-            ((= char ?i) (error "sgf: \"i\" is an invalid char"))
-            (t           (+ 1 (- char ?a))))))
-    (cons (char-to-pos (aref position-string 0))
-          (char-to-pos (aref position-string 1)))))
+  (cons (char-to-pos (aref position-string 0))
+        (char-to-pos (aref position-string 1))))
 
 (defun process-move (move-args)
   (process-position (car move-args)))
@@ -197,8 +198,8 @@
 ;; - keep an index into the sgf file
 ;; - write functions for building boards from sgf files (forwards and backwards)
 ;; - sgf movement keys
+(defun make-board (size) (make-vector (* size size) nil))
 
-;; (defvar *board* (make-vector (* 19 19) nil))
 (defun board-size (board) (round (sqrt (length board))))
 
 (defun range (size) (number-sequence 0 (- size 1)))
@@ -217,12 +218,15 @@
                            (string char)))
                        (range size) " "))))
 
+(defun pos-to-index (pos size)
+  (+ (car pos) (* (cdr pos) size)))
+
 (defun board-pos-to-string (board pos)
   (let ((size (board-size board)))
     (flet ((emph (n) (or (= 3 n)
                          (= 4 (- size n))
                          (= n (/ (- size 1) 2)))))
-      (case (aref board (+ (car pos) (* (cdr pos) size)))
+      (case (aref board (pos-to-index pos size))
         (:w white-piece)
         (:b black-piece)
         (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" "."))))))
@@ -244,6 +248,15 @@
   (let ((header (board-header board))
         (body (board-body-to-string board)))
     (mapconcat #'identity (list header body header) "\n")))
+
+
+;;; Board manipulation functions
+(defun apply-move (board move)
+  (setf (aref board (pos-to-index (cdr move) (board-size board)))
+        (cond ((string= "B" (car move)) :b)
+              ((string= "W" (car move)) :w)
+              (t (error "sgf: invalid move %s" (car move)))))
+  board)
 
 
 ;;; Tests
@@ -300,7 +313,7 @@
     (should (= 2 (length (second tree))))))
 
 (ert-deftest sgf-parse-file-test ()
-  (let ((game (car (parse-from-file "games/jp-ming-5.sgf"))))
+  (let ((game (car (read-from-file "games/jp-ming-5.sgf"))))
     (should (= 247 (length game)))))
 
 (ert-deftest sgf-empty-board-to-string-test ()
@@ -329,26 +342,32 @@
     (should (string= string (board-to-string board)))))
 
 (ert-deftest sgf-non-empty-board-to-string-test ()
-  (let ((board (make-vector (* 19 19) nil))
-        (string (concat "    A B C D E F G H J K L M N O P Q R S T\n"
-                        " 19 . . . . . . . . . . . . . . . . . . . 19\n"
-                        " 18 . . . . . . . . . . . . . . . . . . . 18\n"
-                        " 17 . . . . . . . . . . . . . . . . . . . 17\n"
-                        " 16 . . . + . . . . . + . . . . . + . . . 16\n"
-                        " 15 . . . . . . . . . . . . . . . . . . . 15\n"
-                        " 14 . . . . . . . . . . . . . . . . . . . 14\n"
-                        " 13 . . . . . . . . . . . . . . . . . . . 13\n"
-                        " 12 . . . . . . . . . . . . . . . . . . . 12\n"
-                        " 11 . . . . . . . . . . . . . . . . . . . 11\n"
-                        " 10 . . . + . . . . . + . . . . . + . . . 10\n"
-                        "  9 . . . . . . . . . . . . . . . . . . .  9\n"
-                        "  8 . . . . . . . . . . . . . . . . . . .  8\n"
-                        "  7 . . . . . . . . . . . . . . . . . . .  7\n"
-                        "  6 . . . . . . . . . . . . . . . . . . .  6\n"
-                        "  5 . . . . . . . . . . . . . . . . . . .  5\n"
-                        "  4 . . . + . . . . . + . . . . . + . . .  4\n"
-                        "  3 . . . . . . . . . . . . . . . . . . .  3\n"
-                        "  2 . . . . . . . . . . . . . . . . . . .  2\n"
-                        "  1 . . . . . . . . . . . . . . . . . . .  1\n"
-                        "    A B C D E F G H J K L M N O P Q R S T")))
+  (let* ((joseki (car (read-from-file "games/3-4-joseki.sgf")))
+         (root (car joseki))
+         (rest (cdr joseki))
+         (board (make-board (cdr (assoc "S" root))))
+         (string (concat "    A B C D E F G H J K L M N O P Q R S T\n"
+                         " 19 . . . . . . . . . . . . . . . . . . . 19\n"
+                         " 18 . . . . . . . . . . . . . . . . . . . 18\n"
+                         " 17 . . . . . . . . . . . . . . . . . . . 17\n"
+                         " 16 . . . + . . . . . + . . . . . + . . . 16\n"
+                         " 15 . . . . . . . . . . . . . . . . . . . 15\n"
+                         " 14 . . . . . . . . . . . . . . . . . . . 14\n"
+                         " 13 . . . . . . . . . . . . . . . . . . . 13\n"
+                         " 12 . . . . . . . . . . . . . . . . . . . 12\n"
+                         " 11 . . . . . . . . . . . . . . . . . . . 11\n"
+                         " 10 . . X + . . . . . + . . . . . + . . . 10\n"
+                         "  9 . . . . . . . . . . . . . . . . . . .  9\n"
+                         "  8 . . . . . . . . . . . . . . . . . . .  8\n"
+                         "  7 . . . . . . . . . . . . . . . . . . .  7\n"
+                         "  6 . . . . . . . . . . . . . . . . . . .  6\n"
+                         "  5 . . . X . . . . . . . . . . . . . . .  5\n"
+                         "  4 . . X + O . O . . + . . . . . + . . .  4\n"
+                         "  3 . . . X O . . . . . O . . . . . . . .  3\n"
+                         "  2 . . . X . . . . . . . . . . . . . . .  2\n"
+                         "  1 . . . . . . . . . . . . . . . . . . .  1\n"
+                         "    A B C D E F G H J K L M N O P Q R S T")))
+    (dolist (moves rest)
+      (apply-move board (car moves)))
+    (board-to-string board)
     (should t)))
