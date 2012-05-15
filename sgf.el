@@ -1,9 +1,39 @@
 ;;; sgf.el --- Smart Game Format (focused on GO)
 
-;; http://www.red-bean.com/sgf/sgf4.html
-;; http://www.red-bean.com/sgf/properties.html
+;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
-;;; BNF
+;; Author: Eric Schulte <eric.schulte@gmx.com>
+;; Created: 2012-05-15
+;; Version: 0.1
+;; Keywords: game go
+
+;; This file is not (yet) part of GNU Emacs.
+;; However, it is distributed under the same license.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 3, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to the
+;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
+
+;;; Commentary:
+
+;; This file implements a reader, writer and visualizer for sgf files.
+;; The sgf format is defined at http://www.red-bean.com/sgf/sgf4.html.
+
+;;; Syntax:
+
+;; BNF
+;; 
 ;; Collection = GameTree { GameTree }
 ;; GameTree   = "(" Sequence { GameTree } ")"
 ;; Sequence   = Node { Node }
@@ -15,12 +45,8 @@
 ;; ValueType  = (None | Number | Real | Double | Color | SimpleText |
 ;;       	Text | Point  | Move | Stone)
 
-;;; There are two types of property lists: 'list of' and 'elist of'. 
-;; 'list of':    PropValue { PropValue }
-;; 'elist of':   ((PropValue { PropValue }) | None)
-;;               In other words elist is list or "[]".
-
-;;; Property Value Types
+;; Property Value Types
+;; 
 ;; UcLetter   = "A".."Z"
 ;; Digit      = "0".."9"
 ;; None       = ""
@@ -34,8 +60,6 @@
 ;; Move       = game-specific
 ;; Stone      = game-specific
 ;; Compose    = ValueType ":" ValueType
-
-;; an example is at the bottom of the page
 
 ;;; Comments:
 
