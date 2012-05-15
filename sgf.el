@@ -303,28 +303,41 @@
     part))
 
 (defun up ())
+
 (defun down ())
-(defun left ())
+
+(defun left (&optional num)
+  (interactive "p")
+  (prog1 (dotimes (n num n)
+           (decf (car (last *index*)))
+           (unless (sgf-ref *sgf* *index*)
+             (update-display)
+             (error "sgf: no more backwards moves."))
+           (revert-moves *board* (sgf-ref *sgf* *index*)))
+    (update-display)))
+
 (defun right (&optional num)
   (interactive "p")
-  (incf (car (last *index*)) num)
-  (unless (sgf-ref *sgf* *index*)
-    (error "sgf: no more forward moves."))
-  (apply-move *board* (sgf-ref *sgf* *index*))
-  (update-display))
+  (prog1 (dotimes (n num n)
+           (incf (car (last *index*)))
+           (unless (sgf-ref *sgf* *index*)
+             (update-display)
+             (error "sgf: no more forward moves."))
+           (apply-moves *board* (sgf-ref *sgf* *index*)))
+    (update-display)))
 
 
 ;;; Board manipulation functions
-(defun apply-move (board move)
-  (setf (aref board (pos-to-index (cdr move) (board-size board)))
-        (cond ((string= "B" (car move)) :b)
-              ((string= "W" (car move)) :w)
-              (t (error "sgf: invalid move %s" (car move)))))
-  board)
+(defun apply-moves (board moves)
+  (dolist (move moves board)
+    (setf (aref board (pos-to-index (cdr move) (board-size board)))
+          (cond ((string= "B" (car move)) :b)
+                ((string= "W" (car move)) :w)
+                (t (error "sgf: invalid move %s" (car move)))))))
 
-(defun revert-move (board move)
-  (setf (aref board (pos-to-index (cdr move) (board-size board))) nil)
-  board)
+(defun revert-moves (board moves)
+  (dolist (move moves board)
+    (setf (aref board (pos-to-index (cdr move) (board-size board))) nil)))
 
 
 ;;; Tests
@@ -436,7 +449,7 @@
                          "  1 . . . . . . . . . . . . . . . . . . .  1\n"
                          "    A B C D E F G H J K L M N O P Q R S T")))
     (dolist (moves rest)
-      (apply-move board (car moves)))
+      (apply-moves board moves))
     (board-to-string board)
     (should t)))
 
