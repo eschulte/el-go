@@ -53,14 +53,11 @@
 
 (defun parse-props (str)
   (let (res (start 0))
-    (while (string-match "[[:space:]]*;\\([[:alpha:]]+\\(\\[[^;]+?\\]\\)+\\)" str start)
+    (while (string-match "[[:space:]]*\\([[:alpha:]]+\\(\\[[^;]+?\\]\\)+\\)" str start)
       (setq start (match-end 0))
-      (push (parse-prop (match-string 1 str)) res))
+      (multiple-value-bind (id rest) (parse-prop-ident (match-string 1 str))
+        (push (cons id (parse-prop-vals rest)) res)))
     (nreverse res)))
-
-(defun parse-prop (str)
-  (multiple-value-bind (id rest) (parse-prop-ident str)
-    (cons id (parse-prop-vals rest))))
 
 (defun parse-prop-ident (str)
   (let ((end (if (and (<= ?A (aref str 1))
@@ -76,21 +73,21 @@
       (push (match-string 1 str) res))
     (nreverse res)))
 
-(defun parse-node ())
+(defun parse-nodes ())
 
 
 ;;; Tests
 (require 'ert)
 
-(ert-deftest parse-prop-tests ()
+(ert-deftest sgf-parse-prop-tests ()
   (flet ((should= (a b) (should (tree-equal a b :test #'string=))))
-    (should= (parse-prop "B[pq]") '("B" "pq"))
-    (should= (parse-prop "GM[1]") '("GM" "1"))
-    (should (= (length (cdr (parse-prop "TB[as][bs][cq][cr][ds][ep]")))
+    (should= (parse-props "B[pq]") '(("B" "pq")))
+    (should= (parse-props "GM[1]") '(("GM" "1")))
+    (should (= (length (cdar (parse-props "TB[as][bs][cq][cr][ds][ep]")))
                6))))
 
-(ert-deftest parse-nodes-test ()
+(ert-deftest sgf-parse-nodes-test ()
   (let* ((str ";B[pq];W[dd];B[pc];W[eq];B[cp];W[cm];B[do];W[hq];B[qn];W[cj]")
-         (nodes (parse-props str)))
+         (nodes (parse-nodes str)))
     (should (= (length nodes) 10))
     (should (tree-equal (car nodes) '("B" "pq") :test #'string=))))
