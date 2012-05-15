@@ -51,6 +51,13 @@
       (+ 26 (- char ?A))
     (- char ?a)))
 
+(defun parse-props (str)
+  (let (res (start 0))
+    (while (string-match "[[:space:]]*;\\([[:alpha:]]+\\(\\[[^;]+?\\]\\)+\\)" str start)
+      (setq start (match-end 0))
+      (push (parse-prop (match-string 1 str)) res))
+    (nreverse res)))
+
 (defun parse-prop (str)
   (multiple-value-bind (id rest) (parse-prop-ident str)
     (cons id (parse-prop-vals rest))))
@@ -65,9 +72,11 @@
 (defun parse-prop-vals (str)
   (let (res (start 0))
     (while (string-match "\\[\\(.*?[^\\]\\)\\]" str start)
-      (push (match-string 1 str) res)
-      (setq start (match-end 0)))
-    res))
+      (setq start (match-end 0))
+      (push (match-string 1 str) res))
+    (nreverse res)))
+
+(defun parse-node ())
 
 
 ;;; Tests
@@ -80,5 +89,8 @@
     (should (= (length (cdr (parse-prop "TB[as][bs][cq][cr][ds][ep]")))
                6))))
 
-(defun parse-nodes (str)
-  )
+(ert-deftest parse-nodes-test ()
+  (let* ((str ";B[pq];W[dd];B[pc];W[eq];B[cp];W[cm];B[do];W[hq];B[qn];W[cj]")
+         (nodes (parse-props str)))
+    (should (= (length nodes) 10))
+    (should (tree-equal (car nodes) '("B" "pq") :test #'string=))))
