@@ -102,9 +102,9 @@
     (setq start (match-beginning 2))
     (let ((cont-p (string= (match-string 2 str) "("))
           (tree-part (parse-nodes (match-string 1 str))))
-      (if cont-p
-          (list tree-part res)
-        (cons tree-part res)))))
+      (setq res (if cont-p
+                    (list tree-part res)
+                  (cons tree-part res))))))
 
 
 ;;; Tests
@@ -127,11 +127,23 @@
 
 (ert-deftest sgf-parse-one-large-node-test ()
   (let* ((str ";GM[1]FF[4]
-    SZ[19]
-    GN[GNU Go 3.7.11 load and print]
-    DT[2008-12-14]
-    KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]AW[ja][oa]
-    [pa][db][eb]")
+               SZ[19]
+               GN[GNU Go 3.7.11 load and print]
+               DT[2008-12-14]
+               KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]AW[ja][oa]
+               [pa][db][eb]")
          (node (car (parse-nodes str))))
     (should (= (length node) 10))
     (should (= (length (cdar (last node))) 5))))
+
+(ert-deftest sgf-parse-simple-tree ()
+  (let* ((str "(;GM[1]FF[4]
+               SZ[19]
+               GN[GNU Go 3.7.11 load and print]
+               DT[2008-12-14]
+               KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]AW[ja][oa]
+               [pa][db][eb])")
+         (tree (parse-trees str)))
+    (should (= 1  (length tree)))
+    (should (= 1  (length (car tree))))
+    (should (= 10 (length (caar tree))))))
