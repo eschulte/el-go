@@ -313,7 +313,7 @@
     (should (= 2 (length (second tree))))))
 
 (ert-deftest sgf-parse-file-test ()
-  (let ((game (car (read-from-file "games/jp-ming-5.sgf"))))
+  (let ((game (car (read-from-file "sgf-files/jp-ming-5.sgf"))))
     (should (= 247 (length game)))))
 
 (ert-deftest sgf-empty-board-to-string-test ()
@@ -342,7 +342,7 @@
     (should (string= string (board-to-string board)))))
 
 (ert-deftest sgf-non-empty-board-to-string-test ()
-  (let* ((joseki (car (read-from-file "games/3-4-joseki.sgf")))
+  (let* ((joseki (car (read-from-file "sgf-files/3-4-joseki.sgf")))
          (root (car joseki))
          (rest (cdr joseki))
          (board (make-board (cdr (assoc "S" root))))
