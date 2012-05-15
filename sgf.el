@@ -165,11 +165,7 @@
   (cond
    ((or (< char ?A) (< ?z char))
     (error "sgf: invalid char %s" char))
-   ((< char ?I) (+ 26 (- char ?A)))
-   ((= char ?I) (error "sgf: \"I\" is an invalid char"))
-   ((< char ?a) (+ 25 (- char ?A)))
-   ((< char ?i) (- char ?a))
-   ((= char ?i) (error "sgf: \"i\" is an invalid char"))
+   ((< char ?a) (+ 26 (- char ?A)))
    (t           (- (- char ?a) 1))))
 
 (defun process-position (position-string)
