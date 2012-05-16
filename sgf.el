@@ -266,18 +266,19 @@
     (mapconcat #'identity (list header body header) "\n")))
 
 (defun update-display ()
+  (unless *sgf* (error "sgf: buffer has not associated sgf data"))
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
   (insert
    "\n"
    (board-to-string *board*)
    "\n\n")  
-  (let ((comment (cdr (assoc "C" (sgf-ref *sgf* *index*)))))
+  (let ((comment (second (assoc "C" (sgf-ref *sgf* *index*)))))
     (when comment
       (insert (make-string (+ 6 (* 2 (board-size *board*))) ?=)
               "\n\n")
       (let ((beg (point)))
-        (insert *comment*)
+        (insert comment)
         (fill-region beg (point)))))
   (goto-char (point-min)))
 
@@ -289,9 +290,9 @@
                            "GO")))
          (buffer (get-buffer-create name)))
     (with-current-buffer buffer
-      (setf *sgf* game)
-      (setf *board* (make-board (cdr (assoc "S" root))))
-      (setf *index* '(1))
+      (setq *sgf* game)
+      (setq *board* (make-board (cdr (assoc "S" root))))
+      (setq *index* '(0))
       (update-display))
     (pop-to-buffer buffer)))
 
@@ -309,11 +310,11 @@
 (defun left (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (decf (car (last *index*)))
            (unless (sgf-ref *sgf* *index*)
              (update-display)
              (error "sgf: no more backwards moves."))
-           (revert-moves *board* (sgf-ref *sgf* *index*)))
+           (revert-moves *board* (sgf-ref *sgf* *index*))
+           (decf (car (last *index*))))
     (update-display)))
 
 (defun right (&optional num)
@@ -321,6 +322,7 @@
   (prog1 (dotimes (n num n)
            (incf (car (last *index*)))
            (unless (sgf-ref *sgf* *index*)
+             (decf (car (last *index*)))
              (update-display)
              (error "sgf: no more forward moves."))
            (apply-moves *board* (sgf-ref *sgf* *index*)))
