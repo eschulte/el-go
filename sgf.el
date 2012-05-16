@@ -140,6 +140,8 @@
 
 
 ;;; Processing
+(defun aget (key list) (cdr (assoc key list)))
+
 (defvar sgf-property-alist nil
   "A-list of property names and the function to interpret their values.")
 
@@ -147,7 +149,7 @@
   (unless (listp raw) (error "sgf: can't process atomic sgf element."))
   (if (listp (car raw))
       (mapcar #'process raw)
-    (let ((func (cdr (assoc (car raw) sgf-property-alist))))
+    (let ((func (aget (car raw) sgf-property-alist)))
       (if func (cons (car raw) (funcall func (cdr raw))) raw))))
 
 (defun process-date (date-args)
@@ -173,7 +175,7 @@
         (char-to-pos (aref position-string 1))))
 
 (defun process-move (move-args)
-  (process-position (car move-args)))
+  (list (cons :pos (process-position (car move-args)))))
 (add-to-list 'sgf-property-alist (cons "B" #'process-move))
 (add-to-list 'sgf-property-alist (cons "W" #'process-move))
 
@@ -181,8 +183,9 @@
   (mapcar (lambda (l-arg)
             (message "l-arg:%s" l-arg)
             (if (string-match "\\([[:alpha:]]+\\):\\(.*\\)" l-arg)
-                (cons (match-string 2 l-arg)
-                      (process-position (match-string 1 l-arg)))
+                (list 
+                 (cons :label (match-string 2 l-arg))
+                 (cons :pos (process-position (match-string 1 l-arg))))
               (error "sgf: malformed label %S" l-arg)))
           label-args))
 (add-to-list 'sgf-property-alist (cons "LB" #'process-label))
@@ -242,10 +245,12 @@
     (flet ((emph (n) (or (= 3 n)
                          (= 4 (- size n))
                          (= n (/ (- size 1) 2)))))
-      (case (aref board (pos-to-index pos size))
-        (:w white-piece)
-        (:b black-piece)
-        (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" "."))))))
+      (let ((val (aref board (pos-to-index pos size))))
+        (cond
+         ((equal val :w) white-piece)
+         ((equal val :b) black-piece)
+         ((and (stringp val) (= 1 (length val)) val))
+         (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" ".")))))))
 
 (defun board-row-to-string (board row)
   (let* ((size (board-size board))
@@ -288,10 +293,13 @@
                        (or (second (assoc "GN" root))
                            (second (assoc "EV" root))
                            "GO")))
-         (buffer (get-buffer-create name)))
+         (buffer (get-buffer-create name))
+         (size (aget "S" root)))
+    (unless size
+      (error "sgf: game has no associated size"))
     (with-current-buffer buffer
       (setq *sgf* game)
-      (setq *board* (make-board (cdr (assoc "S" root))))
+      (setq *board* (make-board size))
       (setq *index* '(0))
       (update-display))
     (pop-to-buffer buffer)))
@@ -330,16 +338,35 @@
 
 
 ;;; Board manipulation functions
+(defun move-type (move)
+  (cond
+   ((member (car move) '("B"  "W"))  :move)
+   ((member (car move) '("LB" "LW")) :label)))
+
 (defun apply-moves (board moves)
-  (dolist (move moves board)
-    (setf (aref board (pos-to-index (cdr move) (board-size board)))
-          (cond ((string= "B" (car move)) :b)
-                ((string= "W" (car move)) :w)
-                (t (error "sgf: invalid move %s" (car move)))))))
+  (flet ((set (val data)
+              (setf (aref board (pos-to-index (aget :pos data)
+                                              (board-size board)))
+                    (cond ((string= "B"  val)  :b)
+                          ((string= "W"  val)  :w)
+                          ;; TODO: instead of just storing the label
+                          ;;       string do (:label string)
+                          ((string= "LB" val) (aget :label data))
+                          ((string= "LW" val) (aget :label data))
+                          (t nil)))))
+    (dolist (move moves board)
+      (case (move-type move)
+        (:move  (set (car move) (cdr move)))
+        (:label (mapcar (lambda (data) (set (car move) data)) (cdr move)))))))
 
 (defun revert-moves (board moves)
-  (dolist (move moves board)
-    (setf (aref board (pos-to-index (cdr move) (board-size board))) nil)))
+  (flet ((unset (move)
+           (setf (aref board (pos-to-index (cdr move) (board-size board)))
+                 nil)))
+    (dolist (move moves board)
+      (case (move-type move)
+        (:move  (set move))
+        (:label (mapcar #'set move))))))
 
 
 ;;; Tests
@@ -428,7 +455,7 @@
   (let* ((joseki (car (read-from-file "sgf-files/3-4-joseki.sgf")))
          (root (car joseki))
          (rest (cdr joseki))
-         (board (make-board (cdr (assoc "S" root))))
+         (board (make-board (aget "S" root)))
          (string (concat "    A B C D E F G H J K L M N O P Q R S T\n"
                          " 19 . . . . . . . . . . . . . . . . . . . 19\n"
                          " 18 . . . . . . . . . . . . . . . . . . . 18\n"
