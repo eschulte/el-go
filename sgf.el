@@ -69,6 +69,13 @@
 ;; - games build such trees as they go
 ;; - a board is just one interface into such a tree
 
+;;; Notes:
+
+;; Save the board layout associated with each node in the sgf file,
+;; and only make new boards if there is not already a known board
+;; layout for a node.  That way there is no worry about replacing
+;; removed stones when moving backwards in a game.
+
 ;;; Code:
 (require 'cl)
 
