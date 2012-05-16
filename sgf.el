@@ -305,6 +305,7 @@
     (unless size
       (error "sgf: game has no associated size"))
     (with-current-buffer buffer
+      (sgf-mode)
       (setq *sgf* game)
       (setq *board* (make-board size))
       (setq *index* '(0))
@@ -340,6 +341,7 @@
              (decf (car (last *index*)))
              (update-display)
              (error "sgf: no more forward moves."))
+           (clean-board *board*)
            (apply-moves *board* (sgf-ref *sgf* *index*)))
     (update-display)))
 
@@ -356,8 +358,6 @@
                                               (board-size board)))
                     (cond ((string= "B"  val)  :b)
                           ((string= "W"  val)  :w)
-                          ;; TODO: instead of just storing the label
-                          ;;       string do (:label string)
                           ((string= "LB" val) (aget :label data))
                           ((string= "LW" val) (aget :label data))
                           (t nil)))))
@@ -367,13 +367,36 @@
         (:label (mapcar (lambda (data) (set (car move) data)) (cdr move)))))))
 
 (defun revert-moves (board moves)
-  (flet ((unset (move)
-           (setf (aref board (pos-to-index (cdr move) (board-size board)))
+  (flet ((unset (data)
+           (setf (aref board (pos-to-index (aget :pos data)
+                                           (board-size board)))
                  nil)))
     (dolist (move moves board)
       (case (move-type move)
-        (:move  (set move))
-        (:label (mapcar #'set move))))))
+        (:move  (unset (cdr move)))
+        (:label (mapcar #'unset (cdr move)))))))
+
+(defun clean-board (board)
+  ;; TODO: need to remove dead stones, need a board-wide-check and sweep
+  (flet ((alive-p (board point) t))
+    (dotimes (point (length board))
+      (when (aref board point)
+        (unless (and (member (aref board point) '(:b :w))
+                     (alive-p board point))
+          (setf (aref board point) nil))))))
+
+
+;;; Display mode
+(defvar sgf-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "<right>") 'right)
+    (define-key map (kbd "<left>")  'left)
+    (define-key map (kbd "q") 'kill-buffer)
+    map)
+  "Keymap for `sgf-mode'.")
+
+(define-derived-mode sgf-mode nil "SGF"
+  "Major mode for editing text written for viewing SGF files.")
 
 
 ;;; Tests
