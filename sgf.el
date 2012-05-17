@@ -603,6 +603,12 @@
     (should (= 4 (length (neighbors board (/ (length board) 2)))))
     (should (= 3 (length (neighbors board 1))))))
 
+(ert-deftest sgf-singl-stone-capture ()
+  (flet ((counts () (cons (stones-for local-board :b)
+                          (stones-for local-board :w))))
+    (with-sgf-file "sgf-files/1-capture.sgf"
+      (right 3) (should (tree-equal (counts) '(2 . 0))))))
+
 (ert-deftest sgf-remove-dead-stone-ko ()
   (flet ((counts () (cons (stones-for local-board :b)
                           (stones-for local-board :w))))
@@ -617,6 +623,8 @@
       (should (tree-equal (counts) '(3 . 2))) (right 1)
       (should (tree-equal (counts) '(2 . 3))))))
 
-;; (ert-deftest sgf-remove-dead-stone () )
-
-;; (ert-deftest sgf-remove-dead-stone-dragon () )
+(ert-deftest sgf-two-stone-capture ()
+  (flet ((counts () (cons (stones-for local-board :b)
+                          (stones-for local-board :w))))
+    (with-sgf-file "sgf-files/2-capture.sgf"
+      (right 8) (should (tree-equal (counts) '(6 . 0))))))

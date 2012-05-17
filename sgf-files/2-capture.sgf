@@ -1,0 +1,11 @@
+(;EV[simple 2-stone capture]
+   S[4]
+   C[Here is a simple 2-stone capture used mainly as an example in tests.]
+ ;B[ac]
+ ;B[ab]
+ ;B[ba]
+ ;B[cb]
+ ;B[cc]
+ ;W[bb]
+ ;W[bc]
+ ;B[bd])
