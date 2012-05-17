@@ -222,14 +222,11 @@
 ;; - write functions for building boards from sgf files (forwards and backwards)
 ;; - sgf movement keys
 
-(defvar *board* nil "Holds the board local to a GO buffer.")
-(make-variable-buffer-local '*board*)
+(defvar local-board nil "Holds the board local to a GO buffer.")
 
-(defvar *sgf*   nil "Holds the sgf data structure local to a GO buffer.")
-(make-variable-buffer-local '*sgf*)
+(defvar local-sgf   nil "Holds the sgf data structure local to a GO buffer.")
 
-(defvar *index* nil "Index into the sgf data structure local to a GO buffer.")
-(make-variable-buffer-local '*index*)
+(defvar local-index nil "Index into the sgf local to a GO buffer.")
 
 (defun make-board (size) (make-vector (* size size) nil))
 
@@ -295,16 +292,17 @@
       (setf (aref board (cdr piece)) (car piece)))))
 
 (defun update-display ()
-  (unless *sgf* (error "sgf: buffer has not associated sgf data"))
+  (unless local-sgf (error "sgf: buffer has not associated sgf data"))
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
   (insert
+   (format "%S" local-index)
    "\n"
-   (board-to-string *board*)
+   (board-to-string local-board)
    "\n\n")
-  (let ((comment (second (assoc "C" (sgf-ref *sgf* *index*)))))
+  (let ((comment (second (assoc "C" (sgf-ref local-sgf local-index)))))
     (when comment
-      (insert (make-string (+ 6 (* 2 (board-size *board*))) ?=)
+      (insert (make-string (+ 6 (* 2 (board-size local-board))) ?=)
               "\n\n")
       (let ((beg (point)))
         (insert comment)
@@ -325,13 +323,12 @@
       (error "sgf: game has no associated size"))
     (with-current-buffer buffer
       (sgf-mode)
-      (setf *sgf* game)
-      (setf *board* (make-board size))
-      (setf *index* '(0))
-      (push (cons :pieces (board-to-pieces *board*))
-            (sgf-ref *sgf* *index*))
-      (update-display)
-      (assert (tree-equal *index* '(0)) 'show-args))
+      (set (make-local-variable 'local-sgf)   game)
+      (set (make-local-variable 'local-board) (make-board size))
+      (set (make-local-variable 'local-index) (list 0))
+      (push (cons :pieces (board-to-pieces local-board))
+            (sgf-ref local-sgf local-index))
+      (update-display))
     (pop-to-buffer buffer)))
 
 (defun sgf-ref (sgf index)
@@ -355,31 +352,31 @@
 (defun left (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (unless (sgf-ref *sgf* *index*)
+           (unless (sgf-ref local-sgf local-index)
              (update-display)
              (error "sgf: no more backwards moves."))
-           (decf (car (last *index*)))
-           (setq *board* (pieces-to-board
-                          (aget :pieces (sgf-ref *sgf* *index*))
-                          (length *board*))))
+           (decf (car (last local-index)))
+           (setq local-board (pieces-to-board
+                              (aget :pieces (sgf-ref local-sgf local-index))
+                              (length local-board))))
     (update-display)))
 
 (defun right (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (incf (car (last *index*)))
-           (unless (sgf-ref *sgf* *index*)
-             (decf (car (last *index*)))
+           (incf (car (last local-index)))
+           (unless (sgf-ref local-sgf local-index)
+             (decf (car (last local-index)))
              (update-display)
              (error "sgf: no more forward moves."))
-           (if (aget :pieces (sgf-ref *sgf* *index*))
-               (setf *board* (pieces-to-board
-                              (aget :pieces (sgf-ref *sgf* *index*))
-                              (length *board*)))
-             (clear-labels *board*)
-             (apply-moves *board* (sgf-ref *sgf* *index*))
-             (push (cons :pieces (board-to-pieces *board*))
-                   (sgf-ref *sgf* *index*))))
+           (if (aget :pieces (sgf-ref local-sgf local-index))
+               (setf local-board (pieces-to-board
+                                  (aget :pieces (sgf-ref local-sgf local-index))
+                                  (length local-board)))
+             (clear-labels local-board)
+             (apply-moves local-board (sgf-ref local-sgf local-index))
+             (push (cons :pieces (board-to-pieces local-board))
+                   (sgf-ref local-sgf local-index))))
     (update-display)))
 
 
@@ -403,8 +400,8 @@
         (:move
          (bset (car move) (cdr move))
          (let ((color (if (string= "B" (car move)) :b :w)))
-           (remove-dead *board* (other-color color))
-           (remove-dead *board* color)))
+           (remove-dead local-board (other-color color))
+           (remove-dead local-board color)))
         (:label
          (dolist (data (cdr move)) (bset (car move) data)))))))
 
@@ -585,13 +582,13 @@
           (buffer (display-sgf sgf)))
      (unwind-protect (with-current-buffer buffer ,@body)
        (should (kill-buffer buffer)))))
+(def-edebug-spec parse-many (file body))
 
 (ert-deftest sgf-display-fresh-sgf-buffer ()
   (with-sgf-file "sgf-files/3-4-joseki.sgf"
-    (should *board*)
-    (should *sgf*)
-    (should *index*)
-    (should (tree-equal *index* '(0)))))
+    (should local-board)
+    (should local-sgf)
+    (should local-index)))
 
 (ert-deftest sgf-independent-points-properties ()
   (with-sgf-file "sgf-files/3-4-joseki.sgf"
@@ -608,19 +605,19 @@
     (should (= 3 (length (neighbors board 1))))))
 
 (ert-deftest sgf-remove-dead-stone-ko ()
-  (flet ((counts () (cons (stones-for *board* :b)
-                          (stones-for *board* :w))))
+  (flet ((counts () (cons (stones-for local-board :b)
+                          (stones-for local-board :w))))
     (with-sgf-file "sgf-files/ko.sgf"
-      (should (tree-equal *index* '(0)))
-      (right 1) (should (tree-equal (counts) '(1 . 0)))
-      (right 1) (should (tree-equal (counts) '(1 . 1)))
-      (right 1) (should (tree-equal (counts) '(2 . 1)))
-      (right 1) (should (tree-equal (counts) '(2 . 2)))
-      (right 1) (should (tree-equal (counts) '(3 . 2)))
-      (right 1) (should (tree-equal (counts) '(2 . 3)))
-      (right 1) (should (tree-equal (counts) '(3 . 2)))
-      (right 1) (should (tree-equal (counts) '(2 . 3))))))
+      (should (tree-equal (counts) '(0 . 0))) (right 1)
+      (should (tree-equal (counts) '(1 . 0))) (right 1)
+      (should (tree-equal (counts) '(1 . 1))) (right 1)
+      (should (tree-equal (counts) '(2 . 1))) (right 1)
+      (should (tree-equal (counts) '(2 . 2))) (right 1)
+      (should (tree-equal (counts) '(3 . 2))) (right 1)
+      (should (tree-equal (counts) '(2 . 3))) (right 1)
+      (should (tree-equal (counts) '(3 . 2))) (right 1)
+      (should (tree-equal (counts) '(2 . 3))))))
 
-(ert-deftest sgf-remove-dead-stone () )
+;; (ert-deftest sgf-remove-dead-stone () )
 
-(ert-deftest sgf-remove-dead-stone-dragon () )
+;; (ert-deftest sgf-remove-dead-stone-dragon () )
