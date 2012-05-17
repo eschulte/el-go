@@ -296,7 +296,6 @@
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
   (insert
-   (format "%S" local-index)
    "\n"
    (board-to-string local-board)
    "\n\n")
