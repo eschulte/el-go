@@ -80,6 +80,36 @@
 (require 'cl)
 
 
+;;; Utility
+(defun some (seq comb &optional func)
+  (flet ((this (el) (funcall (or func #'identity) el)))
+    (reduce (lambda (acc el)
+              (case comb
+                (:or  (or acc (this el)))
+                (:and (and acc (this el)))))
+            seq :initial-value (case comb (:or nil) (:and t)))))
+
+(defun any (seq &optional func) (some seq :or  func))
+(defun all (seq &optional func) (some seq :and func))
+
+(defun aget (key list) (cdr (assoc key list)))
+
+(defun range (a &optional b)
+  (block nil
+    (let (tmp)
+      (unless b
+        (cond ((> a 0) (decf a))
+              ((= a 0) (return nil))
+              ((> 0 a) (incf a)))
+        (setq b a a 0))
+      (if (> a b) (setq tmp a a b b tmp))
+      (let ((res (number-sequence a b)))
+        (if tmp (nreverse res) res)))))
+
+(defun other-color (color)
+  (if (equal color :b) :w :b))
+
+
 ;;; Parsing
 (defmacro parse-many (regexp string &rest body)
   (declare (indent 2))
@@ -147,8 +177,6 @@
 
 
 ;;; Processing
-(defun aget (key list) (cdr (assoc key list)))
-
 (defvar sgf-property-alist nil
   "A-list of property names and the function to interpret their values.")
 
@@ -217,18 +245,6 @@
 (defun make-board (size) (make-vector (* size size) nil))
 
 (defun board-size (board) (round (sqrt (length board))))
-
-(defun range (a &optional b)
-  (block nil
-    (let (tmp)
-      (unless b
-        (cond ((> a 0) (decf a))
-              ((= a 0) (return nil))
-              ((> 0 a) (incf a)))
-        (setq b a a 0))
-      (if (> a b) (setq tmp a a b b tmp))
-      (let ((res (number-sequence a b)))
-        (if tmp (nreverse res) res)))))
 
 (defvar black-piece "X")
 
