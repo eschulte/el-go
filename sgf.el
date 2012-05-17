@@ -111,7 +111,7 @@
 (def-edebug-spec parse-many (regexp string body))
 
 (defvar parse-prop-val-re
-  "[[:space:]\n\r]*\\[\\([^\000]*?[^\\]\\)\\]")
+  "[[:space:]\n\r]*\\[\\([^\000]*?[^\\]?\\)\\]")
 
 (defvar parse-prop-re
   (format "[[:space:]\n\r]*\\([[:alpha:]]+\\(%s\\)+\\)" parse-prop-val-re))
@@ -205,7 +205,6 @@
 
 (defun process-label (label-args)
   (mapcar (lambda (l-arg)
-            (message "l-arg:%s" l-arg)
             (if (string-match "\\([[:alpha:]]+\\):\\(.*\\)" l-arg)
                 (list
                  (cons :label (match-string 2 l-arg))
@@ -251,10 +250,14 @@
 
 (defun board-pos-to-string (board pos)
   (let ((size (board-size board)))
-    (flet ((emph (n) (and (= size 19) ; TODO: emph for other size boards
-                          (or (= 3 n)
-                              (= 4 (- size n))
-                              (= n (/ (- size 1) 2))))))
+    (flet ((emph (n) (cond
+                      ((= size 19)
+                       (or (= 3 n)
+                           (= 4 (- size n))
+                           (= n (/ (- size 1) 2))))
+                      ((= size 9)
+                       (or (= 2 n)
+                           (= 4 n))))))
       (let ((val (aref board (pos-to-index pos size))))
         (cond
          ((equal val :w) white-piece)
@@ -329,6 +332,10 @@
             (sgf-ref local-sgf local-index))
       (update-display))
     (pop-to-buffer buffer)))
+
+(defun display-sgf-file (path)
+  (interactive "f")
+  (display-sgf (car (read-from-file path))))
 
 (defun sgf-ref (sgf index)
   (let ((part sgf))
@@ -629,3 +636,10 @@
                           (stones-for local-board :w))))
     (with-sgf-file "sgf-files/2-capture.sgf"
       (right 8) (should (tree-equal (counts) '(6 . 0))))))
+
+(ert-deftest sgf-parse-empty-properties ()
+  (with-sgf-file "sgf-files/w-empty-properties.sgf"
+    (should (remove-if-not (lambda (prop)
+                             (let ((val (cdr prop)))
+                               (and (sequencep val) (= 0 (length val)))))
+                           (car sgf)))))
