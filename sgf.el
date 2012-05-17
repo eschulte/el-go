@@ -81,17 +81,6 @@
 
 
 ;;; Utility
-(defun some (seq comb &optional func)
-  (flet ((this (el) (funcall (or func #'identity) el)))
-    (reduce (lambda (acc el)
-              (case comb
-                (:or  (or acc (this el)))
-                (:and (and acc (this el)))))
-            seq :initial-value (case comb (:or nil) (:and t)))))
-
-(defun any (seq &optional func) (some seq :or  func))
-(defun all (seq &optional func) (some seq :and func))
-
 (defun aget (key list) (cdr (assoc key list)))
 
 (defun range (a &optional b)
@@ -341,7 +330,8 @@
       (setf *index* '(0))
       (push (cons :pieces (board-to-pieces *board*))
             (sgf-ref *sgf* *index*))
-      (update-display))
+      (update-display)
+      (assert (tree-equal *index* '(0)) 'show-args))
     (pop-to-buffer buffer)))
 
 (defun sgf-ref (sgf index)
@@ -352,10 +342,8 @@
     part))
 
 (defun set-sgf-ref (sgf index new)
-  (eval `(setf ,(if (listp index)
-                    (reduce (lambda (acc el) (list 'nth el acc))
-                            index :initial-value 'sgf)
-                  `(nth ,accessor 'sgf))
+  (eval `(setf ,(reduce (lambda (acc el) (list 'nth el acc))
+                        index :initial-value 'sgf)
                ',new)))
 
 (defsetf sgf-ref set-sgf-ref)
@@ -402,23 +390,23 @@
    ((member (car move) '("LB" "LW")) :label)))
 
 (defun apply-moves (board moves)
-  (flet ((set (val data)
-              (setf (aref board (pos-to-index (aget :pos data)
-                                              (board-size board)))
-                    (cond ((string= "B"  val)  :b)
-                          ((string= "W"  val)  :w)
-                          ((string= "LB" val) (aget :label data))
-                          ((string= "LW" val) (aget :label data))
-                          (t nil)))))
+  (flet ((bset (val data)
+               (setf (aref board (pos-to-index (aget :pos data)
+                                               (board-size board)))
+                     (cond ((string= "B"  val)  :b)
+                           ((string= "W"  val)  :w)
+                           ((string= "LB" val) (aget :label data))
+                           ((string= "LW" val) (aget :label data))
+                           (t nil)))))
     (dolist (move moves board)
       (case (move-type move)
         (:move
-         (set (car move) (cdr move))
+         (bset (car move) (cdr move))
          (let ((color (if (string= "B" (car move)) :b :w)))
            (remove-dead *board* (other-color color))
            (remove-dead *board* color)))
         (:label
-         (mapcar (lambda (data) (set (car move) data)) (cdr move)))))))
+         (dolist (data (cdr move)) (bset (car move) data)))))))
 
 (defun clear-labels (board)
   (dotimes (point (length board))
@@ -450,10 +438,10 @@
                                                       (when (equal v val) n))
                                               neighbors neighbor-vals)))
          (already (cons piece (append friendly-neighbors already))))
-    (or (any neighbor-vals              ; touching open space
-             (lambda (v) (not (equal v enemy))))
-        (any friendly-neighbors         ; touching alive dragon
-             (lambda (n) (alive-p board n already))))))
+    (or (some (lambda (v) (not (equal v enemy)))     ; touching open space
+              neighbor-vals)
+        (some (lambda (n) (alive-p board n already)) ; touching alive dragon
+              friendly-neighbors))))
 
 (defun remove-dead (board color)
   ;; must remove one color at a time for ko situations
