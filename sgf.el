@@ -387,12 +387,9 @@
                               (length *board*)))
              (clear-labels *board*)
              (apply-moves *board* (sgf-ref *sgf* *index*))
-             (remove-dead *board*)
              (push (cons :pieces (board-to-pieces *board*))
                    (sgf-ref *sgf* *index*))))
     (update-display)))
-
-(sgf-ref *game* '(0))
 
 
 ;;; Board manipulation functions
@@ -412,8 +409,13 @@
                           (t nil)))))
     (dolist (move moves board)
       (case (move-type move)
-        (:move  (set (car move) (cdr move)))
-        (:label (mapcar (lambda (data) (set (car move) data)) (cdr move)))))))
+        (:move
+         (set (car move) (cdr move))
+         (let ((color (if (string= "B" (car move)) :b :w)))
+           (remove-dead *board* (other-color color))
+           (remove-dead *board* color)))
+        (:label
+         (mapcar (lambda (data) (set (car move) data)) (cdr move)))))))
 
 (defun clear-labels (board)
   (dotimes (point (length board))
@@ -421,23 +423,37 @@
       (unless (member (aref board point) '(:b :w))
         (setf (aref board point) nil)))))
 
-(defun any (func seq)
-  (reduce ))
-
 (defun neighbors (board piece)
-  )
+  (let ((size (board-size board))
+        neighbors)
+    (when (not (= (mod piece size) (1- size))) (push (1+ piece) neighbors))
+    (when (not (= (mod piece size) 0))         (push (1- piece) neighbors))
+    (when (< (+ piece size) (length board))    (push (+ piece size) neighbors))
+    (when (> (- piece size) 0)                 (push (- piece size) neighbors))
+    neighbors))
 
-(defun alive-p (board piece)
-  (let ((val (aref board piece))
-        (neighbors (neighbors board piece)))
-    (or (any #'null neighbors)
-        (any #'alive-p (remove-if-not (lambda (n) (equal (aref board piece) val))
-                                      neighbors)))))
+(defun alive-p (board piece &optional already)
+  (let* ((val (aref board piece))
+         (enemy (other-color val))
+         (neighbors (remove-if (lambda (n) (member n already))
+                               (neighbors board piece)))
+         (neighbor-vals (mapcar (lambda (n) (aref board n)) neighbors))
+         (friendly-neighbors (delete nil (map 'list (lambda (n v)
+                                                      (when (equal v val) n))
+                                              neighbors neighbor-vals)))
+         (already (cons piece (append friendly-neighbors already))))
+    (or (any neighbor-vals              ; touching open space
+             (lambda (v) (not (equal v enemy))))      
+        (any friendly-neighbors         ; touching alive dragon
+             (lambda (n) (alive-p board n already))))))
 
-(defun remove-dead (board)
-  (dotimes (n (length board) board)
-    (let ((val (aref board n)))
-      (when (and val )))))
+(defun remove-dead (board color)
+  ;; must remove one color at a time for ko situations
+  (let (cull)
+    (dotimes (n (length board) board)
+      (when (and (equal (aref board n) color) (not (alive-p board n)))
+        (push n cull)))
+    (dolist (n cull cull) (setf (aref board n) nil))))
 
 
 ;;; Display mode
@@ -584,3 +600,10 @@
       (right 4)
       (should (= points-length (length (assoc :points (sgf-ref joseki '(0)))))))
     (should (kill-buffer buffer))))
+
+(ert-deftest sgf-neighbors ()
+  (let ((board (make-board 19)))
+    (should (= 2 (length (neighbors board 0))))
+    (should (= 2 (length (neighbors board (length board)))))
+    (should (= 4 (length (neighbors board (/ (length board) 2)))))
+    (should (= 3 (length (neighbors board 1))))))
