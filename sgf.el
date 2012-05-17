@@ -33,7 +33,7 @@
 ;;; Syntax:
 
 ;; BNF
-;; 
+;;
 ;; Collection = GameTree { GameTree }
 ;; GameTree   = "(" Sequence { GameTree } ")"
 ;; Sequence   = Node { Node }
@@ -46,7 +46,7 @@
 ;;       	Text | Point  | Move | Stone)
 
 ;; Property Value Types
-;; 
+;;
 ;; UcLetter   = "A".."Z"
 ;; Digit      = "0".."9"
 ;; None       = ""
@@ -203,7 +203,7 @@
    ((or (< char ?A) (< ?z char))
     (error "sgf: invalid char %s" char))
    ((< char ?a) (+ 26 (- char ?A)))
-   (t           (- (- char ?a) 1))))
+   (t           (- char ?a))))
 
 (defun process-position (position-string)
   (cons (char-to-pos (aref position-string 0))
@@ -218,7 +218,7 @@
   (mapcar (lambda (l-arg)
             (message "l-arg:%s" l-arg)
             (if (string-match "\\([[:alpha:]]+\\):\\(.*\\)" l-arg)
-                (list 
+                (list
                  (cons :label (match-string 2 l-arg))
                  (cons :pos (process-position (match-string 1 l-arg))))
               (error "sgf: malformed label %S" l-arg)))
@@ -265,9 +265,10 @@
 
 (defun board-pos-to-string (board pos)
   (let ((size (board-size board)))
-    (flet ((emph (n) (or (= 3 n)
-                         (= 4 (- size n))
-                         (= n (/ (- size 1) 2)))))
+    (flet ((emph (n) (and (= size 19) ; TODO: emph for other size boards
+                          (or (= 3 n)
+                              (= 4 (- size n))
+                              (= n (/ (- size 1) 2))))))
       (let ((val (aref board (pos-to-index pos size))))
         (cond
          ((equal val :w) white-piece)
@@ -311,7 +312,7 @@
   (insert
    "\n"
    (board-to-string *board*)
-   "\n\n")  
+   "\n\n")
   (let ((comment (second (assoc "C" (sgf-ref *sgf* *index*)))))
     (when comment
       (insert (make-string (+ 6 (* 2 (board-size *board*))) ?=)
@@ -327,15 +328,17 @@
                        (or (second (assoc "GN" root))
                            (second (assoc "EV" root))
                            "GO")))
-         (buffer (get-buffer-create name))
+         (buffer (if (get-buffer name)
+                     (error "sgf: buffer %s already exists" name)
+                   (get-buffer-create name)))
          (size (aget "S" root)))
     (unless size
       (error "sgf: game has no associated size"))
     (with-current-buffer buffer
       (sgf-mode)
-      (setq *sgf* game)
-      (setq *board* (make-board size))
-      (setq *index* '(0))
+      (setf *sgf* game)
+      (setf *board* (make-board size))
+      (setf *index* '(0))
       (push (cons :pieces (board-to-pieces *board*))
             (sgf-ref *sgf* *index*))
       (update-display))
@@ -423,6 +426,11 @@
       (unless (member (aref board point) '(:b :w))
         (setf (aref board point) nil)))))
 
+(defun stones-for (board color)
+  (let ((count 0))
+    (dotimes (n (length board) count)
+      (when (equal color (aref board n)) (incf count)))))
+
 (defun neighbors (board piece)
   (let ((size (board-size board))
         neighbors)
@@ -443,7 +451,7 @@
                                               neighbors neighbor-vals)))
          (already (cons piece (append friendly-neighbors already))))
     (or (any neighbor-vals              ; touching open space
-             (lambda (v) (not (equal v enemy))))      
+             (lambda (v) (not (equal v enemy))))
         (any friendly-neighbors         ; touching alive dragon
              (lambda (n) (alive-p board n already))))))
 
@@ -583,23 +591,26 @@
     (board-to-string board)
     (should t)))
 
+(defmacro with-sgf-file (file &rest body)
+  (declare (indent 1))
+  `(let* ((sgf    (car (read-from-file ,file)))
+          (buffer (display-sgf sgf)))
+     (unwind-protect (with-current-buffer buffer ,@body)
+       (should (kill-buffer buffer)))))
+
 (ert-deftest sgf-display-fresh-sgf-buffer ()
-  (let* ((joseki (car (read-from-file "sgf-files/3-4-joseki.sgf")))
-         (buffer (display-sgf joseki)))
-    (with-current-buffer buffer
-      (should *board*)
-      (should *sgf*)
-      (should *index*))
-    (should (kill-buffer buffer))))
+  (with-sgf-file "sgf-files/3-4-joseki.sgf"
+    (should *board*)
+    (should *sgf*)
+    (should *index*)
+    (should (tree-equal *index* '(0)))))
 
 (ert-deftest sgf-independent-points-properties ()
-  (let* ((joseki (car (read-from-file "sgf-files/3-4-joseki.sgf")))
-         (buffer (display-sgf joseki))
-         (points-length (length (assoc :points (sgf-ref joseki '(0))))))
-    (with-current-buffer buffer
+  (with-sgf-file "sgf-files/3-4-joseki.sgf"
+    (let ((points-length (length (assoc :points (sgf-ref sgf '(0))))))
       (right 4)
-      (should (= points-length (length (assoc :points (sgf-ref joseki '(0)))))))
-    (should (kill-buffer buffer))))
+      (should (= points-length
+                 (length (assoc :points (sgf-ref sgf '(0)))))))))
 
 (ert-deftest sgf-neighbors ()
   (let ((board (make-board 19)))
@@ -607,3 +618,21 @@
     (should (= 2 (length (neighbors board (length board)))))
     (should (= 4 (length (neighbors board (/ (length board) 2)))))
     (should (= 3 (length (neighbors board 1))))))
+
+(ert-deftest sgf-remove-dead-stone-ko ()
+  (flet ((counts () (cons (stones-for *board* :b)
+                          (stones-for *board* :w))))
+    (with-sgf-file "sgf-files/ko.sgf"
+      (should (tree-equal *index* '(0)))
+      (right 1) (should (tree-equal (counts) '(1 . 0)))
+      (right 1) (should (tree-equal (counts) '(1 . 1)))
+      (right 1) (should (tree-equal (counts) '(2 . 1)))
+      (right 1) (should (tree-equal (counts) '(2 . 2)))
+      (right 1) (should (tree-equal (counts) '(3 . 2)))
+      (right 1) (should (tree-equal (counts) '(2 . 3)))
+      (right 1) (should (tree-equal (counts) '(3 . 2)))
+      (right 1) (should (tree-equal (counts) '(2 . 3))))))
+
+(ert-deftest sgf-remove-dead-stone () )
+
+(ert-deftest sgf-remove-dead-stone-dragon () )

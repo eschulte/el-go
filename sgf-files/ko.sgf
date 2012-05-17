@@ -1,0 +1,12 @@
+(;EV[simple KO]
+   S[4]
+   C[Here is a simple KO used mainly as an example in tests.]
+ ;B[ab]
+ ;W[bb]
+ ;B[ba]
+ ;W[ca]
+ ;B[ac]
+ ;W[aa] C[white takes a black piece starting the KO]
+ ;B[ba] C[black responds immediately (not really legal)]
+ ;W[aa] C[and so on]
+ ;B[ba] C[and so forth])
