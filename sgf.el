@@ -277,6 +277,17 @@
         (body (board-body-to-string board)))
     (mapconcat #'identity (list header body header) "\n")))
 
+(defun board-to-pieces (board)
+  (let (pieces)
+    (dotimes (n (length board) pieces)
+      (let ((val (aref board n)))
+        (when val (push (cons val n) pieces))))))
+
+(defun pieces-to-board (pieces size)
+  (let ((board (make-vector size nil)))
+    (dolist (piece pieces board)
+      (setf (aref board (cdr piece)) (car piece)))))
+
 (defun update-display ()
   (unless *sgf* (error "sgf: buffer has not associated sgf data"))
   (delete-region (point-min) (point-max))
@@ -309,6 +320,8 @@
       (setq *sgf* game)
       (setq *board* (make-board size))
       (setq *index* '(0))
+      (push (cons :pieces (board-to-pieces *board*))
+            (sgf-ref *sgf* *index*))
       (update-display))
     (pop-to-buffer buffer)))
 
@@ -318,6 +331,15 @@
       (setq part (nth (car index) part))
       (setq index (cdr index)))
     part))
+
+(defun set-sgf-ref (sgf index new)
+  (eval `(setf ,(if (listp index)
+                    (reduce (lambda (acc el) (list 'nth el acc))
+                            index :initial-value 'sgf)
+                  `(nth ,accessor 'sgf))
+               ',new)))
+
+(defsetf sgf-ref set-sgf-ref)
 
 (defun up ())
 
@@ -329,8 +351,10 @@
            (unless (sgf-ref *sgf* *index*)
              (update-display)
              (error "sgf: no more backwards moves."))
-           (revert-moves *board* (sgf-ref *sgf* *index*))
-           (decf (car (last *index*))))
+           (decf (car (last *index*)))
+           (setq *board* (pieces-to-board
+                          (aget :pieces (sgf-ref *sgf* *index*))
+                          (length *board*))))
     (update-display)))
 
 (defun right (&optional num)
@@ -341,9 +365,17 @@
              (decf (car (last *index*)))
              (update-display)
              (error "sgf: no more forward moves."))
-           (clean-board *board*)
-           (apply-moves *board* (sgf-ref *sgf* *index*)))
+           (if (aget :pieces (sgf-ref *sgf* *index*))
+               (setf *board* (pieces-to-board
+                              (aget :pieces (sgf-ref *sgf* *index*))
+                              (length *board*)))
+             (clear-labels *board*)
+             (apply-moves *board* (sgf-ref *sgf* *index*))
+             (push (cons :pieces (board-to-pieces *board*))
+                   (sgf-ref *sgf* *index*))))
     (update-display)))
+
+(sgf-ref *game* '(0))
 
 
 ;;; Board manipulation functions
@@ -366,24 +398,11 @@
         (:move  (set (car move) (cdr move)))
         (:label (mapcar (lambda (data) (set (car move) data)) (cdr move)))))))
 
-(defun revert-moves (board moves)
-  (flet ((unset (data)
-           (setf (aref board (pos-to-index (aget :pos data)
-                                           (board-size board)))
-                 nil)))
-    (dolist (move moves board)
-      (case (move-type move)
-        (:move  (unset (cdr move)))
-        (:label (mapcar #'unset (cdr move)))))))
-
-(defun clean-board (board)
-  ;; TODO: need to remove dead stones, need a board-wide-check and sweep
-  (flet ((alive-p (board point) t))
-    (dotimes (point (length board))
-      (when (aref board point)
-        (unless (and (member (aref board point) '(:b :w))
-                     (alive-p board point))
-          (setf (aref board point) nil))))))
+(defun clear-labels (board)
+  (dotimes (point (length board))
+    (when (aref board point)
+      (unless (member (aref board point) '(:b :w))
+        (setf (aref board point) nil)))))
 
 
 ;;; Display mode
