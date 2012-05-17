@@ -371,6 +371,7 @@
                               (length *board*)))
              (clear-labels *board*)
              (apply-moves *board* (sgf-ref *sgf* *index*))
+             (remove-dead *board*)
              (push (cons :pieces (board-to-pieces *board*))
                    (sgf-ref *sgf* *index*))))
     (update-display)))
@@ -403,6 +404,24 @@
     (when (aref board point)
       (unless (member (aref board point) '(:b :w))
         (setf (aref board point) nil)))))
+
+(defun any (func seq)
+  (reduce ))
+
+(defun neighbors (board piece)
+  )
+
+(defun alive-p (board piece)
+  (let ((val (aref board piece))
+        (neighbors (neighbors board piece)))
+    (or (any #'null neighbors)
+        (any #'alive-p (remove-if-not (lambda (n) (equal (aref board piece) val))
+                                      neighbors)))))
+
+(defun remove-dead (board)
+  (dotimes (n (length board) board)
+    (let ((val (aref board n)))
+      (when (and val )))))
 
 
 ;;; Display mode
@@ -539,4 +558,13 @@
       (should *board*)
       (should *sgf*)
       (should *index*))
+    (should (kill-buffer buffer))))
+
+(ert-deftest sgf-independent-points-properties ()
+  (let* ((joseki (car (read-from-file "sgf-files/3-4-joseki.sgf")))
+         (buffer (display-sgf joseki))
+         (points-length (length (assoc :points (sgf-ref joseki '(0))))))
+    (with-current-buffer buffer
+      (right 4)
+      (should (= points-length (length (assoc :points (sgf-ref joseki '(0)))))))
     (should (kill-buffer buffer))))
