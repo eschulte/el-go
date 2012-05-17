@@ -391,7 +391,8 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<right>") 'right)
     (define-key map (kbd "<left>")  'left)
-    (define-key map (kbd "q") 'kill-buffer)
+    (define-key map (kbd "q") (lambda () (interactive)
+                                (kill-buffer (current-buffer))))
     map)
   "Keymap for `sgf-mode'.")
 
