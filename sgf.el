@@ -433,8 +433,9 @@
          (friendly-neighbors (delete nil (map 'list (lambda (n v)
                                                       (when (equal v val) n))
                                               neighbors neighbor-vals)))
-         (already (cons piece (append friendly-neighbors already))))
-    (or (some (lambda (v) (not (equal v enemy)))     ; touching open space
+         (already (cons piece already)))
+    (or (some (lambda (v) (not (or (equal v enemy) ; touching open space
+                              (equal v val))))
               neighbor-vals)
         (some (lambda (n) (alive-p board n already)) ; touching alive dragon
               friendly-neighbors))))
