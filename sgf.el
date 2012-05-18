@@ -147,14 +147,10 @@
     (collect (parse-props (match-string 1 str)))))
 
 (defun parse-trees (str)
-  (let (cont-p)
-    (parse-many parse-tree-part-re str
-      (setq start (match-beginning 2))
-      (let ((tree-part (parse-nodes (match-string 1 str))))
-        (setq res (if cont-p
-                      (list tree-part res)
-                    (cons tree-part res)))
-        (setq cont-p (string= (match-string 2 str) "("))))))
+  (parse-many parse-tree-part-re str
+    (setq start (match-beginning 2))
+    (let ((tree-part (parse-nodes (match-string 1 str))))
+      (collect tree-part))))
 
 (defun read-from-buffer (buffer)
   (process (parse-trees (with-current-buffer buffer (buffer-string)))))
@@ -442,7 +438,7 @@
                                               neighbors neighbor-vals)))
          (already (cons piece already)))
     (or (some (lambda (v) (not (or (equal v enemy) ; touching open space
-                              (equal v val))))
+                                   (equal v val))))
               neighbor-vals)
         (some (lambda (n) (alive-p board n already)) ; touching alive dragon
               friendly-neighbors))))
