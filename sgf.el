@@ -120,7 +120,7 @@
   (format "[[:space:]\n\r]*;\\(\\(%s\\)+\\)" parse-prop-re))
 
 (defvar parse-tree-part-re
-  (format "[[:space:]\n\r]*(\\(%s\\)[[:space:]\n\r]*\\([()]\\)" parse-node-re))
+  (format "[[:space:]\n\r]*(\\(%s\\)[[:space:]\n\r]*[()]" parse-node-re))
 
 (defun parse-prop-ident (str)
   (let ((end (if (and (<= ?A (aref str 1))
@@ -147,10 +147,25 @@
     (collect (parse-props (match-string 1 str)))))
 
 (defun parse-trees (str)
-  (parse-many parse-tree-part-re str
-    (setq start (match-beginning 2))
-    (let ((tree-part (parse-nodes (match-string 1 str))))
-      (collect tree-part))))
+  (let ((cont-p 0))
+    (parse-many parse-tree-part-re str
+      (setq
+       start (match-beginning 2)
+       res (add-tree cont-p (save-match-data
+                              (parse-nodes (match-string 1 str))) res)
+       cont-p
+       (+ cont-p
+          (if (string= "(" (substring (match-string 0 str)
+                                      (1- (length (match-string 0 str)))))
+              1 -1))))))
+
+(defun add-tree (cont-p tree-part res)
+  (flet ((do-car (n acc) (if (<= n 0) acc (do-car (1- n) `(car ,acc)))))
+    (if (null res)
+        (setf res (nreverse tree-part))
+      ;; TODO: almost there but need to push onto the end
+      (eval `(push (nreverse tree-part) ,(do-car (1- cont-p) 'res)))))
+  res)
 
 (defun read-from-buffer (buffer)
   (process (parse-trees (with-current-buffer buffer (buffer-string)))))
