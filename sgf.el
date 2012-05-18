@@ -157,6 +157,21 @@
        (+ cont-p
           (if (string= "(" (substring (match-string 0 str)
                                       (1- (length (match-string 0 str)))))
+(defun closing-paren (str &optional index)
+  ;; return index of closing paren watching out for []
+  (save-match-data
+    (let ((paren-open 0)
+          (square-open 0))
+      (loop for n from (or index 0) to (1- (length str))
+         do (let ((last (when (> n 0) (aref str (1- n))))
+                  (char (aref str n)))
+              (cond
+                ((= char ?\[)                           (incf square-open))
+                ((and (= char ?\]) (not (= last ?\\)))  (decf square-open))
+                ((and (= char ?\() (zerop square-open)) (incf paren-open))
+                ((and (= char ?\)) (zerop square-open)) (decf paren-open))))
+         when (zerop paren-open) return n))))
+
               1 -1))))))
 
 (defun add-tree (cont-p tree-part res)
@@ -654,3 +669,8 @@
                              (let ((val (cdr prop)))
                                (and (sequencep val) (= 0 (length val)))))
                            (car sgf)))))
+
+(ert-deftest sgf-paren-matching ()
+  (let ((str "(a (b) [c \\] ) ] d)"))
+    (should (= (closing-paren str) (1- (length str))))
+    (should (= (closing-paren str 3) 5))))
