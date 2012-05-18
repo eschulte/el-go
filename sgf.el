@@ -199,14 +199,14 @@
   (unless (listp raw) (error "sgf: can't process atomic sgf element."))
   (if (listp (car raw))
       (mapcar #'process raw)
-    (let ((func (aget (car raw) sgf-property-alist)))
-      (if func (cons (car raw) (funcall func (cdr raw))) raw))))
+      (let ((func (aget (car raw) sgf-property-alist)))
+        (if func (cons (car raw) (funcall func (cdr raw))) raw))))
 
 (defun process-date (date-args)
   (parse-time-string
    (if (> 1 (length date-args))
        (mapconcat #'number-to-string date-args " ")
-     (car date-args))))
+       (car date-args))))
 (add-to-list 'sgf-property-alist (cons "DT" #'process-date))
 
 (defun process-board-size (size-args)
@@ -215,10 +215,10 @@
 
 (defun char-to-pos (char)
   (cond
-   ((or (< char ?A) (< ?z char))
-    (error "sgf: invalid char %s" char))
-   ((< char ?a) (+ 26 (- char ?A)))
-   (t           (- char ?a))))
+    ((or (< char ?A) (< ?z char))
+     (error "sgf: invalid char %s" char))
+    ((< char ?a) (+ 26 (- char ?A)))
+    (t           (- char ?a))))
 
 (defun process-position (position-string)
   (cons (char-to-pos (aref position-string 0))
@@ -235,7 +235,7 @@
                 (list
                  (cons :label (match-string 2 l-arg))
                  (cons :pos (process-position (match-string 1 l-arg))))
-              (error "sgf: malformed label %S" l-arg)))
+                (error "sgf: malformed label %S" l-arg)))
           label-args))
 (add-to-list 'sgf-property-alist (cons "LB" #'process-label))
 (add-to-list 'sgf-property-alist (cons "LW" #'process-label))
@@ -276,20 +276,21 @@
 
 (defun board-pos-to-string (board pos)
   (let ((size (board-size board)))
-    (flet ((emph (n) (cond
-                      ((= size 19)
-                       (or (= 3 n)
-                           (= 4 (- size n))
-                           (= n (/ (- size 1) 2))))
-                      ((= size 9)
-                       (or (= 2 n)
-                           (= 4 n))))))
+    (flet ((emph (n)
+             (cond
+               ((= size 19)
+                (or (= 3 n)
+                    (= 4 (- size n))
+                    (= n (/ (- size 1) 2))))
+               ((= size 9)
+                (or (= 2 n)
+                    (= 4 n))))))
       (let ((val (aref board (pos-to-index pos size))))
         (cond
-         ((equal val :w) white-piece)
-         ((equal val :b) black-piece)
-         ((and (stringp val) (= 1 (length val)) val))
-         (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" ".")))))))
+          ((equal val :w) white-piece)
+          ((equal val :b) black-piece)
+          ((and (stringp val) (= 1 (length val)) val))
+          (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" ".")))))))
 
 (defun board-row-to-string (board row)
   (let* ((size (board-size board))
@@ -345,7 +346,7 @@
                            "GO")))
          (buffer (if (get-buffer name)
                      (error "sgf: buffer %s already exists" name)
-                   (get-buffer-create name)))
+                     (get-buffer-create name)))
          (size (aget "S" root)))
     (unless size
       (error "sgf: game has no associated size"))
@@ -405,28 +406,28 @@
                (setf local-board (pieces-to-board
                                   (aget :pieces (sgf-ref local-sgf local-index))
                                   (length local-board)))
-             (clear-labels local-board)
-             (apply-moves local-board (sgf-ref local-sgf local-index))
-             (push (cons :pieces (board-to-pieces local-board))
-                   (sgf-ref local-sgf local-index))))
+               (clear-labels local-board)
+               (apply-moves local-board (sgf-ref local-sgf local-index))
+               (push (cons :pieces (board-to-pieces local-board))
+                     (sgf-ref local-sgf local-index))))
     (update-display)))
 
 
 ;;; Board manipulation functions
 (defun move-type (move)
   (cond
-   ((member (car move) '("B"  "W"))  :move)
-   ((member (car move) '("LB" "LW")) :label)))
+    ((member (car move) '("B"  "W"))  :move)
+    ((member (car move) '("LB" "LW")) :label)))
 
 (defun apply-moves (board moves)
   (flet ((bset (val data)
-               (setf (aref board (pos-to-index (aget :pos data)
-                                               (board-size board)))
-                     (cond ((string= "B"  val)  :b)
-                           ((string= "W"  val)  :w)
-                           ((string= "LB" val) (aget :label data))
-                           ((string= "LW" val) (aget :label data))
-                           (t nil)))))
+           (setf (aref board (pos-to-index (aget :pos data)
+                                           (board-size board)))
+                 (cond ((string= "B"  val)  :b)
+                       ((string= "W"  val)  :w)
+                       ((string= "LB" val) (aget :label data))
+                       ((string= "LW" val) (aget :label data))
+                       (t nil)))))
     (dolist (move moves board)
       (case (move-type move)
         (:move
@@ -488,7 +489,7 @@
     (define-key map (kbd "<right>") 'right)
     (define-key map (kbd "<left>")  'left)
     (define-key map (kbd "q") (lambda () (interactive)
-                                (kill-buffer (current-buffer))))
+                                 (kill-buffer (current-buffer))))
     map)
   "Keymap for `sgf-mode'.")
 
