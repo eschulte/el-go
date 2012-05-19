@@ -98,20 +98,8 @@
 (defun other-color (color)
   (if (equal color :b) :w :b))
 
-(defun rcons (x l) (append l (list x)))
-
-(defmacro rpush (x place)
-  "Insert X at the tail of the list stored in PLACE.
-Analogous to (setf PLACE (rcons X PLACE)), though more careful about
-evaluating each argument only once and in the right order.  PLACE may
-be a symbol, or any generalized variable allowed by `setf'."
-  (if (symbolp place)
-      (list 'setq place (list 'rcons x place))
-      (list 'callf2 'rcons x place)))
-
 
 ;;; Parsing
-;; TODO: try using load-read-function and try loading these files w/read
 (defmacro parse-many (regexp string &rest body)
   (declare (indent 2))
   `(let (res (start 0))
@@ -171,17 +159,21 @@ be a symbol, or any generalized variable allowed by `setf'."
                 ((and (= char ?\]) (not (= last ?\\)))  (decf square-open))
                 ((and (= char ?\() (zerop square-open)) (incf paren-open))
                 ((and (= char ?\)) (zerop square-open)) (decf paren-open))))
-         when (zerop paren-open) return n))))
+         when (zerop paren-open) return (1+ n)))))
 
 (defun parse-trees (str)
   (let (cont-p)
     (parse-many parse-tree-part-re str
-      (message "match: %d:%S" (1- (match-end 0)) (substring str (1- (match-end 0)) (match-end 0)))
-      (let* ((start (1- (match-end 0)))
-             (end (closing-paren str start)))
+      (let ((m-end (match-end 0)))
+        (setq cont-p (string= "(" (substring str (1- m-end) m-end)))
         (collect (parse-nodes (match-string 1 str)))
-        (collect (parse-trees (substring str start end)))
-        (setq start end)))))
+        (setq start
+              (if cont-p
+                  (let* ((start (1- m-end))
+                         (end (closing-paren str start)))
+                    (collect (parse-trees (substring str start end)))
+                    (1+ end))
+                  m-end))))))
 
 (defun read-from-buffer (buffer)
   (process (parse-trees (with-current-buffer buffer (buffer-string)))))
