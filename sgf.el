@@ -111,6 +111,7 @@ be a symbol, or any generalized variable allowed by `setf'."
 
 
 ;;; Parsing
+;; TODO: try using load-read-function and try loading these files w/read
 (defmacro parse-many (regexp string &rest body)
   (declare (indent 2))
   `(let (res (start 0))
