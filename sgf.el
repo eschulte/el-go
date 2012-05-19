@@ -98,6 +98,17 @@
 (defun other-color (color)
   (if (equal color :b) :w :b))
 
+(defun rcons (x l) (append l (list x)))
+
+(defmacro rpush (x place)
+  "Insert X at the tail of the list stored in PLACE.
+Analogous to (setf PLACE (rcons X PLACE)), though more careful about
+evaluating each argument only once and in the right order.  PLACE may
+be a symbol, or any generalized variable allowed by `setf'."
+  (if (symbolp place)
+      (list 'setq place (list 'rcons x place))
+      (list 'callf2 'rcons x place)))
+
 
 ;;; Parsing
 (defmacro parse-many (regexp string &rest body)
@@ -146,17 +157,6 @@
   (parse-many parse-node-re str
     (collect (parse-props (match-string 1 str)))))
 
-(defun parse-trees (str)
-  (let ((cont-p 0))
-    (parse-many parse-tree-part-re str
-      (setq
-       start (match-beginning 2)
-       res (add-tree cont-p (save-match-data
-                              (parse-nodes (match-string 1 str))) res)
-       cont-p
-       (+ cont-p
-          (if (string= "(" (substring (match-string 0 str)
-                                      (1- (length (match-string 0 str)))))
 (defun closing-paren (str &optional index)
   ;; return index of closing paren watching out for []
   (save-match-data
@@ -172,15 +172,15 @@
                 ((and (= char ?\)) (zerop square-open)) (decf paren-open))))
          when (zerop paren-open) return n))))
 
-              1 -1))))))
-
-(defun add-tree (cont-p tree-part res)
-  (flet ((do-car (n acc) (if (<= n 0) acc (do-car (1- n) `(car ,acc)))))
-    (if (null res)
-        (setf res (nreverse tree-part))
-      ;; TODO: almost there but need to push onto the end
-      (eval `(push (nreverse tree-part) ,(do-car (1- cont-p) 'res)))))
-  res)
+(defun parse-trees (str)
+  (let (cont-p)
+    (parse-many parse-tree-part-re str
+      (message "match: %d:%S" (1- (match-end 0)) (substring str (1- (match-end 0)) (match-end 0)))
+      (let* ((start (1- (match-end 0)))
+             (end (closing-paren str start)))
+        (collect (parse-nodes (match-string 1 str)))
+        (collect (parse-trees (substring str start end)))
+        (setq start end)))))
 
 (defun read-from-buffer (buffer)
   (process (parse-trees (with-current-buffer buffer (buffer-string)))))
