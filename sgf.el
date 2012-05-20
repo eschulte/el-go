@@ -149,16 +149,15 @@
 (defun closing-paren (str &optional index)
   ;; return index of closing paren watching out for []
   (save-match-data
-    (let ((paren-open 0)
-          (square-open 0))
+    (let ((paren-open 0) (square-open 0) char last)
       (loop for n from (or index 0) to (1- (length str))
-         do (let ((last (when (> n 0) (aref str (1- n))))
-                  (char (aref str n)))
-              (cond
-                ((= char ?\[)                           (incf square-open))
-                ((and (= char ?\]) (not (= last ?\\)))  (decf square-open))
-                ((and (= char ?\() (zerop square-open)) (incf paren-open))
-                ((and (= char ?\)) (zerop square-open)) (decf paren-open))))
+         do
+         (setq last char char (aref str n))
+         (cond
+          ((and (= char ?\[) (not (= last ?\\)))  (incf square-open))
+          ((and (= char ?\]) (not (= last ?\\)))  (decf square-open))
+          ((and (= char ?\() (zerop square-open)) (incf paren-open))
+          ((and (= char ?\)) (zerop square-open)) (decf paren-open)))
          when (zerop paren-open) return (1+ n)))))
 
 (defun parse-trees (str)
@@ -171,9 +170,10 @@
               (if cont-p
                   (let* ((start (1- m-end))
                          (end (closing-paren str start)))
+                    (unless end (error "sgf: parsing w/o end at %d" start))
                     (collect (parse-trees (substring str start end)))
                     (1+ end))
-                  m-end))))))
+                m-end))))))
 
 (defun read-from-buffer (buffer)
   (process (parse-trees (with-current-buffer buffer (buffer-string)))))
