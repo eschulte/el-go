@@ -539,7 +539,7 @@
                KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]
                (;AW[ja][oa][pa][db][eb] ;AB[fa][ha][ia][qa][cb]))")
          (tree (parse-trees str)))
-    (should (= 2  (length tree)))
+    (should (= 2 (length tree)))
     (should (= 9 (length (car (first tree)))))
     (should (= 2 (length (car (second tree)))))))
 
