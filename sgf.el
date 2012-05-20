@@ -162,18 +162,19 @@
 
 (defun parse-trees (str)
   (let (cont-p)
-    (parse-many parse-tree-part-re str
-      (let ((m-end (match-end 0)))
-        (setq cont-p (string= "(" (substring str (1- m-end) m-end)))
-        (collect (parse-nodes (match-string 1 str)))
-        (setq start
-              (if cont-p
-                  (let* ((start (1- m-end))
-                         (end (closing-paren str start)))
-                    (unless end (error "sgf: parsing w/o end at %d" start))
-                    (collect (parse-trees (substring str start end)))
-                    (1+ end))
-                m-end))))))
+    (flet ((my-collect (el) (setq res (append el res))))
+      (parse-many parse-tree-part-re str
+        (let ((m-end (match-end 0)))
+          (setq cont-p (string= "(" (substring str (1- m-end) m-end)))
+          (my-collect (parse-nodes (match-string 1 str)))
+          (setq start
+                (if cont-p
+                    (let* ((start (1- m-end))
+                           (end (closing-paren str start)))
+                      (unless end (error "sgf: parsing w/o end at %d" start))
+                      (my-collect (nreverse (parse-trees (substring str start end))))
+                      (1+ end))
+                  m-end)))))))
 
 (defun read-from-buffer (buffer)
   (process (parse-trees (with-current-buffer buffer (buffer-string)))))
@@ -314,6 +315,15 @@
     (dolist (piece pieces board)
       (setf (aref board (cdr piece)) (car piece)))))
 
+(defun clean-comment (comment)
+  (let ((replacements '(("\\(" . "(")
+                        ("\\)" . ")")
+                        ("\\[" . "[")
+                        ("\\]" . "]"))))
+    (dolist (pair replacements comment)
+      (setq comment (replace-regexp-in-string
+                     (regexp-quote (car pair)) (cdr pair) comment)))))
+
 (defun update-display ()
   (unless local-sgf (error "sgf: buffer has not associated sgf data"))
   (delete-region (point-min) (point-max))
@@ -326,9 +336,7 @@
     (when comment
       (insert (make-string (+ 6 (* 2 (board-size local-board))) ?=)
               "\n\n")
-      (let ((beg (point)))
-        (insert comment)
-        (fill-region beg (point)))))
+      (insert (clean-comment comment))))
   (goto-char (point-min)))
 
 (defun display-sgf (game)
