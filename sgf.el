@@ -162,7 +162,7 @@
 
 (defun parse-trees (str)
   (let (cont-p)
-    (flet ((my-collect (el) (setq res (append el res))))
+    (flet ((my-collect (el) (setq res (append (nreverse el) res))))
       (parse-many parse-tree-part-re str
         (let ((m-end (match-end 0)))
           (setq cont-p (string= "(" (substring str (1- m-end) m-end)))
@@ -172,7 +172,7 @@
                     (let* ((start (1- m-end))
                            (end (closing-paren str start)))
                       (unless end (error "sgf: parsing w/o end at %d" start))
-                      (my-collect (nreverse (parse-trees (substring str start end))))
+                      (my-collect (parse-trees (substring str start end)))
                       (1+ end))
                   m-end)))))))
 
@@ -363,7 +363,7 @@
 
 (defun display-sgf-file (path)
   (interactive "f")
-  (display-sgf (car (read-from-file path))))
+  (display-sgf (read-from-file path)))
 
 (defun sgf-ref (sgf index)
   (let ((part sgf))
@@ -536,8 +536,7 @@
                [pa][db][eb])")
          (tree (parse-trees str)))
     (should (= 1  (length tree)))
-    (should (= 1  (length (car tree))))
-    (should (= 10 (length (caar tree))))))
+    (should (= 10 (length (first tree))))))
 
 (ert-deftest sgf-parse-nested-tree ()
   (let* ((str "(;GM[1]FF[4]
@@ -547,12 +546,13 @@
                KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]
                (;AW[ja][oa][pa][db][eb] ;AB[fa][ha][ia][qa][cb]))")
          (tree (parse-trees str)))
-    (should (= 2 (length tree)))
-    (should (= 9 (length (car (first tree)))))
-    (should (= 2 (length (car (second tree)))))))
+    (should (= 3 (length tree)))
+    (should (= 9 (length (first tree))))
+    (should (= 6 (length (car (second tree)))))
+    (should (= 6 (length (car (third tree)))))))
 
 (ert-deftest sgf-parse-file-test ()
-  (let ((game (car (read-from-file "sgf-files/jp-ming-5.sgf"))))
+  (let ((game (read-from-file "sgf-files/jp-ming-5.sgf")))
     (should (= 247 (length game)))))
 
 (ert-deftest sgf-empty-board-to-string-test ()
@@ -581,7 +581,7 @@
     (should (string= string (board-to-string board)))))
 
 (ert-deftest sgf-non-empty-board-to-string-test ()
-  (let* ((joseki (car (read-from-file "sgf-files/3-4-joseki.sgf")))
+  (let* ((joseki (read-from-file "sgf-files/3-4-joseki.sgf"))
          (root (car joseki))
          (rest (cdr joseki))
          (board (make-board (aget "S" root)))
@@ -613,7 +613,7 @@
 
 (defmacro with-sgf-file (file &rest body)
   (declare (indent 1))
-  `(let* ((sgf    (car (read-from-file ,file)))
+  `(let* ((sgf    (read-from-file ,file))
           (buffer (display-sgf sgf)))
      (unwind-protect (with-current-buffer buffer ,@body)
        (should (kill-buffer buffer)))))
