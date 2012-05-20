@@ -543,15 +543,6 @@
     (should (= 9 (length (car (first tree)))))
     (should (= 2 (length (car (second tree)))))))
 
-(setf *game* (parse-trees "(;GM[1]FF[4]
-               SZ[19]
-               GN[GNU Go 3.7.11 load and print]
-               DT[2008-12-14]
-               KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]
-               (;AW[ja][oa][pa][db][eb] ;AB[fa][ha][ia][qa][cb]))"))
-
-(length (car (second *game*)))
-
 (ert-deftest sgf-parse-file-test ()
   (let ((game (car (read-from-file "sgf-files/jp-ming-5.sgf"))))
     (should (= 247 (length game)))))
