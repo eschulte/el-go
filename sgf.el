@@ -166,13 +166,13 @@
       (parse-many parse-tree-part-re str
         (let ((m-end (match-end 0)))
           (setq cont-p (string= "(" (substring str (1- m-end) m-end)))
-          (my-collect (parse-nodes (match-string 1 str)))
+          (collect (parse-nodes (match-string 1 str)))
           (setq start
                 (if cont-p
                     (let* ((start (1- m-end))
                            (end (closing-paren str start)))
                       (unless end (error "sgf: parsing w/o end at %d" start))
-                      (my-collect (parse-trees (substring str start end)))
+                      (collect (parse-trees (substring str start end)))
                       (1+ end))
                   m-end)))))))
 
@@ -340,25 +340,22 @@
   (goto-char (point-min)))
 
 (defun display-sgf (game)
-  (let* ((root (car game))
-         (name (format "*%s*"
-                       (or (second (assoc "GN" root))
-                           (second (assoc "EV" root))
-                           "GO")))
-         (buffer (if (get-buffer name)
-                     (error "sgf: buffer %s already exists" name)
-                     (get-buffer-create name)))
-         (size (aget "S" root)))
-    (unless size
-      (error "sgf: game has no associated size"))
+  (let ((buffer (generate-new-buffer "*sgf*")))
     (with-current-buffer buffer
       (sgf-mode)
       (set (make-local-variable 'local-sgf)   game)
-      (set (make-local-variable 'local-board) (make-board size))
-      (set (make-local-variable 'local-index) (list 0))
-      (push (cons :pieces (board-to-pieces local-board))
-            (sgf-ref local-sgf local-index))
-      (update-display))
+      (set (make-local-variable 'local-index) '(0 1))
+      (let* ((root (sgf-ref local-sgf local-index))
+             (name (format (or (second (assoc "GN" root))
+                               (second (assoc "EV" root)))))
+             (size (aget "S" root)))
+        (unless size
+          (error "sgf: game has no associated size"))
+        (when name (rename-buffer name 'unique))
+        (set (make-local-variable 'local-board) (make-board size))
+        (push (cons :pieces (board-to-pieces local-board))
+              (sgf-ref local-sgf local-index))
+        (update-display)))
     (pop-to-buffer buffer)))
 
 (defun display-sgf-file (path)
@@ -379,9 +376,38 @@
 
 (defsetf sgf-ref set-sgf-ref)
 
-(defun up ())
+(defun get-create-pieces ()
+  (if (aget :pieces (sgf-ref local-sgf local-index))
+      (setf local-board (pieces-to-board
+                         (aget :pieces (sgf-ref local-sgf local-index))
+                         (length local-board)))
+    (clear-labels local-board)
+    (apply-moves local-board (sgf-ref local-sgf local-index))
+    (push (cons :pieces (board-to-pieces local-board))
+          (sgf-ref local-sgf local-index))))
 
-(defun down ())
+(defun up (&optional num)
+  (interactive "p")
+  (prog1 (dotimes (n num n)
+           (unless (sgf-ref local-sgf local-index)
+             (update-display)
+             (error "sgf: no more upwards moves."))
+           (decf (car (last local-index 2)))
+           (setq local-board (pieces-to-board
+                              (aget :pieces (sgf-ref local-sgf local-index))
+                              (length local-board))))
+    (update-display)))
+
+(defun down (&optional num)
+  (interactive "p")
+  (prog1 (dotimes (n num n)
+           (incf (car (last local-index 2)))
+           (setf (car (last local-index)) 0)
+           (unless (sgf-ref local-sgf local-index)
+             (update-display)
+             (error "sgf: no more downwards moves."))
+           (get-create-pieces))
+    (update-display)))
 
 (defun left (&optional num)
   (interactive "p")
@@ -403,14 +429,7 @@
              (decf (car (last local-index)))
              (update-display)
              (error "sgf: no more forward moves."))
-           (if (aget :pieces (sgf-ref local-sgf local-index))
-               (setf local-board (pieces-to-board
-                                  (aget :pieces (sgf-ref local-sgf local-index))
-                                  (length local-board)))
-               (clear-labels local-board)
-               (apply-moves local-board (sgf-ref local-sgf local-index))
-               (push (cons :pieces (board-to-pieces local-board))
-                     (sgf-ref local-sgf local-index))))
+           (get-create-pieces))
     (update-display)))
 
 
@@ -489,8 +508,10 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<right>") 'right)
     (define-key map (kbd "<left>")  'left)
+    (define-key map (kbd "<up>")    'up)
+    (define-key map (kbd "<down>")  'down)
     (define-key map (kbd "q") (lambda () (interactive)
-                                 (kill-buffer (current-buffer))))
+                                (kill-buffer (current-buffer))))
     map)
   "Keymap for `sgf-mode'.")
 
