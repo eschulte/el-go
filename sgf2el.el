@@ -5,7 +5,7 @@
 ;; Author: Eric Schulte <eric.schulte@gmx.com>
 ;; Created: 2012-05-15
 ;; Version: 0.1
-;; Keywords: game go
+;; Keywords: game go sgf
 
 ;; This file is not (yet) part of GNU Emacs.
 ;; However, it is distributed under the same license.
@@ -82,6 +82,34 @@
                                                   (car val) val)))))
             (replace-match rep nil 'literal)))))))
 
+(defun sgf2el (&optional sgf-buffer)
+  "Convert the content of SGF-BUFFER to emacs-lisp in a new buffer."
+  (interactive)
+  (let* ((sgf-buffer (or sgf-buffer (current-buffer)))
+         (buffer (generate-new-buffer (concat (buffer-name sgf-buffer) "-el")))
+         (sgf-str (with-current-buffer sgf-buffer (buffer-string))))
+    (with-current-buffer buffer
+      (insert sgf-str)
+      (sgf2el-region)
+      (emacs-lisp-mode))
+    (pop-to-buffer buffer)))
+
+(defmacro sgf2el-set-to-var (var &optional buffer)
+  "Assign the value of the board in BUFFER to VAR."
+  `(let ((buffer ,(or buffer (current-buffer))))
+     (setq ,var (save-excursion (goto-char (point-min)) (read buffer)))))
+
+(defun sgf2el-normalize (&optional buffer)
+  "Cleanup the formatting of the elisp sgf data in BUFFER."
+  (interactive)
+  (let ((buffer (or buffer (current-buffer))) temp)
+    (sgf2el-set-to-var temp buffer)
+    (with-current-buffer buffer
+      (save-excursion
+        (delete-region (point-min) (point-max))
+        (insert (pp temp))))
+    (length temp)))
+
 
 ;;; Specific property converters
 (defun process-date (date-args)
@@ -117,3 +145,5 @@
           label-args))
 (add-to-list 'sgf2el-special-properties (cons :LB #'process-label))
 (add-to-list 'sgf2el-special-properties (cons :LW #'process-label))
+
+(provide 'sgf2el)
