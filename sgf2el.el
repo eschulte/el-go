@@ -29,10 +29,10 @@
 (eval-when-compile (require 'cl))
 
 (defvar prop-re
-  "\\([[:alpha:]]+\\)\\(\\([[:space:]]*\\[[^\000]*?[^\\]?\\]\\)+\\)")
+  "\\([[:alpha:]]+\\)\\(\\(\\[\\]\\|[[:space:]]*\\[[^\000]*?[^\\]\\]\\)+\\)")
 
 (defvar prop-val-re
-  "\\[\\([^\000]*?[^\\]?\\)\\]")
+  "\\(\\[\\]\\|\\[\\([^\000]*?[^\\]\\)\\]\\)")
 
 (defvar sgf2el-special-properties nil
   "A-list of properties and functions to specially convert their values.")
@@ -81,7 +81,7 @@
               (setq last-node t))
           (let* ((key (sgf2el-convert-prop-key (match-string 2)))
                  (val (sgf2el-convert-prop-vals key
-                       (sgf2el-all-matches (match-string 3) prop-val-re 1)))
+                       (sgf2el-all-matches (match-string 3) prop-val-re 2)))
                  (rep (format "%S " (cons key (if (= 1 (length val))
                                                   (car val) val)))))
             (replace-match rep nil 'literal))))

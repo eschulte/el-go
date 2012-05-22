@@ -57,6 +57,25 @@
     (should (= 6 (length (car (first (second sgf))))))
     (should (= 6 (length (car (second (second sgf))))))))
 
+(ert-deftest sgf-parse-tree-w-weird-comment ()
+  (let* ((str "(;B[kd]N[(c)]LB[ke:a][pf:b]
+     C[Black 25 takes larger territory on top, and gives up
+     larger territory at the right, as compared to variation
+     (a) \\[3-1-2-1-1-1-2-2-3-2-2-1\\].
+
+     White continues with 'a'. White 'b' is an overplay
+     that sets up a ladder that ends the game, unless
+     White has a ladder break to the lower left.]
+     (;W[ke]N[(a)];B[ng];W[ne];B[mf];W[me];B[je];W[kf];B[jf];W[kg];B[jd];W[pf])
+
+     (;W[pf]
+     C[White 26 is a mistake unless White has a ladder break to the lower left.]
+     N[mistake (b)];B[pe];W[og];B[rg];W[qh];B[ng];W[ne];B[se];W[qg];B[mf];
+     W[me];B[lf])
+     )")
+         (sgf (sgf2el-str-to-el str)))
+    (should (= 3 (length sgf)))))
+
 (ert-deftest sgf-parse-file-test ()
   (let ((sgf (sgf2el-file-to-el "sgf-files/jp-ming-5.sgf")))
     (should (= 247 (length sgf)))))
