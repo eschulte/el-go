@@ -51,4 +51,18 @@
        (listp (car list))
        (not (listp (caar list)))))
 
+(defun num-to-char (num)
+  (flet ((err () (error "sgf: invalid num %s" num)))
+    (cond
+     ((< num 1) (err))
+     ((< num 9) (+ ?A (1- num)))
+     (t         (+ ?A num)))))
+
+(defun char-to-num (char)
+  (cond
+   ((or (< char ?A) (< ?z char))
+    (error "sgf: invalid char %s" char))
+   ((< char ?a) (+ 26 (- char ?A)))
+   (t           (- char ?a))))
+
 (provide 'sgf-util)

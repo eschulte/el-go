@@ -304,6 +304,53 @@
     (dolist (n cull cull) (setf (aref board n) nil))))
 
 
+;;; User input
+(defvar sgf-board-actions '(move resign undo comment)
+  "List of actions which may be taken on an SGF board.")
+
+(defun sgf-board-act ()
+  "Send a command to the current SGF board."
+  (interactive)
+  (let ((command (org-icompleting-read
+                  "Action: " (mapcar #'symbol-name sgf-board-actions))))
+    (case (intern command)
+      (move    (message "make a move"))
+      (resign  (message "game over"))
+      (undo    (message "loser"))
+      (comment (message "what?")))))
+
+(defun sgf-board-act-move (&optional pos)
+  (interactive)
+  (unless pos
+    (let ((size (if *board* (board-size *board*) 19)))
+      (setq pos
+            (cons
+             (char-to-num
+              (aref (downcase
+                     (org-icompleting-read
+                      "X pos: "
+                      (mapcar #'string
+                              (mapcar #'num-to-char (range 1 size)))))
+                    0))
+             (1- (string-to-number
+                  (org-icompleting-read
+                   "Y pos: "
+                   (mapcar #'number-to-string (range 1 size)))))))))
+  (message "move: %S" pos))
+
+(defun sgf-board-act-resign ()
+  (interactive)
+  (message "resign"))
+
+(defun sgf-board-act-undo (&optional num)
+  (interactive "p")
+  (message "undo: %S" num))
+
+(defun sgf-board-act-comment (&optional comment)
+  (interactive "MComment: ")
+  (message "comment: %S" comment))
+
+
 ;;; Display mode
 (defvar sgf-mode-map
   (let ((map (make-sparse-keymap)))

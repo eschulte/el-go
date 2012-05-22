@@ -149,16 +149,9 @@
                       (car date-args)))))
 (add-to-list 'sgf2el-special-properties (cons :DT #'process-date))
 
-(defun char-to-pos (char)
-  (cond
-   ((or (< char ?A) (< ?z char))
-    (error "sgf: invalid char %s" char))
-   ((< char ?a) (+ 26 (- char ?A)))
-   (t           (- char ?a))))
-
 (defun process-position (position-string)
-  (cons (char-to-pos (aref position-string 0))
-        (char-to-pos (aref position-string 1))))
+  (cons (char-to-num (aref position-string 0))
+        (char-to-num (aref position-string 1))))
 
 (defun process-move (move-args)
   (list (cons :pos (process-position (car move-args)))))

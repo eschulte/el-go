@@ -33,6 +33,7 @@
 
 ;; Code:
 (require 'cl)
+(require 'sgf-util)
 
 (defun sgf-gtp-char-to-pos (char)
   (flet ((err () (error "sgf-gtp: invalid char %s" char)))
@@ -45,16 +46,8 @@
      ((<= char ?t) (- char ?a))
      (t (err)))))
 
-(defun sgf-num-to-gtp-char (num)
-  (flet ((err () (error "sgf-gtp: invalid num %s" num)))
-    (cond
-     ((< num 1)   (err))
-     ((< num 9)   (+ ?A (1- num)))
-     ((< num 19)  (+ ?A num))
-     (t (err)))))
-
 (defun sgf-pos-to-gtp (pos)
-  (format "%c%d" (sgf-num-to-gtp-char (car pos)) (1+ (cdr pos))))
+  (format "%c%d" (num-to-char (car pos)) (1+ (cdr pos))))
 
 (defun sgf-to-gtp-command (element)
   "Convert an sgf ELEMENT to a gtp command."
