@@ -26,20 +26,16 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
+(require 'sgf2el)
 (eval-when-compile (require 'cl))
 
 
 ;;; Visualization
-;; - make buffer to show a board, and notes, etc...
-;; - keep an index into the sgf file
-;; - write functions for building boards from sgf files (forwards and backwards)
-;; - sgf movement keys
 (defvar sgf-board nil "Holds the board local to a GO buffer.")
 
 (defvar sgf-sgf   nil "Holds the sgf data structure local to a GO buffer.")
 
 (defvar sgf-index nil "Index into the sgf local to a GO buffer.")
-(set-default 'sgf-index '(0))
 
 (defun make-board (size) (make-vector (* size size) nil))
 
@@ -109,15 +105,6 @@
     (dolist (piece pieces board)
       (setf (aref board (cdr piece)) (car piece)))))
 
-(defun clean-comment (comment)
-  (let ((replacements '(("\\(" . "(")
-                        ("\\)" . ")")
-                        ("\\[" . "[")
-                        ("\\]" . "]"))))
-    (dolist (pair replacements comment)
-      (setq comment (replace-regexp-in-string
-                     (regexp-quote (car pair)) (cdr pair) comment)))))
-
 (defun update-display ()
   (unless sgf-sgf (error "sgf: buffer has not associated sgf data"))
   (delete-region (point-min) (point-max))
@@ -130,7 +117,7 @@
     (when comment
       (insert (make-string (+ 6 (* 2 (board-size sgf-board))) ?=)
               "\n\n")
-      (insert (clean-comment comment))))
+      (insert comment)))
   (goto-char (point-min)))
 
 (defun display-sgf (game)
@@ -159,21 +146,7 @@
 
 (defun display-sgf-file (path)
   (interactive "f")
-  (display-sgf (read-from-file path)))
-
-(defun sgf-ref (sgf index)
-  (let ((part sgf))
-    (while (car index)
-      (setq part (nth (car index) part))
-      (setq index (cdr index)))
-    part))
-
-(defun set-sgf-ref (sgf index new)
-  (eval `(setf ,(reduce (lambda (acc el) (list 'nth el acc))
-                        index :initial-value 'sgf)
-               ',new)))
-
-(defsetf sgf-ref set-sgf-ref)
+  (display-sgf (sgf2el-file-to-el path)))
 
 (defun get-create-pieces ()
   (if (aget (sgf-ref sgf-sgf sgf-index) :pieces)
@@ -234,6 +207,20 @@
 
 
 ;;; Board manipulation functions
+(defun sgf-ref (sgf index)
+  (let ((part sgf))
+    (while (car index)
+      (setq part (nth (car index) part))
+      (setq index (cdr index)))
+    part))
+
+(defun set-sgf-ref (sgf index new)
+  (eval `(setf ,(reduce (lambda (acc el) (list 'nth el acc))
+                        index :initial-value 'sgf)
+               ',new)))
+
+(defsetf sgf-ref set-sgf-ref)
+
 (defun move-type (move)
   (cond
    ((member (car move) '(:B  :W))  :move)

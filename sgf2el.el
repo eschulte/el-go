@@ -170,4 +170,16 @@
 (add-to-list 'sgf2el-special-properties (cons :LB #'process-label))
 (add-to-list 'sgf2el-special-properties (cons :LW #'process-label))
 
+(defun process-comment (comments)
+  (let ((replacements '(("\\(" . "(")
+                        ("\\)" . ")")
+                        ("\\[" . "[")
+                        ("\\]" . "]"))))
+    (mapcar (lambda (comment)
+              (dolist (pair replacements comment)
+                (setq comment (replace-regexp-in-string
+                               (regexp-quote (car pair)) (cdr pair) comment))))
+            comments)))
+(add-to-list 'sgf2el-special-properties (cons :C #'process-comment))
+
 (provide 'sgf2el)
