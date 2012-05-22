@@ -73,6 +73,10 @@
         last-node)
     (save-excursion (goto-char start)
       (while (re-search-forward re end t)
+        (let ((start (marker-position start)))
+          (message "parsing %.2f%%"
+                   (* 100 (/ (float (- (point) start))
+                             (float (- (marker-position end) start))))))
         (if (string= (match-string 6) ";")
             (progn
               (replace-match "(" nil nil nil 6)
@@ -85,7 +89,8 @@
                  (rep (format "%S " (cons key (if (= 1 (length val))
                                                   (car val) val)))))
             (replace-match rep nil 'literal))))
-      (when last-node (insert ")")))))
+      (when last-node (insert ")")))
+    (message "parsing DONE")))
 
 (defmacro sgf2el-set-to-var (var &optional buffer)
   "Assign the value of the board in BUFFER to VAR."
@@ -113,7 +118,6 @@
       (insert sgf-str)
       (goto-char (point-min))
       (sgf2el-region)
-      (sgf2el-normalize (current-buffer))
       (emacs-lisp-mode))
     (pop-to-buffer buffer)))
 
