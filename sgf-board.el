@@ -31,11 +31,11 @@
 
 
 ;;; Visualization
-(defvar sgf-board nil "Holds the board local to a GO buffer.")
+(defvar *board* nil "Holds the board local to a GO buffer.")
 
-(defvar sgf-sgf   nil "Holds the sgf data structure local to a GO buffer.")
+(defvar *sgf*   nil "Holds the sgf data structure local to a GO buffer.")
 
-(defvar sgf-index nil "Index into the sgf local to a GO buffer.")
+(defvar *index* nil "Index into the sgf local to a GO buffer.")
 
 (defun make-board (size) (make-vector (* size size) nil))
 
@@ -117,27 +117,27 @@
             (sgf-nthcdr *sgf* *index*))))
 
 (defun get-create-pieces ()
-  (let ((pieces (aget (sgf-ref sgf-sgf sgf-index) :pieces)))
+  (let ((pieces (aget (sgf-ref *sgf* *index*) :pieces)))
     (if pieces
         (when (listp pieces) pieces)
-      (clear-labels sgf-board)
-      (apply-moves sgf-board (sgf-ref sgf-sgf sgf-index))
-      (setq pieces (board-to-pieces sgf-board))
-      (push (cons :pieces pieces) (sgf-ref sgf-sgf sgf-index))
+      (clear-labels *board*)
+      (apply-moves *board* (sgf-ref *sgf* *index*))
+      (setq pieces (board-to-pieces *board*))
+      (push (cons :pieces pieces) (sgf-ref *sgf* *index*))
       pieces)))
 
 (defun update-display ()
-  (unless sgf-sgf (error "sgf: buffer has not associated sgf data"))
+  (unless *sgf* (error "sgf: buffer has not associated sgf data"))
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
-  (setq sgf-board (pieces-to-board (get-create-pieces) (length sgf-board)))
+  (setq *board* (pieces-to-board (get-create-pieces) (length *board*)))
   (insert
    "\n"
-   (board-to-string sgf-board)
+   (board-to-string *board*)
    "\n\n")
-  (let ((comment (aget (sgf-ref sgf-sgf sgf-index) :C)))
+  (let ((comment (aget (sgf-ref *sgf* *index*) :C)))
     (when comment
-      (insert (make-string (+ 6 (* 2 (board-size sgf-board))) ?=)
+      (insert (make-string (+ 6 (* 2 (board-size *board*))) ?=)
               "\n\n")
       (insert comment)))
   (goto-char (point-min)))
@@ -146,21 +146,21 @@
   (let ((buffer (generate-new-buffer "*sgf*")))
     (with-current-buffer buffer
       (sgf-mode)
-      (set (make-local-variable 'sgf-sgf)   game)
-      (set (make-local-variable 'sgf-index) '(0))
+      (set (make-local-variable '*sgf*)   game)
+      (set (make-local-variable '*index*) '(0))
       ;; TODO: this shouldn't be required
-      (unless (tree-equal sgf-index '(0))
-        (setq sgf-index '(0))
-        (setf (car sgf-index) 0))
-      (let* ((root (sgf-ref sgf-sgf sgf-index))
+      (unless (tree-equal *index* '(0))
+        (setq *index* '(0))
+        (setf (car *index*) 0))
+      (let* ((root (sgf-ref *sgf* *index*))
              (name (or (aget root :GN)
                        (aget root :EV)))
              (size (or (aget root :S) (aget root :SZ)
-                       (unless (tree-equal sgf-index '(0))
-                         (error "sgf: bad index %S" sgf-index))
+                       (unless (tree-equal *index* '(0))
+                         (error "sgf: bad index %S" *index*))
                        (error "sgf: game has no associated size"))))
         (when name (rename-buffer name 'unique))
-        (set (make-local-variable 'sgf-board) (make-board size))
+        (set (make-local-variable '*board*) (make-board size))
         (update-display)))
     (pop-to-buffer buffer)))
 
@@ -171,18 +171,18 @@
 (defun up (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (unless (alistp (sgf-ref sgf-sgf sgf-index))
+           (unless (alistp (sgf-ref *sgf* *index*))
              (update-display)
              (error "sgf: no more upwards moves."))
-           (decf (car (last sgf-index 2)))
+           (decf (car (last *index* 2)))
            (update-display))))
 
 (defun down (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (incf (car (last sgf-index 2)))
-           (setf (car (last sgf-index)) 0)
-           (unless (alistp (sgf-ref sgf-sgf sgf-index))
+           (incf (car (last *index* 2)))
+           (setf (car (last *index*)) 0)
+           (unless (alistp (sgf-ref *sgf* *index*))
              (update-display)
              (error "sgf: no more downwards moves."))
            (update-display))))
@@ -190,18 +190,18 @@
 (defun left (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (unless (alistp (sgf-ref sgf-sgf sgf-index))
+           (unless (alistp (sgf-ref *sgf* *index*))
              (update-display)
              (error "sgf: no more backwards moves."))
-           (decf (car (last sgf-index)))
+           (decf (car (last *index*)))
            (update-display))))
 
 (defun right (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (incf (car (last sgf-index)))
-           (unless (alistp (sgf-ref sgf-sgf sgf-index))
-             (decf (car (last sgf-index)))
+           (incf (car (last *index*)))
+           (unless (alistp (sgf-ref *sgf* *index*))
+             (decf (car (last *index*)))
              (update-display)
              (error "sgf: no more forward moves."))
            (update-display))))
@@ -254,8 +254,8 @@
         (:move
          (bset (car move) (cdr move))
          (let ((color (if (equal :B (car move)) :B :W)))
-           (remove-dead sgf-board (other-color color))
-           (remove-dead sgf-board color)))
+           (remove-dead *board* (other-color color))
+           (remove-dead *board* color)))
         (:label
          (dolist (data (cdr move)) (bset (car move) data)))))))
 

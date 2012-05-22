@@ -147,9 +147,9 @@
 
 (ert-deftest sgf-display-fresh-sgf-buffer ()
   (with-sgf-file "sgf-files/3-4-joseki.sgf"
-    (should sgf-board)
-    (should sgf-sgf)
-    (should sgf-index)))
+    (should *board*)
+    (should *sgf*)
+    (should *index*)))
 
 (ert-deftest sgf-independent-points-properties ()
   (with-sgf-file "sgf-files/3-4-joseki.sgf"
@@ -166,8 +166,8 @@
     (should (= 3 (length (neighbors board 1))))))
 
 (defun stone-counts ()
-  (cons (stones-for sgf-board :B)
-        (stones-for sgf-board :W)))
+  (cons (stones-for *board* :B)
+        (stones-for *board* :W)))
 
 (ert-deftest sgf-singl-stone-capture ()
   (with-sgf-file "sgf-files/1-capture.sgf"
