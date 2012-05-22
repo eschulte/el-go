@@ -1,4 +1,4 @@
-;;; sgf-gtp.el --- translate between sgf and GTP
+;;; sgf-gtp.el --- GTP backend for sgf-trans
 
 ;; Copyright (C) 2008 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -32,8 +32,8 @@
 ;; The GMP command set may be implemented as an extension.
 
 ;; Code:
-(require 'cl)
 (require 'sgf-util)
+(require 'sgf-trans)
 
 (defun sgf-gtp-char-to-pos (char)
   (flet ((err () (error "sgf-gtp: invalid char %s" char)))

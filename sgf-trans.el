@@ -34,9 +34,7 @@
 ;; - the IGS protocol
 
 ;;; Code:
-(require 'sgf2el)
-(require 'sgf-board)
-(eval-when-compile (require 'cl))
+(require 'sgf-util)
 
 ;; TODO: API, and how functions may implement it
 

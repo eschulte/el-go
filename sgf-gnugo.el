@@ -30,6 +30,7 @@
 ;; Interaction with gnugo
 
 ;;; CODE:
+(require 'sgf-util)
 (require 'comint)
 
 (defun sgf-gnugo-gtp-commands ()

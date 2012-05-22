@@ -1,4 +1,4 @@
-;;; sgf-igs.el --- translate between sgf and GTP
+;;; sgf-igs.el --- IGS backend for sgf-trans
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -30,3 +30,7 @@
 ;; http://www.pandanet.co.jp/English/commands/term/Summary.html
 
 ;; Code:
+(require 'sgf-util)
+(require 'sgf-trans)
+
+(provide 'sgf-igs)
