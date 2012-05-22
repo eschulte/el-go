@@ -34,11 +34,12 @@
 ;; - keep an index into the sgf file
 ;; - write functions for building boards from sgf files (forwards and backwards)
 ;; - sgf movement keys
-(defvar *board* nil "Holds the board local to a GO buffer.")
+(defvar sgf-board nil "Holds the board local to a GO buffer.")
 
-(defvar *sgf*   nil "Holds the sgf data structure local to a GO buffer.")
+(defvar sgf-sgf   nil "Holds the sgf data structure local to a GO buffer.")
 
-(defvar *index* nil "Index into the sgf local to a GO buffer.")
+(defvar sgf-index nil "Index into the sgf local to a GO buffer.")
+(set-default 'sgf-index '(0))
 
 (defun make-board (size) (make-vector (* size size) nil))
 
@@ -118,16 +119,16 @@
                      (regexp-quote (car pair)) (cdr pair) comment)))))
 
 (defun update-display ()
-  (unless *sgf* (error "sgf: buffer has not associated sgf data"))
+  (unless sgf-sgf (error "sgf: buffer has not associated sgf data"))
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
   (insert
    "\n"
-   (board-to-string *board*)
+   (board-to-string sgf-board)
    "\n\n")
-  (let ((comment (aget (sgf-ref *sgf* *index*) :C)))
+  (let ((comment (aget (sgf-ref sgf-sgf sgf-index) :C)))
     (when comment
-      (insert (make-string (+ 6 (* 2 (board-size *board*))) ?=)
+      (insert (make-string (+ 6 (* 2 (board-size sgf-board))) ?=)
               "\n\n")
       (insert (clean-comment comment))))
   (goto-char (point-min)))
@@ -136,17 +137,19 @@
   (let ((buffer (generate-new-buffer "*sgf*")))
     (with-current-buffer buffer
       (sgf-mode)
-      (set (make-local-variable '*sgf*)   game)
-      (set (make-local-variable '*index*) '(0))
-      (let* ((root (sgf-ref *sgf* *index*))
+      (set (make-local-variable 'sgf-sgf)   game)
+      (set (make-local-variable 'sgf-index) '(0))
+      ;; TODO: this shouldn't be required
+      (unless (tree-equal sgf-index '(0)) (setq sgf-index '(0)))
+      (let* ((root (sgf-ref sgf-sgf sgf-index))
              (name (or (aget root :GN)
                        (aget root :EV)))
              (size (or (aget root :S) (aget root :SZ)
                        (error "sgf: game has no associated size"))))
         (when name (rename-buffer name 'unique))
-        (set (make-local-variable '*board*) (make-board size))
-        (push (cons :pieces (board-to-pieces *board*))
-              (sgf-ref *sgf* *index*))
+        (set (make-local-variable 'sgf-board) (make-board size))
+        (push (cons :pieces (board-to-pieces sgf-board))
+              (sgf-ref sgf-sgf sgf-index))
         (update-display)))
     (pop-to-buffer buffer)))
 
@@ -169,33 +172,33 @@
 (defsetf sgf-ref set-sgf-ref)
 
 (defun get-create-pieces ()
-  (if (aget (sgf-ref *sgf* *index*) :pieces)
-      (setf *board* (pieces-to-board
-                     (aget (sgf-ref *sgf* *index*) :pieces)
-                     (length *board*)))
-    (clear-labels *board*)
-    (apply-moves *board* (sgf-ref *sgf* *index*))
-    (push (cons :pieces (board-to-pieces *board*))
-          (sgf-ref *sgf* *index*))))
+  (if (aget (sgf-ref sgf-sgf sgf-index) :pieces)
+      (setf sgf-board (pieces-to-board
+                     (aget (sgf-ref sgf-sgf sgf-index) :pieces)
+                     (length sgf-board)))
+    (clear-labels sgf-board)
+    (apply-moves sgf-board (sgf-ref sgf-sgf sgf-index))
+    (push (cons :pieces (board-to-pieces sgf-board))
+          (sgf-ref sgf-sgf sgf-index))))
 
 (defun up (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (unless (sgf-ref *sgf* *index*)
+           (unless (sgf-ref sgf-sgf sgf-index)
              (update-display)
              (error "sgf: no more upwards moves."))
-           (decf (car (last *index* 2)))
-           (setq *board* (pieces-to-board
-                          (aget (sgf-ref *sgf* *index*) :pieces)
-                          (length *board*))))
+           (decf (car (last sgf-index 2)))
+           (setq sgf-board (pieces-to-board
+                          (aget (sgf-ref sgf-sgf sgf-index) :pieces)
+                          (length sgf-board))))
     (update-display)))
 
 (defun down (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (incf (car (last *index* 2)))
-           (setf (car (last *index*)) 0)
-           (unless (sgf-ref *sgf* *index*)
+           (incf (car (last sgf-index 2)))
+           (setf (car (last sgf-index)) 0)
+           (unless (sgf-ref sgf-sgf sgf-index)
              (update-display)
              (error "sgf: no more downwards moves."))
            (get-create-pieces))
@@ -204,22 +207,22 @@
 (defun left (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (unless (sgf-ref *sgf* *index*)
+           (unless (sgf-ref sgf-sgf sgf-index)
              (update-display)
              (error "sgf: no more backwards moves."))
-           (decf (car (last *index*)))
-           (let ((pieces (aget (sgf-ref *sgf* *index*) :pieces)))
-             (setq *board* (pieces-to-board
+           (decf (car (last sgf-index)))
+           (let ((pieces (aget (sgf-ref sgf-sgf sgf-index) :pieces)))
+             (setq sgf-board (pieces-to-board
                             (if (listp pieces) pieces nil)
-                            (length *board*)))))
+                            (length sgf-board)))))
     (update-display)))
 
 (defun right (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (incf (car (last *index*)))
-           (unless (sgf-ref *sgf* *index*)
-             (decf (car (last *index*)))
+           (incf (car (last sgf-index)))
+           (unless (sgf-ref sgf-sgf sgf-index)
+             (decf (car (last sgf-index)))
              (update-display)
              (error "sgf: no more forward moves."))
            (get-create-pieces))
@@ -248,8 +251,8 @@
         (:move
          (bset (car move) (cdr move))
          (let ((color (if (equal :B (car move)) :B :W)))
-           (remove-dead *board* (other-color color))
-           (remove-dead *board* color)))
+           (remove-dead sgf-board (other-color color))
+           (remove-dead sgf-board color)))
         (:label
          (dolist (data (cdr move)) (bset (car move) data)))))))
 

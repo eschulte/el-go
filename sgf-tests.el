@@ -127,16 +127,16 @@
 
 (ert-deftest sgf-display-fresh-sgf-buffer ()
   (with-sgf-file "sgf-files/3-4-joseki.sgf"
-    (should *board*)
-    (should *sgf*)
-    (should *index*)))
+    (should sgf-board)
+    (should sgf-sgf)
+    (should sgf-index)))
 
-;; (ert-deftest sgf-independent-points-properties ()
-;;   (with-sgf-file "sgf-files/3-4-joseki.sgf"
-;;     (let ((points-length (length (assoc :points (sgf-ref sgf '(0))))))
-;;       (right 4)
-;;       (should (= points-length
-;;                  (length (assoc :points (sgf-ref sgf '(0)))))))))
+(ert-deftest sgf-independent-points-properties ()
+  (with-sgf-file "sgf-files/3-4-joseki.sgf"
+    (let ((points-length (length (assoc :points (sgf-ref sgf '(0))))))
+      (right 4)
+      (should (= points-length
+                 (length (assoc :points (sgf-ref sgf '(0)))))))))
 
 ;; (ert-deftest sgf-neighbors ()
 ;;   (let ((board (make-board 19)))
