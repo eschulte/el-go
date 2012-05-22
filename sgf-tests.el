@@ -31,17 +31,6 @@
 (require 'sgf-board)
 (require 'ert)
 
-(ert-deftest sgf-parse-one-large-node-test ()
-  (let* ((str ";GM[1]FF[4]
-               SZ[19]
-               GN[GNU Go 3.7.11 load and print]
-               DT[2008-12-14]
-               KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]AW[ja][oa]
-               [pa][db][eb]")
-         (node (car (parse-nodes str))))
-    (should (= (length node) 10))
-    (should (= (length (cdar (last node))) 5))))
-
 (ert-deftest sgf-parse-simple-tree ()
   (let* ((str "(;GM[1]FF[4]
                SZ[19]
@@ -49,9 +38,10 @@
                DT[2008-12-14]
                KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]AW[ja][oa]
                [pa][db][eb])")
-         (tree (parse-trees str)))
-    (should (= 1  (length tree)))
-    (should (= 10 (length (first tree))))))
+         (sgf (sgf2el-str str)))
+    (should (= 1  (length sgf)))
+    (should (= 10 (length (first sgf))))
+    (should (= 6  (length (car (last (first sgf))))))))
 
 (ert-deftest sgf-parse-nested-tree ()
   (let* ((str "(;GM[1]FF[4]
@@ -60,11 +50,12 @@
                DT[2008-12-14]
                KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]
                (;AW[ja][oa][pa][db][eb] ;AB[fa][ha][ia][qa][cb]))")
-         (tree (parse-trees str)))
-    (should (= 3 (length tree)))
-    (should (= 9 (length (first tree))))
-    (should (= 6 (length (car (second tree)))))
-    (should (= 6 (length (car (third tree)))))))
+         (sgf (sgf2el-str str)))
+    (should (= 2 (length sgf)))
+    (should (= 9 (length (first sgf))))
+    (should (= 2 (length (second sgf))))
+    (should (= 6 (length (car (first (second sgf))))))
+    (should (= 6 (length (car (second (second sgf))))))))
 
 (ert-deftest sgf-parse-file-test ()
   (let ((game (read-from-file "sgf-files/jp-ming-5.sgf")))

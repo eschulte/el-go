@@ -28,17 +28,22 @@
 ;;; Code:
 (eval-when-compile (require 'cl))
 
-(defvar prop-re "\\([[:alpha:]]+\\)\\(\\(\\[[^\000]*?[^\\]?\\]\\)+\\)")
+(defvar prop-re
+  "\\([[:alpha:]]+\\)\\(\\([[:space:]]*\\[[^\000]*?[^\\]?\\]\\)+\\)")
 
-(defvar prop-val-re "\\[\\([^\000]*?[^\\]?\\)\\]")
+(defvar prop-val-re
+  "\\[\\([^\000]*?[^\\]?\\)\\]")
 
 (defvar sgf2el-special-properties nil
   "A-list of properties and functions to specially convert their values.")
 
-(defun sgf2el (str)
+(defun sgf2el-str (str)
   "Convert a string of sgf into the equivalent Emacs Lisp."
   (with-temp-buffer
-    (insert str) (sgf2el-region (point-min) (point-max)) (buffer-string)))
+    (insert str)
+    (sgf2el-region (point-min) (point-max))
+    (goto-char (point-min))
+    (read (current-buffer))))
 
 (defun make-keyword (string)
   (intern (concat ":" (upcase string))))
@@ -72,19 +77,16 @@
   (interactive "r")
   (let ((start (copy-marker (or start (point-min))))
         (end   (copy-marker (or end   (point-max))))
-        (re    (format "\\(%s\\|%s\\)" prop-re ";"))
+        (re    (format "\\(%s\\|%s\\)" prop-re "\\(([[:space:]]*\\)*\\(;\\)"))
         last-node)
     (save-excursion (goto-char start)
       (while (re-search-forward re end t)
-        (message "1%S 2%S 3%S 4%S 5%S"
-                 (match-string 1)
-                 (match-string 2)
-                 (match-string 3)
-                 (match-string 4)
-                 (match-string 5))
-        (if (string= (match-string 0) ";")
-            (progn (replace-match (if last-node ")(" "("))
-                   (setq last-node t))
+        (if (string= (match-string 6) ";")
+            (progn
+              (replace-match "(" nil nil nil 6)
+              (when last-node
+                (save-excursion (goto-char (match-beginning 0)) (insert ")")))
+              (setq last-node t))
           (let* ((key (sgf2el-convert-prop-key (match-string 2)))
                  (val (sgf2el-convert-prop-vals key
                        (sgf2el-all-matches (match-string 3) prop-val-re 1)))
