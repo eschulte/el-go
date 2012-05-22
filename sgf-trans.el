@@ -1,4 +1,4 @@
-;;; sgf-play.el --- Play SGF-backed game of GO
+;;; sgf-trans.el --- Translate and transfer between GO back ends
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -27,21 +27,17 @@
 
 ;;; Commentary:
 
-;; Playing a game of go amounts to authoring an SGF file.  A game
-;; requires two players and an SGF data store.  Those elements of the
-;; game which are amenable to storage in SGF format will be added to
-;; the file.
-
-;; A player may be any of the following;
-;; - a human inputting moves through an Emacs buffer
-;; - an entity communicating through the Go Text Protocol (GTP)
-;; - an entity communicating through the IGS protocol
+;; An API for transferring GO moves and data between a number of GO
+;; back ends including the following.
+;; - the SGF format
+;; - the Go Text Protocol (GTP)
+;; - the IGS protocol
 
 ;;; Code:
 (require 'sgf2el)
 (require 'sgf-board)
 (eval-when-compile (require 'cl))
 
-;; TODO: implement an API for back-end protocols
+;; TODO: API, and how functions may implement it
 
-(provide 'sgf-play)
+(provide 'sgf-trans)
