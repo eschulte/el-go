@@ -113,6 +113,7 @@
       (insert sgf-str)
       (goto-char (point-min))
       (sgf2el-region)
+      (sgf2el-normalize (current-buffer))
       (emacs-lisp-mode))
     (pop-to-buffer buffer)))
 
