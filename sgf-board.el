@@ -105,10 +105,32 @@
     (dolist (piece pieces board)
       (setf (aref board (cdr piece)) (car piece)))))
 
+(defun sgf-board-options ()
+  (let ((count 0))
+    (mapcar (lambda (alt)
+              (prog1 (if (alistp alt)
+                         count
+                       (if (alistp (car alt))
+                           (list count 0)
+                         :other))
+                (incf count)))
+            (sgf-nthcdr *sgf* *index*))))
+
+(defun get-create-pieces ()
+  (let ((pieces (aget (sgf-ref sgf-sgf sgf-index) :pieces)))
+    (if pieces
+        (when (listp pieces) pieces)
+      (clear-labels sgf-board)
+      (apply-moves sgf-board (sgf-ref sgf-sgf sgf-index))
+      (setq pieces (board-to-pieces sgf-board))
+      (push (cons :pieces pieces) (sgf-ref sgf-sgf sgf-index))
+      pieces)))
+
 (defun update-display ()
   (unless sgf-sgf (error "sgf: buffer has not associated sgf data"))
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
+  (setq sgf-board (pieces-to-board (get-create-pieces) (length sgf-board)))
   (insert
    "\n"
    (board-to-string sgf-board)
@@ -139,8 +161,6 @@
                        (error "sgf: game has no associated size"))))
         (when name (rename-buffer name 'unique))
         (set (make-local-variable 'sgf-board) (make-board size))
-        (push (cons :pieces (board-to-pieces sgf-board))
-              (sgf-ref sgf-sgf sgf-index))
         (update-display)))
     (pop-to-buffer buffer)))
 
@@ -148,65 +168,54 @@
   (interactive "f")
   (display-sgf (sgf2el-file-to-el path)))
 
-(defun get-create-pieces ()
-  (if (aget (sgf-ref sgf-sgf sgf-index) :pieces)
-      (setf sgf-board (pieces-to-board
-                     (aget (sgf-ref sgf-sgf sgf-index) :pieces)
-                     (length sgf-board)))
-    (clear-labels sgf-board)
-    (apply-moves sgf-board (sgf-ref sgf-sgf sgf-index))
-    (push (cons :pieces (board-to-pieces sgf-board))
-          (sgf-ref sgf-sgf sgf-index))))
-
 (defun up (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (unless (sgf-ref sgf-sgf sgf-index)
+           (unless (alistp (sgf-ref sgf-sgf sgf-index))
              (update-display)
              (error "sgf: no more upwards moves."))
            (decf (car (last sgf-index 2)))
-           (setq sgf-board (pieces-to-board
-                          (aget (sgf-ref sgf-sgf sgf-index) :pieces)
-                          (length sgf-board))))
-    (update-display)))
+           (update-display))))
 
 (defun down (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
            (incf (car (last sgf-index 2)))
            (setf (car (last sgf-index)) 0)
-           (unless (sgf-ref sgf-sgf sgf-index)
+           (unless (alistp (sgf-ref sgf-sgf sgf-index))
              (update-display)
              (error "sgf: no more downwards moves."))
-           (get-create-pieces))
-    (update-display)))
+           (update-display))))
 
 (defun left (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
-           (unless (sgf-ref sgf-sgf sgf-index)
+           (unless (alistp (sgf-ref sgf-sgf sgf-index))
              (update-display)
              (error "sgf: no more backwards moves."))
            (decf (car (last sgf-index)))
-           (let ((pieces (aget (sgf-ref sgf-sgf sgf-index) :pieces)))
-             (setq sgf-board (pieces-to-board
-                            (if (listp pieces) pieces nil)
-                            (length sgf-board)))))
-    (update-display)))
+           (update-display))))
 
 (defun right (&optional num)
   (interactive "p")
   (prog1 (dotimes (n num n)
            (incf (car (last sgf-index)))
-           (unless (sgf-ref sgf-sgf sgf-index)
+           (unless (alistp (sgf-ref sgf-sgf sgf-index))
              (decf (car (last sgf-index)))
              (update-display)
              (error "sgf: no more forward moves."))
-           (get-create-pieces))
-    (update-display)))
+           (update-display))))
 
 
 ;;; Board manipulation functions
+(defun sgf-nthcdr (sgf index)
+  (let ((part sgf))
+    (while (cdr index)
+      (setq part (nth (car index) part))
+      (setq index (cdr index)))
+    (setq part (nthcdr (car index) part))
+    part))
+
 (defun sgf-ref (sgf index)
   (let ((part sgf))
     (while (car index)
@@ -225,6 +234,9 @@
   (cond
    ((member (car move) '(:B  :W))  :move)
    ((member (car move) '(:LB :LW)) :label)))
+
+(defun other-color (color)
+  (if (equal color :B) :W :B))
 
 (defun apply-moves (board moves)
   (flet ((bset (val data)

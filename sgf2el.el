@@ -92,11 +92,6 @@
       (when last-node (insert ")")))
     (message "parsing DONE")))
 
-(defmacro sgf2el-set-to-var (var &optional buffer)
-  "Assign the value of the board in BUFFER to VAR."
-  `(let ((buffer ,(or buffer (current-buffer))))
-     (setq ,var (save-excursion (goto-char (point-min)) (read buffer)))))
-
 (defun sgf2el-normalize (&optional buffer)
   "Cleanup the formatting of the elisp sgf data in BUFFER."
   (interactive)
@@ -121,20 +116,29 @@
       (emacs-lisp-mode))
     (pop-to-buffer buffer)))
 
-(defun sgf2el-current-buffer-to-el ()
-  (sgf2el-region (point-min) (point-max))
-  (goto-char (point-min))
-  (read (current-buffer)))
+(defun sgf2el-read (&optional buf)
+  (with-current-buffer (or buf (current-buffer))
+    (goto-char (point-min))
+    (read (current-buffer))))
+
+(defun sgf2el-buffer-to-el (&optional bufffer)
+  "Convert the sgf contents of BUFFER to emacs lisp."
+  (interactive "b")
+  (with-current-buffer (or bufffer (current-buffer))
+    (sgf2el-region (point-min) (point-max))
+    (sgf2el-read)))
 
 (defun sgf2el-str-to-el (str)
   "Convert a string of sgf into the equivalent Emacs Lisp."
-  (with-temp-buffer (insert str) (sgf2el-current-buffer-to-el)))
+  (interactive)
+  (with-temp-buffer (insert str) (sgf2el-buffer-to-el)))
 
 (defun sgf2el-file-to-el (file)
+  "Convert the sgf contents of FILE to emacs lisp."
   (interactive "f")
   (with-temp-buffer
     (insert-file-contents-literally file)
-    (sgf2el-current-buffer-to-el)))
+    (sgf2el-buffer-to-el)))
 
 
 ;;; Specific property converters

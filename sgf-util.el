@@ -40,11 +40,15 @@
       (let ((res (number-sequence a b)))
         (if tmp (nreverse res) res)))))
 
+(defun take (num list) (subseq list 0 num))
+
 (defmacro until (test &rest body)
   (declare (indent 1))
   `(while (not ,test) ,@body))
 
-(defun other-color (color)
-  (if (equal color :B) :W :B))
+(defun alistp (list)
+  (and (listp list)
+       (listp (car list))
+       (not (listp (caar list)))))
 
 (provide 'sgf-util)
