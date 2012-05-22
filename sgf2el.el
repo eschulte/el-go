@@ -151,10 +151,10 @@
 
 (defun char-to-pos (char)
   (cond
-    ((or (< char ?A) (< ?z char))
-     (error "sgf: invalid char %s" char))
-    ((< char ?a) (+ 26 (- char ?A)))
-    (t           (- char ?a))))
+   ((or (< char ?A) (< ?z char))
+    (error "sgf: invalid char %s" char))
+   ((< char ?a) (+ 26 (- char ?A)))
+   (t           (- char ?a))))
 
 (defun process-position (position-string)
   (cons (char-to-pos (aref position-string 0))
