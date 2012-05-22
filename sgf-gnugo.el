@@ -2,12 +2,10 @@
 
 ;; Copyright (C) 2008 2012 Eric Schulte <eric.schulte@gmx.com>
 
-;;; Liscence:
-
 ;; Author: Eric Schulte <eric.schulte@gmx.com>
 ;; Created: 2012-05-15
 ;; Version: 0.1
-;; Keywords: game go sgf gtp gnugo
+;; Keywords: game go sgf gnugo
 
 ;; This file is not (yet) part of GNU Emacs.
 ;; However, it is distributed under the same license.
