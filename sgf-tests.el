@@ -38,7 +38,7 @@
                DT[2008-12-14]
                KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]AW[ja][oa]
                [pa][db][eb])")
-         (sgf (sgf2el-str str)))
+         (sgf (sgf2el-str-to-el str)))
     (should (= 1  (length sgf)))
     (should (= 10 (length (first sgf))))
     (should (= 6  (length (car (last (first sgf))))))))
@@ -50,7 +50,7 @@
                DT[2008-12-14]
                KM[0.0]HA[0]RU[Japanese]AP[GNU Go:3.7.11]
                (;AW[ja][oa][pa][db][eb] ;AB[fa][ha][ia][qa][cb]))")
-         (sgf (sgf2el-str str)))
+         (sgf (sgf2el-str-to-el str)))
     (should (= 2 (length sgf)))
     (should (= 9 (length (first sgf))))
     (should (= 2 (length (second sgf))))
@@ -58,8 +58,8 @@
     (should (= 6 (length (car (second (second sgf))))))))
 
 (ert-deftest sgf-parse-file-test ()
-  (let ((game (read-from-file "sgf-files/jp-ming-5.sgf")))
-    (should (= 247 (length game)))))
+  (let ((sgf (sgf2el-file-to-el "sgf-files/jp-ming-5.sgf")))
+    (should (= 247 (length sgf)))))
 
 (ert-deftest sgf-empty-board-to-string-test ()
   (let ((board (make-vector (* 19 19) nil))
@@ -87,7 +87,7 @@
     (should (string= string (board-to-string board)))))
 
 (ert-deftest sgf-non-empty-board-to-string-test ()
-  (let* ((joseki (read-from-file "sgf-files/3-4-joseki.sgf"))
+  (let* ((joseki (sgf2el-file-to-el "sgf-files/3-4-joseki.sgf"))
          (root (car joseki))
          (rest (cdr joseki))
          (board (make-board (aget root :S)))
@@ -117,68 +117,68 @@
     (board-to-string board)
     (should t)))
 
-(defmacro with-sgf-file (file &rest body)
-  (declare (indent 1))
-  `(let* ((sgf    (read-from-file ,file))
-          (buffer (display-sgf sgf)))
-     (unwind-protect (with-current-buffer buffer ,@body)
-       (should (kill-buffer buffer)))))
-(def-edebug-spec parse-many (file body))
+;; (defmacro with-sgf-file (file &rest body)
+;;   (declare (indent 1))
+;;   `(let* ((sgf    (read-from-file ,file))
+;;           (buffer (display-sgf sgf)))
+;;      (unwind-protect (with-current-buffer buffer ,@body)
+;;        (should (kill-buffer buffer)))))
+;; (def-edebug-spec parse-many (file body))
 
-(ert-deftest sgf-display-fresh-sgf-buffer ()
-  (with-sgf-file "sgf-files/3-4-joseki.sgf"
-    (should local-board)
-    (should local-sgf)
-    (should local-index)))
+;; (ert-deftest sgf-display-fresh-sgf-buffer ()
+;;   (with-sgf-file "sgf-files/3-4-joseki.sgf"
+;;     (should local-board)
+;;     (should local-sgf)
+;;     (should local-index)))
 
-(ert-deftest sgf-independent-points-properties ()
-  (with-sgf-file "sgf-files/3-4-joseki.sgf"
-    (let ((points-length (length (assoc :points (sgf-ref sgf '(0))))))
-      (right 4)
-      (should (= points-length
-                 (length (assoc :points (sgf-ref sgf '(0)))))))))
+;; (ert-deftest sgf-independent-points-properties ()
+;;   (with-sgf-file "sgf-files/3-4-joseki.sgf"
+;;     (let ((points-length (length (assoc :points (sgf-ref sgf '(0))))))
+;;       (right 4)
+;;       (should (= points-length
+;;                  (length (assoc :points (sgf-ref sgf '(0)))))))))
 
-(ert-deftest sgf-neighbors ()
-  (let ((board (make-board 19)))
-    (should (= 2 (length (neighbors board 0))))
-    (should (= 2 (length (neighbors board (length board)))))
-    (should (= 4 (length (neighbors board (/ (length board) 2)))))
-    (should (= 3 (length (neighbors board 1))))))
+;; (ert-deftest sgf-neighbors ()
+;;   (let ((board (make-board 19)))
+;;     (should (= 2 (length (neighbors board 0))))
+;;     (should (= 2 (length (neighbors board (length board)))))
+;;     (should (= 4 (length (neighbors board (/ (length board) 2)))))
+;;     (should (= 3 (length (neighbors board 1))))))
 
-(ert-deftest sgf-singl-stone-capture ()
-  (flet ((counts () (cons (stones-for local-board :b)
-                          (stones-for local-board :w))))
-    (with-sgf-file "sgf-files/1-capture.sgf"
-      (right 3) (should (tree-equal (counts) '(2 . 0))))))
+;; (ert-deftest sgf-singl-stone-capture ()
+;;   (flet ((counts () (cons (stones-for local-board :b)
+;;                           (stones-for local-board :w))))
+;;     (with-sgf-file "sgf-files/1-capture.sgf"
+;;       (right 3) (should (tree-equal (counts) '(2 . 0))))))
 
-(ert-deftest sgf-remove-dead-stone-ko ()
-  (flet ((counts () (cons (stones-for local-board :b)
-                          (stones-for local-board :w))))
-    (with-sgf-file "sgf-files/ko.sgf"
-      (should (tree-equal (counts) '(0 . 0))) (right 1)
-      (should (tree-equal (counts) '(1 . 0))) (right 1)
-      (should (tree-equal (counts) '(1 . 1))) (right 1)
-      (should (tree-equal (counts) '(2 . 1))) (right 1)
-      (should (tree-equal (counts) '(2 . 2))) (right 1)
-      (should (tree-equal (counts) '(3 . 2))) (right 1)
-      (should (tree-equal (counts) '(2 . 3))) (right 1)
-      (should (tree-equal (counts) '(3 . 2))) (right 1)
-      (should (tree-equal (counts) '(2 . 3))))))
+;; (ert-deftest sgf-remove-dead-stone-ko ()
+;;   (flet ((counts () (cons (stones-for local-board :b)
+;;                           (stones-for local-board :w))))
+;;     (with-sgf-file "sgf-files/ko.sgf"
+;;       (should (tree-equal (counts) '(0 . 0))) (right 1)
+;;       (should (tree-equal (counts) '(1 . 0))) (right 1)
+;;       (should (tree-equal (counts) '(1 . 1))) (right 1)
+;;       (should (tree-equal (counts) '(2 . 1))) (right 1)
+;;       (should (tree-equal (counts) '(2 . 2))) (right 1)
+;;       (should (tree-equal (counts) '(3 . 2))) (right 1)
+;;       (should (tree-equal (counts) '(2 . 3))) (right 1)
+;;       (should (tree-equal (counts) '(3 . 2))) (right 1)
+;;       (should (tree-equal (counts) '(2 . 3))))))
 
-(ert-deftest sgf-two-stone-capture ()
-  (flet ((counts () (cons (stones-for local-board :b)
-                          (stones-for local-board :w))))
-    (with-sgf-file "sgf-files/2-capture.sgf"
-      (right 8) (should (tree-equal (counts) '(6 . 0))))))
+;; (ert-deftest sgf-two-stone-capture ()
+;;   (flet ((counts () (cons (stones-for local-board :b)
+;;                           (stones-for local-board :w))))
+;;     (with-sgf-file "sgf-files/2-capture.sgf"
+;;       (right 8) (should (tree-equal (counts) '(6 . 0))))))
 
-(ert-deftest sgf-parse-empty-properties ()
-  (with-sgf-file "sgf-files/w-empty-properties.sgf"
-    (should (remove-if-not (lambda (prop)
-                             (let ((val (cdr prop)))
-                               (and (sequencep val) (= 0 (length val)))))
-                           (car sgf)))))
+;; (ert-deftest sgf-parse-empty-properties ()
+;;   (with-sgf-file "sgf-files/w-empty-properties.sgf"
+;;     (should (remove-if-not (lambda (prop)
+;;                              (let ((val (cdr prop)))
+;;                                (and (sequencep val) (= 0 (length val)))))
+;;                            (car sgf)))))
 
-(ert-deftest sgf-paren-matching ()
-  (let ((str "(a (b) [c \\] ) ] d)"))
-    (should (= (closing-paren str) (length str)))
-    (should (= (closing-paren str 3) 6))))
+;; (ert-deftest sgf-paren-matching ()
+;;   (let ((str "(a (b) [c \\] ) ] d)"))
+;;     (should (= (closing-paren str) (length str)))
+;;     (should (= (closing-paren str 3) 6))))

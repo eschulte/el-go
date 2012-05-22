@@ -37,14 +37,6 @@
 (defvar sgf2el-special-properties nil
   "A-list of properties and functions to specially convert their values.")
 
-(defun sgf2el-str (str)
-  "Convert a string of sgf into the equivalent Emacs Lisp."
-  (with-temp-buffer
-    (insert str)
-    (sgf2el-region (point-min) (point-max))
-    (goto-char (point-min))
-    (read (current-buffer))))
-
 (defun make-keyword (string)
   (intern (concat ":" (upcase string))))
 
@@ -95,19 +87,6 @@
             (replace-match rep nil 'literal))))
       (when last-node (insert ")")))))
 
-(defun sgf2el (&optional sgf-buffer)
-  "Convert the content of SGF-BUFFER to emacs-lisp in a new buffer."
-  (interactive)
-  (let* ((sgf-buffer (or sgf-buffer (current-buffer)))
-         (buffer (generate-new-buffer (concat (buffer-name sgf-buffer) "-el")))
-         (sgf-str (with-current-buffer sgf-buffer (buffer-string))))
-    (with-current-buffer buffer
-      (insert sgf-str)
-      (goto-char (point-min))
-      (sgf2el-region)
-      (emacs-lisp-mode))
-    (pop-to-buffer buffer)))
-
 (defmacro sgf2el-set-to-var (var &optional buffer)
   "Assign the value of the board in BUFFER to VAR."
   `(let ((buffer ,(or buffer (current-buffer))))
@@ -123,6 +102,34 @@
         (delete-region (point-min) (point-max))
         (insert (pp temp))))
     temp))
+
+(defun sgf2el (&optional sgf-buffer)
+  "Convert the content of SGF-BUFFER to emacs-lisp in a new buffer."
+  (interactive)
+  (let* ((sgf-buffer (or sgf-buffer (current-buffer)))
+         (buffer (generate-new-buffer (concat (buffer-name sgf-buffer) "-el")))
+         (sgf-str (with-current-buffer sgf-buffer (buffer-string))))
+    (with-current-buffer buffer
+      (insert sgf-str)
+      (goto-char (point-min))
+      (sgf2el-region)
+      (emacs-lisp-mode))
+    (pop-to-buffer buffer)))
+
+(defun sgf2el-current-buffer-to-el ()
+  (sgf2el-region (point-min) (point-max))
+  (goto-char (point-min))
+  (read (current-buffer)))
+
+(defun sgf2el-str-to-el (str)
+  "Convert a string of sgf into the equivalent Emacs Lisp."
+  (with-temp-buffer (insert str) (sgf2el-current-buffer-to-el)))
+
+(defun sgf2el-file-to-el (file)
+  (interactive "f")
+  (with-temp-buffer
+    (insert-file-contents-literally file)
+    (sgf2el-current-buffer-to-el)))
 
 
 ;;; Specific property converters
