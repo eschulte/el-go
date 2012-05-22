@@ -26,7 +26,7 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
-(defun aget (key list) (cdr (assoc key list)))
+(eval-when-compile (require 'cl))
 
 (defun range (a &optional b)
   (block nil
@@ -39,6 +39,10 @@
       (if (> a b) (setq tmp a a b b tmp))
       (let ((res (number-sequence a b)))
         (if tmp (nreverse res) res)))))
+
+(defmacro until (test &rest body)
+  (declare (indent 1))
+  `(while (not ,test) ,@body))
 
 (defun other-color (color)
   (if (equal color :B) :W :B))

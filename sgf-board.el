@@ -74,8 +74,8 @@
                        (= 4 n))))))
       (let ((val (aref board (pos-to-index pos size))))
         (cond
-         ((equal val :w) white-piece)
-         ((equal val :b) black-piece)
+         ((equal val :W) white-piece)
+         ((equal val :B) black-piece)
          ((and (stringp val) (= 1 (length val)) val))
          (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" ".")))))))
 
@@ -125,7 +125,7 @@
    "\n"
    (board-to-string *board*)
    "\n\n")
-  (let ((comment (second (assoc "C" (sgf-ref *sgf* *index*)))))
+  (let ((comment (aget (sgf-ref *sgf* *index*) :C)))
     (when comment
       (insert (make-string (+ 6 (* 2 (board-size *board*))) ?=)
               "\n\n")
@@ -137,13 +137,12 @@
     (with-current-buffer buffer
       (sgf-mode)
       (set (make-local-variable '*sgf*)   game)
-      (set (make-local-variable '*index*) '(0 1))
+      (set (make-local-variable '*index*) '(0))
       (let* ((root (sgf-ref *sgf* *index*))
-             (name (format (or (second (assoc "GN" root))
-                               (second (assoc "EV" root)))))
-             (size (aget "S" root)))
-        (unless size
-          (error "sgf: game has no associated size"))
+             (name (or (aget root :GN)
+                       (aget root :EV)))
+             (size (or (aget root :S) (aget root :SZ)
+                       (error "sgf: game has no associated size"))))
         (when name (rename-buffer name 'unique))
         (set (make-local-variable '*board*) (make-board size))
         (push (cons :pieces (board-to-pieces *board*))
@@ -170,9 +169,9 @@
 (defsetf sgf-ref set-sgf-ref)
 
 (defun get-create-pieces ()
-  (if (aget :pieces (sgf-ref *sgf* *index*))
+  (if (aget (sgf-ref *sgf* *index*) :pieces)
       (setf *board* (pieces-to-board
-                     (aget :pieces (sgf-ref *sgf* *index*))
+                     (aget (sgf-ref *sgf* *index*) :pieces)
                      (length *board*)))
     (clear-labels *board*)
     (apply-moves *board* (sgf-ref *sgf* *index*))
@@ -187,7 +186,7 @@
              (error "sgf: no more upwards moves."))
            (decf (car (last *index* 2)))
            (setq *board* (pieces-to-board
-                          (aget :pieces (sgf-ref *sgf* *index*))
+                          (aget (sgf-ref *sgf* *index*) :pieces)
                           (length *board*))))
     (update-display)))
 
@@ -209,9 +208,10 @@
              (update-display)
              (error "sgf: no more backwards moves."))
            (decf (car (last *index*)))
-           (setq *board* (pieces-to-board
-                          (aget :pieces (sgf-ref *sgf* *index*))
-                          (length *board*))))
+           (let ((pieces (aget (sgf-ref *sgf* *index*) :pieces)))
+             (setq *board* (pieces-to-board
+                            (if (listp pieces) pieces nil)
+                            (length *board*)))))
     (update-display)))
 
 (defun right (&optional num)
@@ -229,23 +229,25 @@
 ;;; Board manipulation functions
 (defun move-type (move)
   (cond
-   ((member (car move) '("B"  "W"))  :move)
-   ((member (car move) '("LB" "LW")) :label)))
+   ((member (car move) '(:B  :W))  :move)
+   ((member (car move) '(:LB :LW)) :label)))
 
 (defun apply-moves (board moves)
   (flet ((bset (val data)
-               (setf (aref board (pos-to-index (aget :pos data)
-                                               (board-size board)))
-                     (cond ((string= "B"  val)  :b)
-                           ((string= "W"  val)  :w)
-                           ((string= "LB" val) (aget :label data))
-                           ((string= "LW" val) (aget :label data))
-                           (t nil)))))
+           (let ((data (if (listp (car data)) data (list data))))
+             (setf (aref board (pos-to-index (aget data :pos)
+                                             (board-size board)))
+                   (case val
+                     (:B  :B)
+                     (:W  :W)
+                     (:LB (aget data :label))
+                     (:LW (aget data :label))
+                     (t nil))))))
     (dolist (move moves board)
       (case (move-type move)
         (:move
          (bset (car move) (cdr move))
-         (let ((color (if (string= "B" (car move)) :b :w)))
+         (let ((color (if (equal :B (car move)) :B :W)))
            (remove-dead *board* (other-color color))
            (remove-dead *board* color)))
         (:label
@@ -254,7 +256,7 @@
 (defun clear-labels (board)
   (dotimes (point (length board))
     (when (aref board point)
-      (unless (member (aref board point) '(:b :w))
+      (unless (member (aref board point) '(:B :W))
         (setf (aref board point) nil)))))
 
 (defun stones-for (board color)

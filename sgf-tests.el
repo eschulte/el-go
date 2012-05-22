@@ -31,21 +31,6 @@
 (require 'sgf-board)
 (require 'ert)
 
-(ert-deftest sgf-parse-prop-tests ()
-  (flet ((should= (a b) (should (tree-equal a b :test #'string=))))
-    (should= (parse-props "B[pq]") '(("B" "pq")))
-    (should= (parse-props "GM[1]") '(("GM" "1")))
-    (should= (parse-props "GM[1]\nB[pq]\tB[pq]")
-             '(("GM" "1") ("B" "pq") ("B" "pq")))
-    (should (= (length (cdar (parse-props "TB[as][bs][cq][cr][ds][ep]")))
-               6))))
-
-(ert-deftest sgf-parse-multiple-small-nodes-test ()
-  (let* ((str ";B[pq];W[dd];B[pc];W[eq];B[cp];W[cm];B[do];W[hq];B[qn];W[cj]")
-         (nodes (parse-nodes str)))
-    (should (= (length nodes) 10))
-    (should (tree-equal (car nodes) '(("B" "pq")) :test #'string=))))
-
 (ert-deftest sgf-parse-one-large-node-test ()
   (let* ((str ";GM[1]FF[4]
                SZ[19]
@@ -114,7 +99,7 @@
   (let* ((joseki (read-from-file "sgf-files/3-4-joseki.sgf"))
          (root (car joseki))
          (rest (cdr joseki))
-         (board (make-board (aget "S" root)))
+         (board (make-board (aget root :S)))
          (string (concat "    A B C D E F G H J K L M N O P Q R S T\n"
                          " 19 . . . . . . . . . . . . . . . . . . . 19\n"
                          " 18 . . . . . . . . . . . . . . . . . . . 18\n"

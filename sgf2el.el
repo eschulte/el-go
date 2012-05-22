@@ -26,7 +26,9 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
-(defvar prop-re "\\([[:alpha:]]+\\)\\(\\[[^\000]*?[^\\]?\\]\\)+")
+(eval-when-compile (require 'cl))
+
+(defvar prop-re "\\([[:alpha:]]+\\)\\(\\(\\[[^\000]*?[^\\]?\\]\\)+\\)")
 
 (defvar prop-val-re "\\[\\([^\000]*?[^\\]?\\)\\]")
 
@@ -70,17 +72,26 @@
   (interactive "r")
   (let ((start (copy-marker (or start (point-min))))
         (end   (copy-marker (or end   (point-max))))
-        (re    (format "\\(%s\\|%s\\)" prop-re ";")))
+        (re    (format "\\(%s\\|%s\\)" prop-re ";"))
+        last-node)
     (save-excursion (goto-char start)
       (while (re-search-forward re end t)
+        (message "1%S 2%S 3%S 4%S 5%S"
+                 (match-string 1)
+                 (match-string 2)
+                 (match-string 3)
+                 (match-string 4)
+                 (match-string 5))
         (if (string= (match-string 0) ";")
-            (replace-match ":node ")
+            (progn (replace-match (if last-node ")(" "("))
+                   (setq last-node t))
           (let* ((key (sgf2el-convert-prop-key (match-string 2)))
                  (val (sgf2el-convert-prop-vals key
                        (sgf2el-all-matches (match-string 3) prop-val-re 1)))
                  (rep (format "%S " (cons key (if (= 1 (length val))
                                                   (car val) val)))))
-            (replace-match rep nil 'literal)))))))
+            (replace-match rep nil 'literal))))
+      (when last-node (insert ")")))))
 
 (defun sgf2el (&optional sgf-buffer)
   "Convert the content of SGF-BUFFER to emacs-lisp in a new buffer."
@@ -90,6 +101,7 @@
          (sgf-str (with-current-buffer sgf-buffer (buffer-string))))
     (with-current-buffer buffer
       (insert sgf-str)
+      (goto-char (point-min))
       (sgf2el-region)
       (emacs-lisp-mode))
     (pop-to-buffer buffer)))
@@ -108,7 +120,7 @@
       (save-excursion
         (delete-region (point-min) (point-max))
         (insert (pp temp))))
-    (length temp)))
+    temp))
 
 
 ;;; Specific property converters
@@ -136,13 +148,15 @@
 (add-to-list 'sgf2el-special-properties (cons :W #'process-move))
 
 (defun process-label (label-args)
-  (mapcar (lambda (l-arg)
-            (if (string-match "\\([[:alpha:]]+\\):\\(.*\\)" l-arg)
-                (list
-                 (cons :label (match-string 2 l-arg))
-                 (cons :pos (process-position (match-string 1 l-arg))))
-                (error "sgf: malformed label %S" l-arg)))
-          label-args))
+  (let ((res (mapcar (lambda (l-arg)
+                       (if (string-match "\\([[:alpha:]]+\\):\\(.*\\)" l-arg)
+                           (list
+                            (cons :label (match-string 2 l-arg))
+                            (cons :pos (process-position
+                                        (match-string 1 l-arg))))
+                         (error "sgf: malformed label %S" l-arg)))
+                     label-args)))
+    (if (= 1 (length label-args)) (list res) res)))
 (add-to-list 'sgf2el-special-properties (cons :LB #'process-label))
 (add-to-list 'sgf2el-special-properties (cons :LW #'process-label))
 
