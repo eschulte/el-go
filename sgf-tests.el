@@ -122,6 +122,7 @@
   `(let* ((sgf    (sgf2el-file-to-el ,file))
           (buffer (display-sgf sgf)))
      (unwind-protect (with-current-buffer buffer ,@body)
+       (set-default 'sgf-index '(0))
        (should (kill-buffer buffer)))))
 (def-edebug-spec parse-many (file body))
 
@@ -138,47 +139,40 @@
       (should (= points-length
                  (length (assoc :points (sgf-ref sgf '(0)))))))))
 
-;; (ert-deftest sgf-neighbors ()
-;;   (let ((board (make-board 19)))
-;;     (should (= 2 (length (neighbors board 0))))
-;;     (should (= 2 (length (neighbors board (length board)))))
-;;     (should (= 4 (length (neighbors board (/ (length board) 2)))))
-;;     (should (= 3 (length (neighbors board 1))))))
+(ert-deftest sgf-neighbors ()
+  (let ((board (make-board 19)))
+    (should (= 2 (length (neighbors board 0))))
+    (should (= 2 (length (neighbors board (length board)))))
+    (should (= 4 (length (neighbors board (/ (length board) 2)))))
+    (should (= 3 (length (neighbors board 1))))))
 
-;; (ert-deftest sgf-singl-stone-capture ()
-;;   (flet ((counts () (cons (stones-for local-board :b)
-;;                           (stones-for local-board :w))))
-;;     (with-sgf-file "sgf-files/1-capture.sgf"
-;;       (right 3) (should (tree-equal (counts) '(2 . 0))))))
+(defun stone-counts ()
+  (cons (stones-for sgf-board :B)
+        (stones-for sgf-board :W)))
 
-;; (ert-deftest sgf-remove-dead-stone-ko ()
-;;   (flet ((counts () (cons (stones-for local-board :b)
-;;                           (stones-for local-board :w))))
-;;     (with-sgf-file "sgf-files/ko.sgf"
-;;       (should (tree-equal (counts) '(0 . 0))) (right 1)
-;;       (should (tree-equal (counts) '(1 . 0))) (right 1)
-;;       (should (tree-equal (counts) '(1 . 1))) (right 1)
-;;       (should (tree-equal (counts) '(2 . 1))) (right 1)
-;;       (should (tree-equal (counts) '(2 . 2))) (right 1)
-;;       (should (tree-equal (counts) '(3 . 2))) (right 1)
-;;       (should (tree-equal (counts) '(2 . 3))) (right 1)
-;;       (should (tree-equal (counts) '(3 . 2))) (right 1)
-;;       (should (tree-equal (counts) '(2 . 3))))))
+(ert-deftest sgf-singl-stone-capture ()
+  (with-sgf-file "sgf-files/1-capture.sgf"
+    (right 3) (should (tree-equal (stone-counts) '(2 . 0)))))
 
-;; (ert-deftest sgf-two-stone-capture ()
-;;   (flet ((counts () (cons (stones-for local-board :b)
-;;                           (stones-for local-board :w))))
-;;     (with-sgf-file "sgf-files/2-capture.sgf"
-;;       (right 8) (should (tree-equal (counts) '(6 . 0))))))
+(ert-deftest sgf-remove-dead-stone-ko ()
+  (with-sgf-file "sgf-files/ko.sgf"
+    (should (tree-equal (stone-counts) '(0 . 0))) (right 1)
+    (should (tree-equal (stone-counts) '(1 . 0))) (right 1)
+    (should (tree-equal (stone-counts) '(1 . 1))) (right 1)
+    (should (tree-equal (stone-counts) '(2 . 1))) (right 1)
+    (should (tree-equal (stone-counts) '(2 . 2))) (right 1)
+    (should (tree-equal (stone-counts) '(3 . 2))) (right 1)
+    (should (tree-equal (stone-counts) '(2 . 3))) (right 1)
+    (should (tree-equal (stone-counts) '(3 . 2))) (right 1)
+    (should (tree-equal (stone-counts) '(2 . 3)))))
 
-;; (ert-deftest sgf-parse-empty-properties ()
-;;   (with-sgf-file "sgf-files/w-empty-properties.sgf"
-;;     (should (remove-if-not (lambda (prop)
-;;                              (let ((val (cdr prop)))
-;;                                (and (sequencep val) (= 0 (length val)))))
-;;                            (car sgf)))))
+(ert-deftest sgf-two-stone-capture ()
+  (with-sgf-file "sgf-files/2-capture.sgf"
+    (right 8) (should (tree-equal (stone-counts) '(6 . 0)))))
 
-;; (ert-deftest sgf-paren-matching ()
-;;   (let ((str "(a (b) [c \\] ) ] d)"))
-;;     (should (= (closing-paren str) (length str)))
-;;     (should (= (closing-paren str 3) 6))))
+(ert-deftest sgf-parse-empty-properties ()
+  (with-sgf-file "sgf-files/w-empty-properties.sgf"
+    (should (remove-if-not (lambda (prop)
+                             (let ((val (cdr prop)))
+                               (and (sequencep val) (= 0 (length val)))))
+                           (car sgf)))))
