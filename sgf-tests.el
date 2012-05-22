@@ -117,19 +117,19 @@
     (board-to-string board)
     (should t)))
 
-;; (defmacro with-sgf-file (file &rest body)
-;;   (declare (indent 1))
-;;   `(let* ((sgf    (read-from-file ,file))
-;;           (buffer (display-sgf sgf)))
-;;      (unwind-protect (with-current-buffer buffer ,@body)
-;;        (should (kill-buffer buffer)))))
-;; (def-edebug-spec parse-many (file body))
+(defmacro with-sgf-file (file &rest body)
+  (declare (indent 1))
+  `(let* ((sgf    (sgf2el-file-to-el ,file))
+          (buffer (display-sgf sgf)))
+     (unwind-protect (with-current-buffer buffer ,@body)
+       (should (kill-buffer buffer)))))
+(def-edebug-spec parse-many (file body))
 
-;; (ert-deftest sgf-display-fresh-sgf-buffer ()
-;;   (with-sgf-file "sgf-files/3-4-joseki.sgf"
-;;     (should local-board)
-;;     (should local-sgf)
-;;     (should local-index)))
+(ert-deftest sgf-display-fresh-sgf-buffer ()
+  (with-sgf-file "sgf-files/3-4-joseki.sgf"
+    (should *board*)
+    (should *sgf*)
+    (should *index*)))
 
 ;; (ert-deftest sgf-independent-points-properties ()
 ;;   (with-sgf-file "sgf-files/3-4-joseki.sgf"
