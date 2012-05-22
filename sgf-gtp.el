@@ -32,7 +32,9 @@
 ;; The GMP command set may be implemented as an extension.
 
 ;; Code:
-(defun sgf-gtp-char-to-gtp (char)
+(require 'cl)
+
+(defun sgf-gtp-char-to-pos (char)
   (flet ((err () (error "sgf-gtp: invalid char %s" char)))
     (cond
      ((< char ?A)  (err))
@@ -43,34 +45,27 @@
      ((<= char ?t) (- char ?a))
      (t (err)))))
 
-(defun sgf-gtp-point-to-gtp (point-string)
-  (format "%s%d"
-	  (substring point-string 0 1)
-	  (sgf-gtp-char-to-gtp (elt point-string 1))))
+(defun sgf-num-to-gtp-char (num)
+  (flet ((err () (error "sgf-gtp: invalid num %s" num)))
+    (cond
+     ((< num 1)   (err))
+     ((< num 9)   (+ ?A (1- num)))
+     ((< num 19)  (+ ?A num))
+     (t (err)))))
 
-(defun sgf-gtp-command-to-sgf (command)
-  "Convert a gtp command to an sgf element"
-  (interactive)
-  (unless (listp node)
-    (error "sgf-gtp: node is not a cons cell"))
-  (let ((symbol (car node))
-	(value (cdr node)))
-    (if (listp symbol) ; recurse
-	(flatten (delq nil (mapcar 'sgf-gtp-node-to-gtp node)))
-      (if (symbolp symbol)
-	  (list
-	   (case symbol
-	    (':B
-	     (format "black %s" (sgf-gtp-point-to-gtp-point value)))
-	    (':W
-	     (format "white %s" (sgf-gtp-point-to-gtp-point value)))
-	    (':SZ
-	     (format "boardsize %s" value))
-	    (':KM
-	     (format "komi %s" value))
-	    (t
-	     nil)))
-	(error "sgf-gtp: %S is not a symbol" symbol)))))
+(defun sgf-pos-to-gtp (pos)
+  (format "%c%d" (sgf-num-to-gtp-char (car pos)) (1+ (cdr pos))))
+
+(defun sgf-to-gtp-command (element)
+  "Convert an sgf ELEMENT to a gtp command."
+  (let ((key (car element))
+	(val (cdr element)))
+    (case key
+      (:B       (format "black %s" (sgf-pos-to-gtp (aget (list val) :pos))))
+      (:W       (format "white %s" (sgf-pos-to-gtp (aget (list val) :pos))))
+      ((:SZ :S) (format "boardsize %s" val))
+      (:KM      (format "komi %s" val))
+      (t        nil))))
 
 (provide 'sgf-gtp)
 ;;; sgf-gtp.el ends here

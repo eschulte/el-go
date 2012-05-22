@@ -57,7 +57,7 @@
                  sgf-gnugo-process-name
                  sgf-gnugo-program nil
                  "--mode" "gtp" "--quiet"
-		 (if options (split-string options))))
+		 (when options (split-string options))))
     (set-buffer sgf-gnugo-buffer)
     (comint-mode)
     ;; just to refresh everything
@@ -72,7 +72,6 @@
 (defun sgf-gnugo-input-command (command)
   "Pass COMMAND to the gnugo process running in `sgf-gnugo-buffer'"
   (save-excursion
-    (message (format "buffer-%s" sgf-gnugo-buffer))
     (set-buffer sgf-gnugo-buffer)
     (goto-char (process-mark (get-buffer-process (current-buffer))))
     (insert command)
@@ -86,15 +85,16 @@
     (while (progn
 	     (goto-char comint-last-input-end)
 	     (not (re-search-forward "^= *[^\000]+?\n\n" nil t)))
-      (if (re-search-forward "^? *\\([^\000]+?\\)\n\n" nil t)
-	  (error (match-string 1)))
+      (when (re-search-forward "^? *\\([^\000]+?\\)\n\n" nil t)
+        (error (match-string 1)))
       (accept-process-output (get-buffer-process (current-buffer))))))
 
 (defun sgf-gnugo-last-output ()
   (save-window-excursion
     (set-buffer sgf-gnugo-buffer)
     (comint-show-output)
-    (buffer-substring (+ 2 (point)) (- (point-max) 2))))
+    (org-babel-clean-text-properties
+     (buffer-substring (+ 2 (point)) (- (point-max) 2)))))
 
 (provide 'sgf-gnugo)
 ;;; sgf-gnugo.el ends here
