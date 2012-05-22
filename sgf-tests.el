@@ -29,6 +29,7 @@
 (require 'sgf-util)
 (require 'sgf2el)
 (require 'sgf-board)
+(require 'sgf-gtp)
 (require 'ert)
 
 (ert-deftest sgf-parse-simple-tree ()
@@ -195,3 +196,13 @@
                              (let ((val (cdr prop)))
                                (and (sequencep val) (= 0 (length val)))))
                            (car sgf)))))
+
+(ert-deftest sgf-test-sgf-gtp-char-to-gtp ()
+  (should (= 1  (sgf-gtp-char-to-gtp ?A)))
+  (should (= 8  (sgf-gtp-char-to-gtp ?H)))
+  (should (= 9  (sgf-gtp-char-to-gtp ?J)))
+  (should (= 19 (sgf-gtp-char-to-gtp ?T)))
+  (should (= 1  (sgf-gtp-char-to-gtp ?a)))
+  (should (= 8  (sgf-gtp-char-to-gtp ?h)))
+  (should (= 9  (sgf-gtp-char-to-gtp ?j)))
+  (should (= 19 (sgf-gtp-char-to-gtp ?t))))
