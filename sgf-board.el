@@ -27,7 +27,7 @@
 
 ;;; Code:
 (require 'sgf-util)
-(require 'sgf2el)
+(require 'sgf-trans)
 
 (defvar *board* nil "Holds the board local to a GO buffer.")
 
@@ -36,6 +36,88 @@
 (defvar black-piece "X")
 
 (defvar white-piece "O")
+
+
+;;; Board manipulation functions
+(defun make-board (size) (make-vector (* size size) nil))
+
+(defun board-size (board) (round (sqrt (length board))))
+
+(defun pos-to-index (pos size)
+  (+ (car pos) (* (cdr pos) size)))
+
+(defun move-type (move)
+  (cond
+   ((member (car move) '(:B  :W))  :move)
+   ((member (car move) '(:LB :LW)) :label)))
+
+(defun other-color (color)
+  (if (equal color :B) :W :B))
+
+(defun apply-moves (board moves)
+  (flet ((bset (val data)
+           (let ((data (if (listp (car data)) data (list data))))
+             (setf (aref board (pos-to-index (aget data :pos)
+                                             (board-size board)))
+                   (case val
+                     (:B  :B)
+                     (:W  :W)
+                     (:LB (aget data :label))
+                     (:LW (aget data :label))
+                     (t nil))))))
+    (dolist (move moves board)
+      (case (move-type move)
+        (:move
+         (bset (car move) (cdr move))
+         (let ((color (if (equal :B (car move)) :B :W)))
+           (remove-dead *board* (other-color color))
+           (remove-dead *board* color)))
+        (:label
+         (dolist (data (cdr move)) (bset (car move) data)))))))
+
+(defun clear-labels (board)
+  (dotimes (point (length board))
+    (when (aref board point)
+      (unless (member (aref board point) '(:B :W))
+        (setf (aref board point) nil)))))
+
+(defun stones-for (board color)
+  (let ((count 0))
+    (dotimes (n (length board) count)
+      (when (equal color (aref board n)) (incf count)))))
+
+(defun neighbors (board piece)
+  (let ((size (board-size board))
+        neighbors)
+    (when (not (= (mod piece size) (1- size))) (push (1+ piece) neighbors))
+    (when (not (= (mod piece size) 0))         (push (1- piece) neighbors))
+    (when (< (+ piece size) (length board))    (push (+ piece size) neighbors))
+    (when (> (- piece size) 0)                 (push (- piece size) neighbors))
+    neighbors))
+
+(defun alive-p (board piece &optional already)
+  (let* ((val (aref board piece))
+         (enemy (other-color val))
+         (neighbors (remove-if (lambda (n) (member n already))
+                               (neighbors board piece)))
+         (neighbor-vals (mapcar (lambda (n) (aref board n)) neighbors))
+         (friendly-neighbors (delete nil (map 'list (lambda (n v)
+                                                      (when (equal v val) n))
+                                              neighbors neighbor-vals)))
+         (already (cons piece already)))
+    (or (some (lambda (v) (not (or (equal v enemy) ; touching open space
+                              (equal v val))))
+              neighbor-vals)
+        (some (lambda (n) (alive-p board n already)) ; touching alive dragon
+              friendly-neighbors))))
+
+(defun remove-dead (board color)
+  ;; must remove one color at a time for ko situations
+  (let (cull)
+    (dotimes (n (length board) board)
+      (when (and (equal (aref board n) color) (not (alive-p board n)))
+        (push n cull)))
+    (dolist (n cull cull) (setf (aref board n) nil))))
 
 
 ;;; Visualization
@@ -143,88 +225,6 @@
         (set (make-local-variable '*board*) (make-board size))
         (update-display)))
     (pop-to-buffer buffer)))
-
-
-;;; Board manipulation functions
-(defun make-board (size) (make-vector (* size size) nil))
-
-(defun board-size (board) (round (sqrt (length board))))
-
-(defun pos-to-index (pos size)
-  (+ (car pos) (* (cdr pos) size)))
-
-(defun move-type (move)
-  (cond
-   ((member (car move) '(:B  :W))  :move)
-   ((member (car move) '(:LB :LW)) :label)))
-
-(defun other-color (color)
-  (if (equal color :B) :W :B))
-
-(defun apply-moves (board moves)
-  (flet ((bset (val data)
-           (let ((data (if (listp (car data)) data (list data))))
-             (setf (aref board (pos-to-index (aget data :pos)
-                                             (board-size board)))
-                   (case val
-                     (:B  :B)
-                     (:W  :W)
-                     (:LB (aget data :label))
-                     (:LW (aget data :label))
-                     (t nil))))))
-    (dolist (move moves board)
-      (case (move-type move)
-        (:move
-         (bset (car move) (cdr move))
-         (let ((color (if (equal :B (car move)) :B :W)))
-           (remove-dead *board* (other-color color))
-           (remove-dead *board* color)))
-        (:label
-         (dolist (data (cdr move)) (bset (car move) data)))))))
-
-(defun clear-labels (board)
-  (dotimes (point (length board))
-    (when (aref board point)
-      (unless (member (aref board point) '(:B :W))
-        (setf (aref board point) nil)))))
-
-(defun stones-for (board color)
-  (let ((count 0))
-    (dotimes (n (length board) count)
-      (when (equal color (aref board n)) (incf count)))))
-
-(defun neighbors (board piece)
-  (let ((size (board-size board))
-        neighbors)
-    (when (not (= (mod piece size) (1- size))) (push (1+ piece) neighbors))
-    (when (not (= (mod piece size) 0))         (push (1- piece) neighbors))
-    (when (< (+ piece size) (length board))    (push (+ piece size) neighbors))
-    (when (> (- piece size) 0)                 (push (- piece size) neighbors))
-    neighbors))
-
-(defun alive-p (board piece &optional already)
-  (let* ((val (aref board piece))
-         (enemy (other-color val))
-         (neighbors (remove-if (lambda (n) (member n already))
-                               (neighbors board piece)))
-         (neighbor-vals (mapcar (lambda (n) (aref board n)) neighbors))
-         (friendly-neighbors (delete nil (map 'list (lambda (n v)
-                                                      (when (equal v val) n))
-                                              neighbors neighbor-vals)))
-         (already (cons piece already)))
-    (or (some (lambda (v) (not (or (equal v enemy) ; touching open space
-                              (equal v val))))
-              neighbor-vals)
-        (some (lambda (n) (alive-p board n already)) ; touching alive dragon
-              friendly-neighbors))))
-
-(defun remove-dead (board color)
-  ;; must remove one color at a time for ko situations
-  (let (cull)
-    (dotimes (n (length board) board)
-      (when (and (equal (aref board n) color) (not (alive-p board n)))
-        (push n cull)))
-    (dolist (n cull cull) (setf (aref board n) nil))))
 
 
 ;;; User input
