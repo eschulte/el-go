@@ -149,8 +149,8 @@
     (should (= 3 (length (neighbors board 1))))))
 
 (defun stone-counts ()
-  (cons (stones-for *board* :B)
-        (stones-for *board* :W)))
+  (cons (stones-for (car *history*) :B)
+        (stones-for (car *history*) :W)))
 
 
 ;;; GTP and gnugo tests
@@ -264,7 +264,8 @@
 
 (ert-deftest sgf-display-fresh-sgf-buffer ()
   (with-sgf-file "sgf-files/3-4-joseki.sgf"
-    (should *board*)))
+    (should *history*)
+    (should *back-ends*)))
 
 (ert-deftest sgf-independent-points-properties ()
   (with-sgf-file "sgf-files/3-4-joseki.sgf"

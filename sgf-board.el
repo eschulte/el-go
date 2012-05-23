@@ -29,9 +29,9 @@
 (require 'sgf-util)
 (require 'sgf-trans)
 
-(defvar *board* nil "Holds the board local to a GO buffer.")
+(defvar *history* nil "Holds the board history for a GO buffer.")
 
-(defvar *backends* nil "Holds the back-ends connected to a board.")
+(defvar *back-ends* nil "Holds the back-ends connected to a board.")
 
 (defvar black-piece "X")
 
@@ -56,22 +56,22 @@
 
 (defun apply-moves (board moves)
   (flet ((bset (val data)
-           (let ((data (if (listp (car data)) data (list data))))
-             (setf (aref board (pos-to-index (aget data :pos)
-                                             (board-size board)))
-                   (case val
-                     (:B  :B)
-                     (:W  :W)
-                     (:LB (aget data :label))
-                     (:LW (aget data :label))
-                     (t nil))))))
+               (let ((data (if (listp (car data)) data (list data))))
+                 (setf (aref board (pos-to-index (aget data :pos)
+                                                 (board-size board)))
+                       (case val
+                         (:B  :B)
+                         (:W  :W)
+                         (:LB (aget data :label))
+                         (:LW (aget data :label))
+                         (t nil))))))
     (dolist (move moves board)
       (case (move-type move)
         (:move
          (bset (car move) (cdr move))
          (let ((color (if (equal :B (car move)) :B :W)))
-           (remove-dead *board* (other-color color))
-           (remove-dead *board* color)))
+           (remove-dead board (other-color color))
+           (remove-dead board color)))
         (:label
          (dolist (data (cdr move)) (bset (car move) data)))))))
 
@@ -118,6 +118,17 @@
       (when (and (equal (aref board n) color) (not (alive-p board n)))
         (push n cull)))
     (dolist (n cull cull) (setf (aref board n) nil))))
+
+(defun board-to-pieces (board)
+  (let (pieces)
+    (dotimes (n (length board) pieces)
+      (let ((val (aref board n)))
+        (when val (push (cons val n) pieces))))))
+
+(defun pieces-to-board (pieces size)
+  (let ((board (make-vector size nil)))
+    (dolist (piece pieces board)
+      (setf (aref board (cdr piece)) (car piece)))))
 
 
 ;;; Visualization
@@ -167,63 +178,30 @@
         (body (board-body-to-string board)))
     (mapconcat #'identity (list header body header) "\n")))
 
-(defun board-to-pieces (board)
-  (let (pieces)
-    (dotimes (n (length board) pieces)
-      (let ((val (aref board n)))
-        (when val (push (cons val n) pieces))))))
-
-(defun pieces-to-board (pieces size)
-  (let ((board (make-vector size nil)))
-    (dolist (piece pieces board)
-      (setf (aref board (cdr piece)) (car piece)))))
-
-(defun get-create-pieces ()
-  (let ((pieces (aget (sgf-ref *sgf* *index*) :pieces)))
-    (if pieces
-        (when (listp pieces) pieces)
-      (clear-labels *board*)
-      (apply-moves *board* (sgf-ref *sgf* *index*))
-      (setq pieces (board-to-pieces *board*))
-      (push (cons :pieces pieces) (sgf-ref *sgf* *index*))
-      pieces)))
-
 (defun update-display ()
-  (unless *sgf* (error "sgf: buffer has not associated sgf data"))
   (delete-region (point-min) (point-max))
   (goto-char (point-min))
-  (setq *board* (pieces-to-board (get-create-pieces) (length *board*)))
   (insert
    "\n"
-   (board-to-string *board*)
+   (board-to-string (car *history*))
    "\n\n")
-  (let ((comment (aget (sgf-ref *sgf* *index*) :C)))
+  (let ((comment (sgf<-comment (car *back-ends*))))
     (when comment
-      (insert (make-string (+ 6 (* 2 (board-size *board*))) ?=)
-              "\n\n")
-      (insert comment)))
+      (insert
+       (make-string (+ 6 (* 2 (board-size (car *history*)))) ?=)
+       "\n\n"
+       comment)))
   (goto-char (point-min)))
 
-(defun display (game)
-  (let ((buffer (generate-new-buffer "*sgf*")))
+(defun sgf-board-display (back-end)
+  (let ((buffer (generate-new-buffer "*GO*")))
     (with-current-buffer buffer
-      (sgf-mode)
-      (set (make-local-variable '*sgf*)   game)
-      (set (make-local-variable '*index*) '(0))
-      ;; TODO: this shouldn't be required
-      (unless (tree-equal *index* '(0))
-        (setq *index* '(0))
-        (setf (car *index*) 0))
-      (let* ((root (sgf-ref *sgf* *index*))
-             (name (or (aget root :GN)
-                       (aget root :EV)))
-             (size (or (aget root :S) (aget root :SZ)
-                       (unless (tree-equal *index* '(0))
-                         (error "sgf: bad index %S" *index*))
-                       (error "sgf: game has no associated size"))))
-        (when name (rename-buffer name 'unique))
-        (set (make-local-variable '*board*) (make-board size))
-        (update-display)))
+      (set (make-local-variable '*back-ends*) (list back-end))
+      (set (make-local-variable '*history*) nil)
+      (push (make-board (sgf<-size back-end)) *history*)
+      (sgf-board-mode))
+    (when (sgf<-name back-end)
+      (rename-buffer (sgf<-name back-end) 'unique))
     (pop-to-buffer buffer)))
 
 
@@ -245,7 +223,7 @@
 (defun sgf-board-act-move (&optional pos)
   (interactive)
   (unless pos
-    (let ((size (if *board* (board-size *board*) 19)))
+    (let ((size (board-size (car *history*))))
       (setq pos
             (cons
              (char-to-num
@@ -275,7 +253,7 @@
 
 
 ;;; Display mode
-(defvar sgf-mode-map
+(defvar sgf-board-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<right>") 'right)
     (define-key map (kbd "<left>")  'left)
@@ -284,9 +262,9 @@
     (define-key map (kbd "q") (lambda () (interactive)
                                 (kill-buffer (current-buffer))))
     map)
-  "Keymap for `sgf-mode'.")
+  "Keymap for `sgf-board-mode'.")
 
-(define-derived-mode sgf-mode nil "SGF"
+(define-derived-mode sgf-board-mode nil "SGF"
   "Major mode for editing text written for viewing SGF files.")
 
 (provide 'sgf-board)
