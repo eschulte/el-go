@@ -29,8 +29,8 @@
 (require 'sgf-util)
 (require 'sgf-trans)
 
-(defvar *history* nil "Holds the board history for a GO buffer.")
-
+(defvar *history*   nil "Holds the board history for a GO buffer.")
+(defvar *size*      nil "Holds the board size.")
 (defvar *back-ends* nil "Holds the back-ends connected to a board.")
 
 (defvar black-piece "X")
@@ -76,15 +76,10 @@
          (dolist (data (cdr move)) (bset (car move) data)))))))
 
 (defun clear-labels (board)
-  (dotimes (point (length board))
+  (dotimes (point (length board) board)
     (when (aref board point)
       (unless (member (aref board point) '(:B :W))
         (setf (aref board point) nil)))))
-
-(defun stones-for (board color)
-  (let ((count 0))
-    (dotimes (n (length board) count)
-      (when (equal color (aref board n)) (incf count)))))
 
 (defun neighbors (board piece)
   (let ((size (board-size board))
@@ -101,15 +96,15 @@
          (neighbors (remove-if (lambda (n) (member n already))
                                (neighbors board piece)))
          (neighbor-vals (mapcar (lambda (n) (aref board n)) neighbors))
-         (friendly-neighbors (delete nil (map 'list (lambda (n v)
-                                                      (when (equal v val) n))
-                                              neighbors neighbor-vals)))
+         (friendly (delete nil (mapcar
+                                (lambda (n) (when (equal (aref board n) val) n))
+                                neighbors)))
          (already (cons piece already)))
     (or (some (lambda (v) (not (or (equal v enemy) ; touching open space
                               (equal v val))))
               neighbor-vals)
         (some (lambda (n) (alive-p board n already)) ; touching alive dragon
-              friendly-neighbors))))
+              friendly))))
 
 (defun remove-dead (board color)
   ;; must remove one color at a time for ko situations
@@ -126,7 +121,7 @@
         (when val (push (cons val n) pieces))))))
 
 (defun pieces-to-board (pieces size)
-  (let ((board (make-vector size nil)))
+  (let ((board (make-vector (* size size) nil)))
     (dolist (piece pieces board)
       (setf (aref board (cdr piece)) (car piece)))))
 
@@ -178,30 +173,34 @@
         (body (board-body-to-string board)))
     (mapconcat #'identity (list header body header) "\n")))
 
-(defun update-display ()
-  (delete-region (point-min) (point-max))
-  (goto-char (point-min))
-  (insert
-   "\n"
-   (board-to-string (car *history*))
-   "\n\n")
-  (let ((comment (sgf<-comment (car *back-ends*))))
-    (when comment
-      (insert
-       (make-string (+ 6 (* 2 (board-size (car *history*)))) ?=)
-       "\n\n"
-       comment)))
-  (goto-char (point-min)))
+(defun ear-muffs (str) (concat "*" str "*"))
+
+(defun update-display (buffer)
+  (with-current-buffer buffer
+    (delete-region (point-min) (point-max))
+    (goto-char (point-min))
+    (insert "\n"
+            (board-to-string
+             (pieces-to-board (car *history*) *size*))
+            "\n\n")
+    (let ((comment (sgf<-comment (car *back-ends*))))
+      (when comment
+        (insert (make-string (+ 6 (* 2 *size*)) ?=)
+                "\n\n"
+                comment)))
+    (goto-char (point-min))))
 
 (defun sgf-board-display (back-end)
   (let ((buffer (generate-new-buffer "*GO*")))
     (with-current-buffer buffer
+      (sgf-board-mode)
+      (when (sgf<-name back-end)
+        (rename-buffer (ear-muffs (sgf<-name back-end)) 'unique))
       (set (make-local-variable '*back-ends*) (list back-end))
-      (set (make-local-variable '*history*) nil)
-      (push (make-board (sgf<-size back-end)) *history*)
-      (sgf-board-mode))
-    (when (sgf<-name back-end)
-      (rename-buffer (sgf<-name back-end) 'unique))
+      (set (make-local-variable '*size*) (sgf<-size back-end))
+      (set (make-local-variable '*history*)
+           (list (board-to-pieces (make-board *size*))))
+      (update-display (current-buffer)))
     (pop-to-buffer buffer)))
 
 
@@ -223,20 +222,19 @@
 (defun sgf-board-act-move (&optional pos)
   (interactive)
   (unless pos
-    (let ((size (board-size (car *history*))))
-      (setq pos
-            (cons
-             (char-to-num
-              (aref (downcase
-                     (org-icompleting-read
-                      "X pos: "
-                      (mapcar #'string
-                              (mapcar #'num-to-char (range 1 size)))))
-                    0))
-             (1- (string-to-number
-                  (org-icompleting-read
-                   "Y pos: "
-                   (mapcar #'number-to-string (range 1 size)))))))))
+    (setq pos
+          (cons
+           (char-to-num
+            (aref (downcase
+                   (org-icompleting-read
+                    "X pos: "
+                    (mapcar #'string
+                            (mapcar #'num-to-char (range 1 *size*)))))
+                  0))
+           (1- (string-to-number
+                (org-icompleting-read
+                 "Y pos: "
+                 (mapcar #'number-to-string (range 1 *size*))))))))
   (message "move: %S" pos))
 
 (defun sgf-board-act-resign ()
@@ -255,10 +253,8 @@
 ;;; Display mode
 (defvar sgf-board-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<right>") 'right)
-    (define-key map (kbd "<left>")  'left)
-    (define-key map (kbd "<up>")    'up)
-    (define-key map (kbd "<down>")  'down)
+    (define-key map (kbd "<right>") 'sgf-board-next)
+    (define-key map (kbd "<left>")  'sgf-board-prev)
     (define-key map (kbd "q") (lambda () (interactive)
                                 (kill-buffer (current-buffer))))
     map)
@@ -266,5 +262,25 @@
 
 (define-derived-mode sgf-board-mode nil "SGF"
   "Major mode for editing text written for viewing SGF files.")
+
+(defun sgf-board-next (&optional count)
+  (interactive "p")
+  (dotimes (n (or count 1) (or count 1))
+    (let ((board (pieces-to-board (car *history*) *size*))
+          (move (sgf<-move (car *back-ends*))))
+      (if move
+          (push (board-to-pieces
+                 (apply-moves (clear-labels board) move))
+                *history*)
+        (error "sgf-board: no more moves"))
+      (update-display (current-buffer)))))
+
+(defun sgf-board-prev (&optional count)
+  (interactive "p")
+  (dotimes (n (or count 1) (or count 1))
+    (message "index:" (index (car *back-ends*)))
+    (sgf->undo (car *back-ends*))
+    (pop *history*)
+    (update-display (current-buffer))))
 
 (provide 'sgf-board)

@@ -30,6 +30,8 @@
 (require 'sgf2el)
 (require 'sgf-board)
 (require 'sgf-gtp)
+(require 'sgf-gnugo)
+(require 'sgf)
 (require 'ert)
 
 
@@ -148,21 +150,17 @@
     (should (= 4 (length (neighbors board (/ (length board) 2)))))
     (should (= 3 (length (neighbors board 1))))))
 
-(defun stone-counts ()
-  (cons (stones-for (car *history*) :B)
-        (stones-for (car *history*) :W)))
-
 
 ;;; GTP and gnugo tests
 (ert-deftest sgf-test-sgf-gtp-char-to-gtp ()
-  (should (= 1  (sgf-gtp-char-to-gtp ?A)))
-  (should (= 8  (sgf-gtp-char-to-gtp ?H)))
-  (should (= 9  (sgf-gtp-char-to-gtp ?J)))
-  (should (= 19 (sgf-gtp-char-to-gtp ?T)))
-  (should (= 1  (sgf-gtp-char-to-gtp ?a)))
-  (should (= 8  (sgf-gtp-char-to-gtp ?h)))
-  (should (= 9  (sgf-gtp-char-to-gtp ?j)))
-  (should (= 19 (sgf-gtp-char-to-gtp ?t))))
+  (should (= 1  (sgf-gtp-char-to-pos ?A)))
+  (should (= 8  (sgf-gtp-char-to-pos ?H)))
+  (should (= 9  (sgf-gtp-char-to-pos ?J)))
+  (should (= 19 (sgf-gtp-char-to-pos ?T)))
+  (should (= 1  (sgf-gtp-char-to-pos ?a)))
+  (should (= 8  (sgf-gtp-char-to-pos ?h)))
+  (should (= 9  (sgf-gtp-char-to-pos ?j)))
+  (should (= 19 (sgf-gtp-char-to-pos ?t))))
 
 (defmacro with-gnugo (&rest body)
   `(let (*gnugo*)
@@ -228,7 +226,7 @@
     (with-gnugo
      (should (string= b1 (gtp-command *gnugo* "showboard")))
      (should (string= "" (gtp-command *gnugo* "black A1")))
-     (should (string= "" (sgf->move *gnugo* '(:B :pos . (0 . 1)))))
+     (should (string= "" (sgf->move   *gnugo* '(:B :pos . (0 . 1)))))
      (should (string= b2 (gtp-command *gnugo* "showboard"))))))
 
 
@@ -237,9 +235,17 @@
   (declare (indent 1))
   `(let (*sgf*)
      (progn
-       (setf *sgf* (make-instance 'sgf))
-       (setf (self *sgf*) (sgf2el-file-to-el ,file))
+       (setf *sgf* (make-instance 'sgf
+                     :self (sgf2el-file-to-el ,file)
+                     :index '(0)))
        ,@body)))
+
+(ert-deftest sgf-parse-empty-properties ()
+  (with-sgf-from-file "sgf-files/w-empty-properties.sgf"
+    (should (remove-if-not (lambda (prop)
+                             (let ((val (cdr prop)))
+                               (and (sequencep val) (= 0 (length val)))))
+                           (root *sgf*)))))
 
 (ert-deftest sgf-test-sgf-class-creation ()
   (with-sgf-from-file "sgf-files/jp-ming-5.sgf"
@@ -250,53 +256,52 @@
 
 
 ;;; SGF and board tests
-(defmacro with-sgf-file (file &rest body)
+(defmacro with-sgf-display (file &rest body)
   (declare (indent 1))
-  `(let (*sgf* buffer)
-     (unwind-protect
-         (progn
-           (setf *sgf* (make-instance 'sgf))
-           (setf (self *sgf*) (sgf2el-file-to-el ,file))
-           (setf buffer (sgf-board-display *sgf*))
-           (with-current-buffer buffer ,@body))
-       (should (kill-buffer buffer)))))
+  (let ((buffer (gensym "sgf-display-buffer")))
+    `(let ((,buffer (sgf-board-display
+                     (make-instance 'sgf
+                       :self (sgf2el-file-to-el ,file)
+                       :index '(0)))))
+       (unwind-protect (with-current-buffer ,buffer ,@body)
+         (should (kill-buffer ,buffer))))))
 (def-edebug-spec parse-many (file body))
 
 (ert-deftest sgf-display-fresh-sgf-buffer ()
-  (with-sgf-file "sgf-files/3-4-joseki.sgf"
+  (with-sgf-display "sgf-files/3-4-joseki.sgf"
     (should *history*)
     (should *back-ends*)))
 
 (ert-deftest sgf-independent-points-properties ()
-  (with-sgf-file "sgf-files/3-4-joseki.sgf"
-    (let ((points-length (length (assoc :points (sgf-ref sgf '(0))))))
-      (right 4)
-      (should (= points-length
-                 (length (assoc :points (sgf-ref sgf '(0)))))))))
+  (with-sgf-display "sgf-files/3-4-joseki.sgf"
+    (sgf-board-next 4)
+    (should (not (tree-equal (car *history*) (car (last *history*)))))))
+
+(defun stone-counts ()
+  (let ((pieces (car sgf-board-history)))
+    (flet ((count-for (color) (length (remove-if-not
+                                      (lambda (piece) (equal color (car piece)))
+                                      pieces))))
+      (cons (count-for :B) (count-for :W)))))
 
 (ert-deftest sgf-singl-stone-capture ()
-  (with-sgf-file "sgf-files/1-capture.sgf"
-    (right 3) (should (tree-equal (stone-counts) '(2 . 0)))))
+  (with-sgf-display "sgf-files/1-capture.sgf"
+    (sgf-board-next 3) (should (tree-equal (stone-counts) '(2 . 0)))))
 
 (ert-deftest sgf-remove-dead-stone-ko ()
-  (with-sgf-file "sgf-files/ko.sgf"
-    (should (tree-equal (stone-counts) '(0 . 0))) (right 1)
-    (should (tree-equal (stone-counts) '(1 . 0))) (right 1)
-    (should (tree-equal (stone-counts) '(1 . 1))) (right 1)
-    (should (tree-equal (stone-counts) '(2 . 1))) (right 1)
-    (should (tree-equal (stone-counts) '(2 . 2))) (right 1)
-    (should (tree-equal (stone-counts) '(3 . 2))) (right 1)
-    (should (tree-equal (stone-counts) '(2 . 3))) (right 1)
-    (should (tree-equal (stone-counts) '(3 . 2))) (right 1)
+  (with-sgf-display "sgf-files/ko.sgf"
+    (should (tree-equal (stone-counts) '(0 . 0))) (sgf-board-next)
+    (should (tree-equal (stone-counts) '(1 . 0))) (sgf-board-next)
+    (should (tree-equal (stone-counts) '(1 . 1))) (sgf-board-next)
+    (should (tree-equal (stone-counts) '(2 . 1))) (sgf-board-next)
+    (should (tree-equal (stone-counts) '(2 . 2))) (sgf-board-next)
+    (should (tree-equal (stone-counts) '(3 . 2))) (sgf-board-next)
+    (should (tree-equal (stone-counts) '(2 . 3))) (sgf-board-next)
+    (should (tree-equal (stone-counts) '(3 . 2))) (sgf-board-next)
     (should (tree-equal (stone-counts) '(2 . 3)))))
 
 (ert-deftest sgf-two-stone-capture ()
-  (with-sgf-file "sgf-files/2-capture.sgf"
-    (right 8) (should (tree-equal (stone-counts) '(6 . 0)))))
+  (with-sgf-display "sgf-files/2-capture.sgf"
+    (sgf-board-next 8) (should (tree-equal (stone-counts) '(6 . 0)))))
 
-(ert-deftest sgf-parse-empty-properties ()
-  (with-sgf-file "sgf-files/w-empty-properties.sgf"
-    (should (remove-if-not (lambda (prop)
-                             (let ((val (cdr prop)))
-                               (and (sequencep val) (= 0 (length val)))))
-                           (car sgf)))))
+(provide 'sgf-tests)

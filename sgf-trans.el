@@ -40,7 +40,7 @@
 (defgeneric sgf->move    (back-end move)    "Send MOVE to BACK-END.")
 (defgeneric sgf->board   (back-end size)    "Send SIZE to BACK-END.")
 (defgeneric sgf->resign  (back-end resign)  "Send RESIGN to BACK-END.")
-(defgeneric sgf->undo    (back-end undo)    "Send UNDO to BACK-END.")
+(defgeneric sgf->undo    (back-end)         "Tell BACK-END undo the last move.")
 (defgeneric sgf->comment (back-end comment) "Send COMMENT to BACK-END.")
 (defgeneric sgf<-size    (back-end)         "Get size from BACK-END")
 (defgeneric sgf<-name    (back-end)         "Get a game name from BACK-END.")

@@ -74,7 +74,7 @@
 
 (defmethod sgf->resign ((sgf sgf) resign))
 
-(defmethod sgf->undo ((sgf sgf) undo)
+(defmethod sgf->undo ((sgf sgf))
   (decf (car (last (index sgf))))
   (alistp (current sgf)))
 
@@ -94,9 +94,13 @@
 
 (defmethod sgf<-move ((sgf sgf))
   (incf (car (last (index sgf))))
-  (alistp (current sgf)))
+  (current sgf))
 
 (defmethod sgf<-comment ((sgf sgf))
   (aget (current sgf) :C))
+
+(defun sgf-from-file (file)
+  (interactive "f")
+  (make-instance 'sgf :self (sgf2el-file-to-el file)))
 
 (provide 'sgf)
