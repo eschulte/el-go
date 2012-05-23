@@ -58,18 +58,45 @@
 
 ;;; Class and interface
 (defclass sgf nil
-  ((sgf   :initarg :sgf   :accessor sgf   :initform nil)
-   (index :initarg :index :accessor index :initform nil))
+  ((self  :initarg :self  :accessor self  :initform nil)
+   (index :initarg :index :accessor index :initform '(0)))
   "Class for the SGF back end.")
 
-(defmethod sgf->move    ((sgf sgf) move))
-(defmethod sgf->board   ((sgf sgf) size))
-(defmethod sgf->resign  ((sgf sgf) resign))
-(defmethod sgf->undo    ((sgf sgf) undo))
-(defmethod sgf->comment ((sgf sgf) comment))
-(defmethod sgf<-alt     ((sgf sgf)))
-(defmethod sgf<-move    ((sgf sgf)))
-(defmethod sgf<-board   ((sgf sgf)))
-(defmethod sgf<-comment ((sgf sgf)))
+(defmethod current ((sgf sgf))
+  (sgf-ref (self sgf) (index sgf)))
+
+(defmethod root ((sgf sgf))
+  (sgf-ref (self sgf) '(0)))
+
+(defmethod sgf->move ((sgf sgf) move))
+
+(defmethod sgf->board ((sgf sgf) size))
+
+(defmethod sgf->resign ((sgf sgf) resign))
+
+(defmethod sgf->undo ((sgf sgf) undo)
+  (decf (car (last (index sgf))))
+  (alistp (current sgf)))
+
+;; (defmethod sgf->comment ((sgf sgf) comment)
+;;   ;; TODO: need a setf method for current
+;;   (push (cons :C comment) (current sgf)))
+
+(defmethod sgf<-size ((sgf sgf))
+  (or (aget (root sgf) :S)
+      (aget (root sgf) :SZ)))
+
+(defmethod sgf<-name ((sgf sgf))
+  (or (aget (root sgf) :GN)
+      (aget (root sgf) :EV)))
+
+(defmethod sgf<-alt ((sgf sgf)))
+
+(defmethod sgf<-move ((sgf sgf))
+  (incf (car (last (index sgf))))
+  (alistp (current sgf)))
+
+(defmethod sgf<-comment ((sgf sgf))
+  (aget (current sgf) :C))
 
 (provide 'sgf)

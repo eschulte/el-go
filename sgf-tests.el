@@ -32,6 +32,8 @@
 (require 'sgf-gtp)
 (require 'ert)
 
+
+;;; sgf2el tests
 (ert-deftest sgf-parse-simple-tree ()
   (let* ((str "(;GM[1]FF[4]
                SZ[19]
@@ -81,6 +83,8 @@
   (let ((sgf (sgf2el-file-to-el "sgf-files/jp-ming-5.sgf")))
     (should (= 247 (length sgf)))))
 
+
+;;; board tests
 (ert-deftest sgf-empty-board-to-string-test ()
   (let ((board (make-vector (* 19 19) nil))
         (string (concat "    A B C D E F G H J K L M N O P Q R S T\n"
@@ -137,29 +141,6 @@
     (board-to-string board)
     (should t)))
 
-(defmacro with-sgf-file (file &rest body)
-  (declare (indent 1))
-  `(let* ((sgf    (sgf2el-file-to-el ,file))
-          (buffer (display-sgf sgf)))
-     (unwind-protect
-         (with-current-buffer buffer ,@body)
-       (set-default 'sgf-index '(0))
-       (should (kill-buffer buffer)))))
-(def-edebug-spec parse-many (file body))
-
-(ert-deftest sgf-display-fresh-sgf-buffer ()
-  (with-sgf-file "sgf-files/3-4-joseki.sgf"
-    (should *board*)
-    (should *sgf*)
-    (should *index*)))
-
-(ert-deftest sgf-independent-points-properties ()
-  (with-sgf-file "sgf-files/3-4-joseki.sgf"
-    (let ((points-length (length (assoc :points (sgf-ref sgf '(0))))))
-      (right 4)
-      (should (= points-length
-                 (length (assoc :points (sgf-ref sgf '(0)))))))))
-
 (ert-deftest sgf-neighbors ()
   (let ((board (make-board 19)))
     (should (= 2 (length (neighbors board 0))))
@@ -171,33 +152,8 @@
   (cons (stones-for *board* :B)
         (stones-for *board* :W)))
 
-(ert-deftest sgf-singl-stone-capture ()
-  (with-sgf-file "sgf-files/1-capture.sgf"
-    (right 3) (should (tree-equal (stone-counts) '(2 . 0)))))
-
-(ert-deftest sgf-remove-dead-stone-ko ()
-  (with-sgf-file "sgf-files/ko.sgf"
-    (should (tree-equal (stone-counts) '(0 . 0))) (right 1)
-    (should (tree-equal (stone-counts) '(1 . 0))) (right 1)
-    (should (tree-equal (stone-counts) '(1 . 1))) (right 1)
-    (should (tree-equal (stone-counts) '(2 . 1))) (right 1)
-    (should (tree-equal (stone-counts) '(2 . 2))) (right 1)
-    (should (tree-equal (stone-counts) '(3 . 2))) (right 1)
-    (should (tree-equal (stone-counts) '(2 . 3))) (right 1)
-    (should (tree-equal (stone-counts) '(3 . 2))) (right 1)
-    (should (tree-equal (stone-counts) '(2 . 3)))))
-
-(ert-deftest sgf-two-stone-capture ()
-  (with-sgf-file "sgf-files/2-capture.sgf"
-    (right 8) (should (tree-equal (stone-counts) '(6 . 0)))))
-
-(ert-deftest sgf-parse-empty-properties ()
-  (with-sgf-file "sgf-files/w-empty-properties.sgf"
-    (should (remove-if-not (lambda (prop)
-                             (let ((val (cdr prop)))
-                               (and (sequencep val) (= 0 (length val)))))
-                           (car sgf)))))
-
+
+;;; GTP and gnugo tests
 (ert-deftest sgf-test-sgf-gtp-char-to-gtp ()
   (should (= 1  (sgf-gtp-char-to-gtp ?A)))
   (should (= 8  (sgf-gtp-char-to-gtp ?H)))
@@ -274,3 +230,72 @@
      (should (string= "" (gtp-command *gnugo* "black A1")))
      (should (string= "" (sgf->move *gnugo* '(:B :pos . (0 . 1)))))
      (should (string= b2 (gtp-command *gnugo* "showboard"))))))
+
+
+;;; SGF tests
+(defmacro with-sgf-from-file (file &rest body)
+  (declare (indent 1))
+  `(let (*sgf*)
+     (progn
+       (setf *sgf* (make-instance 'sgf))
+       (setf (self *sgf*) (sgf2el-file-to-el ,file))
+       ,@body)))
+
+(ert-deftest sgf-test-sgf-class-creation ()
+  (with-sgf-from-file "sgf-files/jp-ming-5.sgf"
+    (should (tree-equal (index *sgf*) '(0)))
+    (should (tree-equal (current *sgf*) (root *sgf*)))
+    (should (string= "Famous Blood Vomiting Game" (sgf<-name *sgf*)))
+    (should (= 19 (sgf<-size *sgf*)))))
+
+
+;;; SGF and board tests
+(defmacro with-sgf-file (file &rest body)
+  (declare (indent 1))
+  `(let (*sgf* buffer)
+     (unwind-protect
+         (progn
+           (setf *sgf* (make-instance 'sgf))
+           (setf (self *sgf*) (sgf2el-file-to-el ,file))
+           (setf buffer (sgf-board-display *sgf*))
+           (with-current-buffer buffer ,@body))
+       (should (kill-buffer buffer)))))
+(def-edebug-spec parse-many (file body))
+
+(ert-deftest sgf-display-fresh-sgf-buffer ()
+  (with-sgf-file "sgf-files/3-4-joseki.sgf"
+    (should *board*)))
+
+(ert-deftest sgf-independent-points-properties ()
+  (with-sgf-file "sgf-files/3-4-joseki.sgf"
+    (let ((points-length (length (assoc :points (sgf-ref sgf '(0))))))
+      (right 4)
+      (should (= points-length
+                 (length (assoc :points (sgf-ref sgf '(0)))))))))
+
+(ert-deftest sgf-singl-stone-capture ()
+  (with-sgf-file "sgf-files/1-capture.sgf"
+    (right 3) (should (tree-equal (stone-counts) '(2 . 0)))))
+
+(ert-deftest sgf-remove-dead-stone-ko ()
+  (with-sgf-file "sgf-files/ko.sgf"
+    (should (tree-equal (stone-counts) '(0 . 0))) (right 1)
+    (should (tree-equal (stone-counts) '(1 . 0))) (right 1)
+    (should (tree-equal (stone-counts) '(1 . 1))) (right 1)
+    (should (tree-equal (stone-counts) '(2 . 1))) (right 1)
+    (should (tree-equal (stone-counts) '(2 . 2))) (right 1)
+    (should (tree-equal (stone-counts) '(3 . 2))) (right 1)
+    (should (tree-equal (stone-counts) '(2 . 3))) (right 1)
+    (should (tree-equal (stone-counts) '(3 . 2))) (right 1)
+    (should (tree-equal (stone-counts) '(2 . 3)))))
+
+(ert-deftest sgf-two-stone-capture ()
+  (with-sgf-file "sgf-files/2-capture.sgf"
+    (right 8) (should (tree-equal (stone-counts) '(6 . 0)))))
+
+(ert-deftest sgf-parse-empty-properties ()
+  (with-sgf-file "sgf-files/w-empty-properties.sgf"
+    (should (remove-if-not (lambda (prop)
+                             (let ((val (cdr prop)))
+                               (and (sequencep val) (= 0 (length val)))))
+                           (car sgf)))))
