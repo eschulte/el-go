@@ -29,22 +29,16 @@
 (require 'sgf-util)
 (require 'sgf2el)
 
-
-;;; Visualization
 (defvar *board* nil "Holds the board local to a GO buffer.")
 
-(defvar *sgf*   nil "Holds the sgf data structure local to a GO buffer.")
-
-(defvar *index* nil "Index into the sgf local to a GO buffer.")
-
-(defun make-board (size) (make-vector (* size size) nil))
-
-(defun board-size (board) (round (sqrt (length board))))
+(defvar *backends* nil "Holds the back-ends connected to a board.")
 
 (defvar black-piece "X")
 
 (defvar white-piece "O")
 
+
+;;; Visualization
 (defun board-header (board)
   (let ((size (board-size board)))
     (concat "    "
@@ -54,9 +48,6 @@
                              (setq char (+ 1 char)))
                            (string char)))
                        (range size) " "))))
-
-(defun pos-to-index (pos size)
-  (+ (car pos) (* (cdr pos) size)))
 
 (defun board-pos-to-string (board pos)
   (let ((size (board-size board)))
@@ -105,17 +96,6 @@
     (dolist (piece pieces board)
       (setf (aref board (cdr piece)) (car piece)))))
 
-(defun sgf-board-options ()
-  (let ((count 0))
-    (mapcar (lambda (alt)
-              (prog1 (if (alistp alt)
-                         count
-                       (if (alistp (car alt))
-                           (list count 0)
-                         :other))
-                (incf count)))
-            (sgf-nthcdr *sgf* *index*))))
-
 (defun get-create-pieces ()
   (let ((pieces (aget (sgf-ref *sgf* *index*) :pieces)))
     (if pieces
@@ -142,7 +122,7 @@
       (insert comment)))
   (goto-char (point-min)))
 
-(defun display-sgf (game)
+(defun display (game)
   (let ((buffer (generate-new-buffer "*sgf*")))
     (with-current-buffer buffer
       (sgf-mode)
@@ -164,71 +144,14 @@
         (update-display)))
     (pop-to-buffer buffer)))
 
-(defun display-sgf-file (path)
-  (interactive "f")
-  (display-sgf (sgf2el-file-to-el path)))
-
-(defun up (&optional num)
-  (interactive "p")
-  (prog1 (dotimes (n num n)
-           (unless (alistp (sgf-ref *sgf* *index*))
-             (update-display)
-             (error "sgf: no more upwards moves."))
-           (decf (car (last *index* 2)))
-           (update-display))))
-
-(defun down (&optional num)
-  (interactive "p")
-  (prog1 (dotimes (n num n)
-           (incf (car (last *index* 2)))
-           (setf (car (last *index*)) 0)
-           (unless (alistp (sgf-ref *sgf* *index*))
-             (update-display)
-             (error "sgf: no more downwards moves."))
-           (update-display))))
-
-(defun left (&optional num)
-  (interactive "p")
-  (prog1 (dotimes (n num n)
-           (unless (alistp (sgf-ref *sgf* *index*))
-             (update-display)
-             (error "sgf: no more backwards moves."))
-           (decf (car (last *index*)))
-           (update-display))))
-
-(defun right (&optional num)
-  (interactive "p")
-  (prog1 (dotimes (n num n)
-           (incf (car (last *index*)))
-           (unless (alistp (sgf-ref *sgf* *index*))
-             (decf (car (last *index*)))
-             (update-display)
-             (error "sgf: no more forward moves."))
-           (update-display))))
-
 
 ;;; Board manipulation functions
-(defun sgf-nthcdr (sgf index)
-  (let ((part sgf))
-    (while (cdr index)
-      (setq part (nth (car index) part))
-      (setq index (cdr index)))
-    (setq part (nthcdr (car index) part))
-    part))
+(defun make-board (size) (make-vector (* size size) nil))
 
-(defun sgf-ref (sgf index)
-  (let ((part sgf))
-    (while (car index)
-      (setq part (nth (car index) part))
-      (setq index (cdr index)))
-    part))
+(defun board-size (board) (round (sqrt (length board))))
 
-(defun set-sgf-ref (sgf index new)
-  (eval `(setf ,(reduce (lambda (acc el) (list 'nth el acc))
-                        index :initial-value 'sgf)
-               ',new)))
-
-(defsetf sgf-ref set-sgf-ref)
+(defun pos-to-index (pos size)
+  (+ (car pos) (* (cdr pos) size)))
 
 (defun move-type (move)
   (cond
