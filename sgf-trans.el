@@ -35,7 +35,15 @@
 
 ;;; Code:
 (require 'sgf-util)
+(require 'eieio)
 
-;; TODO: API, and how functions may implement it
+(defgeneric sgf->move    (back-end move)    "Send MOVE to BACK-END.")
+(defgeneric sgf->board   (back-end size)    "Send SIZE to BACK-END.")
+(defgeneric sgf->resign  (back-end resign)  "Send RESIGN to BACK-END.")
+(defgeneric sgf->undo    (back-end undo)    "Send UNDO to BACK-END.")
+(defgeneric sgf->comment (back-end comment) "Send COMMENT to BACK-END.")
+(defgeneric sgf<-move    (back-end)         "Get POS from BACK-END.")
+(defgeneric sgf<-board   (back-end)         "Get SIZE from BACK-END.")
+(defgeneric sgf<-comment (back-end)         "Get COMMENT from BACK-END.")
 
 (provide 'sgf-trans)
