@@ -86,7 +86,7 @@
      (buffer-substring (+ 2 (point)) (- (point-max) 2)))))
 
 
-;;; gtp interface
+;;; Class and interface
 (defclass gnugo (gtp)
   ((buffer :initarg :buffer :accessor buffer :initform nil)))
 

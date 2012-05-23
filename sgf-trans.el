@@ -42,6 +42,7 @@
 (defgeneric sgf->resign  (back-end resign)  "Send RESIGN to BACK-END.")
 (defgeneric sgf->undo    (back-end undo)    "Send UNDO to BACK-END.")
 (defgeneric sgf->comment (back-end comment) "Send COMMENT to BACK-END.")
+(defgeneric sgf<-alt     (back-end)         "Get an alternative from BACK-END.")
 (defgeneric sgf<-move    (back-end)         "Get POS from BACK-END.")
 (defgeneric sgf<-board   (back-end)         "Get SIZE from BACK-END.")
 (defgeneric sgf<-comment (back-end)         "Get COMMENT from BACK-END.")

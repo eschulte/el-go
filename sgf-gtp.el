@@ -60,7 +60,9 @@
       (:KM      (format "komi %s" val))
       (t        nil))))
 
-(defclass gtp nil nil "Class for the GTP SGF GO backend.")
+
+;;; Class and interface
+(defclass gtp nil nil "Class for the GTP SGF GO back end.")
 
 (defgeneric gtp-command (back-end command)
   "Send gtp COMMAND to OBJECT and return any output.")
