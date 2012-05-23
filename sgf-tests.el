@@ -141,7 +141,8 @@
   (declare (indent 1))
   `(let* ((sgf    (sgf2el-file-to-el ,file))
           (buffer (display-sgf sgf)))
-     (unwind-protect (with-current-buffer buffer ,@body)
+     (unwind-protect
+         (with-current-buffer buffer ,@body)
        (set-default 'sgf-index '(0))
        (should (kill-buffer buffer)))))
 (def-edebug-spec parse-many (file body))
@@ -206,3 +207,70 @@
   (should (= 8  (sgf-gtp-char-to-gtp ?h)))
   (should (= 9  (sgf-gtp-char-to-gtp ?j)))
   (should (= 19 (sgf-gtp-char-to-gtp ?t))))
+
+(defmacro with-gnugo (&rest body)
+  `(let (*gnugo*)
+     (unwind-protect
+         (progn
+           (setf *gnugo* (make-instance 'gnugo))
+           (setf (buffer *gnugo*) (sgf-gnugo-start-process))
+           ,@body)
+       (let ((kill-buffer-query-functions nil))
+         (should (kill-buffer (buffer *gnugo*)))))))
+
+(ert-deftest sgf-test-gnugo-interaction-through-gtp ()
+  (let ((b1 (concat
+             "\n"
+             "   A B C D E F G H J K L M N O P Q R S T\n"
+             "19 . . . . . . . . . . . . . . . . . . . 19\n"
+             "18 . . . . . . . . . . . . . . . . . . . 18\n"
+             "17 . . . . . . . . . . . . . . . . . . . 17\n"
+             "16 . . . + . . . . . + . . . . . + . . . 16\n"
+             "15 . . . . . . . . . . . . . . . . . . . 15\n"
+             "14 . . . . . . . . . . . . . . . . . . . 14\n"
+             "13 . . . . . . . . . . . . . . . . . . . 13\n"
+             "12 . . . . . . . . . . . . . . . . . . . 12\n"
+             "11 . . . . . . . . . . . . . . . . . . . 11     "
+             "WHITE (O) has captured 0 stones\n"
+             "10 . . . + . . . . . + . . . . . + . . . 10     "
+             "BLACK (X) has captured 0 stones\n"
+             " 9 . . . . . . . . . . . . . . . . . . . 9\n"
+             " 8 . . . . . . . . . . . . . . . . . . . 8\n"
+             " 7 . . . . . . . . . . . . . . . . . . . 7\n"
+             " 6 . . . . . . . . . . . . . . . . . . . 6\n"
+             " 5 . . . . . . . . . . . . . . . . . . . 5\n"
+             " 4 . . . + . . . . . + . . . . . + . . . 4\n"
+             " 3 . . . . . . . . . . . . . . . . . . . 3\n"
+             " 2 . . . . . . . . . . . . . . . . . . . 2\n"
+             " 1 . . . . . . . . . . . . . . . . . . . 1\n"
+             "   A B C D E F G H J K L M N O P Q R S T"))
+        (b2 (concat
+             "\n"
+             "   A B C D E F G H J K L M N O P Q R S T\n"
+             "19 . . . . . . . . . . . . . . . . . . . 19\n"
+             "18 . . . . . . . . . . . . . . . . . . . 18\n"
+             "17 . . . . . . . . . . . . . . . . . . . 17\n"
+             "16 . . . + . . . . . + . . . . . + . . . 16\n"
+             "15 . . . . . . . . . . . . . . . . . . . 15\n"
+             "14 . . . . . . . . . . . . . . . . . . . 14\n"
+             "13 . . . . . . . . . . . . . . . . . . . 13\n"
+             "12 . . . . . . . . . . . . . . . . . . . 12\n"
+             "11 . . . . . . . . . . . . . . . . . . . 11     "
+             "WHITE (O) has captured 0 stones\n"
+             "10 . . . + . . . . . + . . . . . + . . . 10     "
+             "BLACK (X) has captured 0 stones\n"
+             " 9 . . . . . . . . . . . . . . . . . . . 9\n"
+             " 8 . . . . . . . . . . . . . . . . . . . 8\n"
+             " 7 . . . . . . . . . . . . . . . . . . . 7\n"
+             " 6 . . . . . . . . . . . . . . . . . . . 6\n"
+             " 5 . . . . . . . . . . . . . . . . . . . 5\n"
+             " 4 . . . + . . . . . + . . . . . + . . . 4\n"
+             " 3 . . . . . . . . . . . . . . . . . . . 3\n"
+             " 2 X . . . . . . . . . . . . . . . . . . 2\n"
+             " 1 X . . . . . . . . . . . . . . . . . . 1\n"
+             "   A B C D E F G H J K L M N O P Q R S T")))
+    (with-gnugo
+     (should (string= b1 (gtp-command *gnugo* "showboard")))
+     (should (string= "" (gtp-command *gnugo* "black A1")))
+     (should (string= "" (sgf->move *gnugo* '(:B :pos . (0 . 1)))))
+     (should (string= b2 (gtp-command *gnugo* "showboard"))))))

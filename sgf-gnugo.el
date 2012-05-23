@@ -47,42 +47,31 @@
 (defvar sgf-gnugo-process-name "gnugo"
   "name for the gnugo process")
 
-(defvar sgf-gnugo-buffer nil
-  "comint buffer holding the gnugo processes")
-
 (defun sgf-gnugo-start-process (&optional options)
-  (interactive)
-  (unless (comint-check-proc sgf-gnugo-buffer)
-    (setf sgf-gnugo-buffer
-	  (apply 'make-comint
-                 sgf-gnugo-process-name
-                 sgf-gnugo-program nil
-                 "--mode" "gtp" "--quiet"
-		 (when options (split-string options))))
-    (set-buffer sgf-gnugo-buffer)
-    (comint-mode)
-    ;; just to refresh everything
-    (sgf-gnugo-input-command "showboard")))
+  (let ((buffer (apply 'make-comint
+                       sgf-gnugo-process-name
+                       sgf-gnugo-program nil
+                       "--mode" "gtp" "--quiet"
+                       (when options (split-string options)))))
+    (with-current-buffer buffer (comint-mode))
+    buffer))
 
-(defun sgf-gnugo-command-to-string (command)
+(defun sgf-gnugo-command-to-string (gnugo command)
   "Send command to gnugo process and return gnugo's results as a string"
   (interactive "sgnugo command: ")
-  (sgf-gnugo-input-command command)
-  (sgf-gnugo-last-output))
+  (sgf-gnugo-input-command gnugo command)
+  (sgf-gnugo-last-output gnugo))
 
-(defun sgf-gnugo-input-command (command)
-  "Pass COMMAND to the gnugo process running in `sgf-gnugo-buffer'"
-  (save-excursion
-    (set-buffer sgf-gnugo-buffer)
+(defun sgf-gnugo-input-command (gnugo command)
+  "Pass COMMAND to the gnugo process running in the buffer of GNUGO."
+  (with-current-buffer (buffer gnugo)
     (goto-char (process-mark (get-buffer-process (current-buffer))))
     (insert command)
-    (comint-send-input)
-    (sgf-gnugo-wait-for-output)))
+    (comint-send-input))
+  (sgf-gnugo-wait-for-output gnugo))
 
-(defun sgf-gnugo-wait-for-output ()
-  "Wait until output arrives"
-  (save-excursion
-    (set-buffer sgf-gnugo-buffer)
+(defun sgf-gnugo-wait-for-output (gnugo)
+  (with-current-buffer (buffer gnugo)
     (while (progn
 	     (goto-char comint-last-input-end)
 	     (not (re-search-forward "^= *[^\000]+?\n\n" nil t)))
@@ -90,12 +79,19 @@
         (error (match-string 1)))
       (accept-process-output (get-buffer-process (current-buffer))))))
 
-(defun sgf-gnugo-last-output ()
-  (save-window-excursion
-    (set-buffer sgf-gnugo-buffer)
+(defun sgf-gnugo-last-output (gnugo)
+  (with-current-buffer (buffer gnugo)
     (comint-show-output)
     (org-babel-clean-text-properties
      (buffer-substring (+ 2 (point)) (- (point-max) 2)))))
+
+
+;;; gtp interface
+(defclass gnugo (gtp)
+  ((buffer :initarg :buffer :accessor buffer :initform nil)))
+
+(defmethod gtp-command ((gnugo gnugo) command)
+  (sgf-gnugo-command-to-string gnugo command))
 
 (provide 'sgf-gnugo)
 ;;; sgf-gnugo.el ends here

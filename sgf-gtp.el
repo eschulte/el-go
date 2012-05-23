@@ -47,7 +47,7 @@
      (t (err)))))
 
 (defun sgf-pos-to-gtp (pos)
-  (format "%c%d" (num-to-char (car pos)) (1+ (cdr pos))))
+  (format "%c%d" (num-to-char (1+ (car pos))) (1+ (cdr pos))))
 
 (defun sgf-to-gtp-command (element)
   "Convert an sgf ELEMENT to a gtp command."
@@ -59,6 +59,14 @@
       ((:SZ :S) (format "boardsize %s" val))
       (:KM      (format "komi %s" val))
       (t        nil))))
+
+(defclass gtp nil nil "Class for the GTP SGF GO backend.")
+
+(defgeneric gtp-command (back-end command)
+  "Send gtp COMMAND to OBJECT and return any output.")
+
+(defmethod sgf->move ((gtp gtp) move)
+  (gtp-command gtp (sgf-to-gtp-command move)))
 
 (provide 'sgf-gtp)
 ;;; sgf-gtp.el ends here
