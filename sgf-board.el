@@ -256,20 +256,6 @@
   (interactive "MComment: ")
   (message "comment: %S" comment))
 
-
-;;; Display mode
-(defvar sgf-board-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<right>") 'sgf-board-next)
-    (define-key map (kbd "<left>")  'sgf-board-prev)
-    (define-key map (kbd "q") (lambda () (interactive)
-                                (kill-buffer (current-buffer))))
-    map)
-  "Keymap for `sgf-board-mode'.")
-
-(define-derived-mode sgf-board-mode nil "SGF"
-  "Major mode for editing text written for viewing SGF files.")
-
 (defun sgf-board-next (&optional count)
   (interactive "p")
   (dotimes (n (or count 1) (or count 1))
@@ -283,5 +269,30 @@
     (sgf->undo *back-end*)
     (pop *history*)
     (update-display (current-buffer))))
+
+(defun sgf-board-mouse-move (ev)
+  (interactive "e")
+  (let ((position (posn-point (event-start ev))))
+    ))
+
+
+;;; Display mode
+(defvar sgf-board-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "m") 'sgf-board-act-move)
+    (define-key map (kbd "r") 'sgf-board-act-resign)
+    (define-key map (kbd "u") 'sgf-board-act-undo)
+    (define-key map (kbd "c") 'sgf-board-act-comment)
+    (define-key map (kbd "n") 'sgf-board-next)
+    (define-key map (kbd "p") 'sgf-board-prev)
+    (define-key map (kbd "<right>") 'sgf-board-next)
+    (define-key map (kbd "<left>")  'sgf-board-prev)
+    (define-key map (kbd "q") (lambda () (interactive)
+                                (kill-buffer (current-buffer))))
+    map)
+  "Keymap for `sgf-board-mode'.")
+
+(define-derived-mode sgf-board-mode nil "SGF"
+  "Major mode for editing text written for viewing SGF files.")
 
 (provide 'sgf-board)
