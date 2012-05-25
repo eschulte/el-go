@@ -62,4 +62,6 @@
         (setf (aref trans (pos-to-index (cons row col) size))
               (aref board (pos-to-index (cons col row) size)))))))
 
+(defun ear-muffs (str) (concat "*" str "*"))
+
 (provide 'sgf-util)

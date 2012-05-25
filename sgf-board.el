@@ -35,7 +35,6 @@
 (defvar *back-end* nil "Holds the primary back-end connected to a board.")
 
 (defvar black-piece "X")
-
 (defvar white-piece "O")
 
 
@@ -177,8 +176,6 @@
   (let ((header (board-header board))
         (body (board-body-to-string board)))
     (mapconcat #'identity (list header body header) "\n")))
-
-(defun ear-muffs (str) (concat "*" str "*"))
 
 (defun update-display (buffer)
   (with-current-buffer buffer
