@@ -31,6 +31,7 @@
 
 ;;; CODE:
 (require 'sgf-util)
+(require 'sgf-gtp)
 (require 'comint)
 
 (defun sgf-gnugo-gtp-commands ()
@@ -88,7 +89,9 @@
 
 ;;; Class and interface
 (defclass gnugo (gtp)
-  ((buffer :initarg :buffer :accessor buffer :initform nil)))
+  ((buffer :initarg :buffer
+           :accessor buffer
+           :initform (sgf-gnugo-start-process))))
 
 (defmethod gtp-command ((gnugo gnugo) command)
   (sgf-gnugo-command-to-string gnugo command))

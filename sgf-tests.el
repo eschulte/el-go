@@ -139,7 +139,8 @@
                          "  1 . . . . . . . . . . . . . . . . . . .  1\n"
                          "    A B C D E F G H J K L M N O P Q R S T")))
     (dolist (moves rest)
-      (apply-moves board moves))
+      (dolist (move moves)
+        (apply-move board move)))
     (board-to-string board)
     (should t)))
 
@@ -153,14 +154,14 @@
 
 ;;; GTP and gnugo tests
 (ert-deftest sgf-test-sgf-gtp-char-to-gtp ()
-  (should (= 1  (sgf-gtp-char-to-pos ?A)))
-  (should (= 8  (sgf-gtp-char-to-pos ?H)))
-  (should (= 9  (sgf-gtp-char-to-pos ?J)))
-  (should (= 19 (sgf-gtp-char-to-pos ?T)))
-  (should (= 1  (sgf-gtp-char-to-pos ?a)))
-  (should (= 8  (sgf-gtp-char-to-pos ?h)))
-  (should (= 9  (sgf-gtp-char-to-pos ?j)))
-  (should (= 19 (sgf-gtp-char-to-pos ?t))))
+  (should (= 1  (sgf-gtp-char-to-num ?A)))
+  (should (= 8  (sgf-gtp-char-to-num ?H)))
+  (should (= 9  (sgf-gtp-char-to-num ?J)))
+  (should (= 19 (sgf-gtp-char-to-num ?T)))
+  (should (= 1  (sgf-gtp-char-to-num ?a)))
+  (should (= 8  (sgf-gtp-char-to-num ?h)))
+  (should (= 9  (sgf-gtp-char-to-num ?j)))
+  (should (= 19 (sgf-gtp-char-to-num ?t))))
 
 (defmacro with-gnugo (&rest body)
   `(let (*gnugo*)

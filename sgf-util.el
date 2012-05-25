@@ -51,18 +51,15 @@
        (listp (car list))
        (not (listp (caar list)))))
 
-(defun num-to-char (num)
-  (flet ((err () (error "sgf: invalid num %s" num)))
-    (cond
-     ((< num 1) (err))
-     ((< num 9) (+ ?A (1- num)))
-     (t         (+ ?A num)))))
+(defun pos-to-index (pos size)
+  (+ (car pos) (* (cdr pos) size)))
 
-(defun char-to-num (char)
-  (cond
-   ((or (< char ?A) (< ?z char))
-    (error "sgf: invalid char %s" char))
-   ((< char ?a) (+ 26 (- char ?A)))
-   (t           (- char ?a))))
+(defun transpose-array (board)
+  (let ((size (round (sqrt (length board))))
+        (trans (make-vector (length board) nil)))
+    (dotimes (row size trans)
+      (dotimes (col size)
+        (setf (aref trans (pos-to-index (cons row col) size))
+              (aref board (pos-to-index (cons col row) size)))))))
 
 (provide 'sgf-util)

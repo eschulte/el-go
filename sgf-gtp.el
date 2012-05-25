@@ -35,19 +35,30 @@
 (require 'sgf-util)
 (require 'sgf-trans)
 
-(defun sgf-gtp-char-to-pos (char)
+(defun sgf-gtp-char-to-num (char)
   (flet ((err () (error "sgf-gtp: invalid char %s" char)))
     (cond
      ((< char ?A)  (err))
-     ((< char ?I)  (1+ (- char ?A)))
-     ((<= char ?T) (- char ?A))
+     ((< char ?I)  (- char ?A))
+     ((<= char ?T) (1- (- char ?A)))
      ((< char ?a)  (err))
-     ((< char ?i)  (1+ (- char ?a)))
-     ((<= char ?t) (- char ?a))
+     ((< char ?i)  (- char ?a))
+     ((<= char ?t) (1- (- char ?a)))
      (t (err)))))
+
+(defun sgf-gtp-num-to-char (num)
+  (flet ((err () (error "sgf: invalid num %s" num)))
+    (cond
+     ((< num 1) (err))
+     ((< num 9) (+ ?A (1- num)))
+     (t         (+ ?A num)))))
 
 (defun sgf-pos-to-gtp (pos)
   (format "%c%d" (num-to-char (1+ (car pos))) (1+ (cdr pos))))
+
+(defun sgf-gtp-to-pos (color gtp)
+  (cons color (cons :pos (cons (sgf-gtp-char-to-num (aref gtp 0))
+                               (1- (parse-integer (substring gtp 1)))))))
 
 (defun sgf-to-gtp-command (element)
   "Convert an sgf ELEMENT to a gtp command."
@@ -69,6 +80,25 @@
 
 (defmethod sgf->move ((gtp gtp) move)
   (gtp-command gtp (sgf-to-gtp-command move)))
+
+(defmethod sgf<-size ((gtp gtp))
+  (parse-integer (gtp-command gtp "query_boardsize")))
+
+(defmethod sgf<-name ((gtp gtp))
+  (gtp-command gtp "name"))
+
+(defmethod sgf<-comment ((gtp gtp)) nil)
+
+(defmethod sgf<-move ((gtp gtp) color)
+  (sgf-gtp-to-pos color
+                  (case color
+                    (:B (gtp-command gtp "genmove_black"))
+                    (:W (gtp-command gtp "genmove_white")))))
+
+(defmethod sgf<-turn ((gtp gtp) color) (list (sgf<-move gtp color)))
+
+(defmethod sgf->reset ((gtp gtp))
+  (gtp-command gtp "clear_board"))
 
 (provide 'sgf-gtp)
 ;;; sgf-gtp.el ends here

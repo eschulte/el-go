@@ -31,6 +31,7 @@
 
 (defvar *history*   nil "Holds the board history for a GO buffer.")
 (defvar *size*      nil "Holds the board size.")
+(defvar *turn*      nil "Holds the color of the current turn.")
 (defvar *back-ends* nil "Holds the back-ends connected to a board.")
 
 (defvar black-piece "X")
@@ -43,9 +44,6 @@
 
 (defun board-size (board) (round (sqrt (length board))))
 
-(defun pos-to-index (pos size)
-  (+ (car pos) (* (cdr pos) size)))
-
 (defun move-type (move)
   (cond
    ((member (car move) '(:B  :W))  :move)
@@ -54,7 +52,14 @@
 (defun other-color (color)
   (if (equal color :B) :W :B))
 
-(defun apply-moves (board moves)
+(defun apply-turn-to-board (moves)
+  (let ((board (pieces-to-board (car *history*) *size*)))
+    (clear-labels board)
+    (dolist (move moves) (apply-move board move))
+    (push (board-to-pieces board) *history*)
+    (update-display (current-buffer))))
+
+(defun apply-move (board move)
   (flet ((bset (val data)
                (let ((data (if (listp (car data)) data (list data))))
                  (setf (aref board (pos-to-index (aget data :pos)
@@ -65,15 +70,14 @@
                          (:LB (aget data :label))
                          (:LW (aget data :label))
                          (t nil))))))
-    (dolist (move moves board)
-      (case (move-type move)
-        (:move
-         (bset (car move) (cdr move))
-         (let ((color (if (equal :B (car move)) :B :W)))
-           (remove-dead board (other-color color))
-           (remove-dead board color)))
-        (:label
-         (dolist (data (cdr move)) (bset (car move) data)))))))
+    (case (move-type move)
+      (:move
+       (bset (car move) (cdr move))
+       (let ((color (if (equal :B (car move)) :B :W)))
+         (remove-dead board (other-color color))
+         (remove-dead board color)))
+      (:label
+       (dolist (data (cdr move)) (bset (car move) data))))))
 
 (defun clear-labels (board)
   (dotimes (point (length board) board)
@@ -157,7 +161,7 @@
 
 (defun board-row-to-string (board row)
   (let* ((size (board-size board))
-         (label (format "%3d" (- size row)))
+         (label (format "%3d" (1+ row)))
          (row-body (mapconcat
                     (lambda (n)
                       (board-pos-to-string board (cons row n)))
@@ -165,8 +169,9 @@
     (concat label " " row-body label)))
 
 (defun board-body-to-string (board)
-  (mapconcat (lambda (m) (board-row-to-string board m))
-             (range (board-size board)) "\n"))
+  (let ((board (transpose-array board)))
+    (mapconcat (lambda (m) (board-row-to-string board m))
+               (reverse (range (board-size board))) "\n")))
 
 (defun board-to-string (board)
   (let ((header (board-header board))
@@ -197,6 +202,7 @@
       (when (sgf<-name back-end)
         (rename-buffer (ear-muffs (sgf<-name back-end)) 'unique))
       (set (make-local-variable '*back-ends*) (list back-end))
+      (set (make-local-variable '*turn*) :B)
       (set (make-local-variable '*size*) (sgf<-size back-end))
       (set (make-local-variable '*history*)
            (list (board-to-pieces (make-board *size*))))
@@ -221,21 +227,25 @@
 
 (defun sgf-board-act-move (&optional pos)
   (interactive)
-  (unless pos
-    (setq pos
-          (cons
-           (char-to-num
-            (aref (downcase
-                   (org-icompleting-read
-                    "X pos: "
-                    (mapcar #'string
-                            (mapcar #'num-to-char (range 1 *size*)))))
-                  0))
-           (1- (string-to-number
-                (org-icompleting-read
-                 "Y pos: "
-                 (mapcar #'number-to-string (range 1 *size*))))))))
-  (message "move: %S" pos))
+  (let* ((color (case *turn* (:B "black") (:W "white")))
+         (move (cons *turn*
+                     (cons :pos
+                           (cons (sgf-gtp-char-to-num
+                                  (aref (downcase
+                                         (org-icompleting-read
+                                          (format "[%s] X pos: " color)
+                                          (mapcar #'string
+                                                  (mapcar #'sgf-gtp-num-to-char
+                                                          (range 1 *size*)))))
+                                        0))
+                                 (1- (string-to-number
+                                      (org-icompleting-read
+                                       (format "[%s] Y pos: " color)
+                                       (mapcar #'number-to-string
+                                               (range 1 *size*))))))))))
+    (sgf->move (car *back-ends*) move)
+    (apply-turn-to-board (list move))
+    (setf *turn* (other-color *turn*))))
 
 (defun sgf-board-act-resign ()
   (interactive)
@@ -266,14 +276,8 @@
 (defun sgf-board-next (&optional count)
   (interactive "p")
   (dotimes (n (or count 1) (or count 1))
-    (let ((board (pieces-to-board (car *history*) *size*))
-          (move (sgf<-move (car *back-ends*))))
-      (if move
-          (push (board-to-pieces
-                 (apply-moves (clear-labels board) move))
-                *history*)
-        (error "sgf-board: no more moves"))
-      (update-display (current-buffer)))))
+    (apply-turn-to-board (sgf<-turn (car *back-ends*) *turn*))
+    (setf *turn* (other-color *turn*))))
 
 (defun sgf-board-prev (&optional count)
   (interactive "p")
