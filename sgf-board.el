@@ -151,12 +151,14 @@
                   ((= size 9)
                    (or (= 2 n)
                        (= 4 n))))))
-      (let ((val (aref board (pos-to-index pos size))))
-        (cond
-         ((equal val :W) white-piece)
-         ((equal val :B) black-piece)
-         ((and (stringp val) (= 1 (length val)) val))
-         (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" ".")))))))
+      (let* ((val (aref board (pos-to-index pos size)))
+             (str (cond
+                   ((equal val :W) white-piece)
+                   ((equal val :B) black-piece)
+                   ((and (stringp val) (= 1 (length val)) val))
+                   (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" ".")))))
+        (put-text-property 0 (length str) :pos pos str)
+        str))))
 
 (defun board-row-to-string (board row)
   (let* ((size (board-size board))
