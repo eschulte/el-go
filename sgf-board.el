@@ -29,10 +29,10 @@
 (require 'sgf-util)
 (require 'sgf-trans)
 
-(defvar *history*   nil "Holds the board history for a GO buffer.")
-(defvar *size*      nil "Holds the board size.")
-(defvar *turn*      nil "Holds the color of the current turn.")
-(defvar *back-ends* nil "Holds the back-ends connected to a board.")
+(defvar *history*  nil "Holds the board history for a GO buffer.")
+(defvar *size*     nil "Holds the board size.")
+(defvar *turn*     nil "Holds the color of the current turn.")
+(defvar *back-end* nil "Holds the primary back-end connected to a board.")
 
 (defvar black-piece "X")
 
@@ -188,7 +188,7 @@
             (board-to-string
              (pieces-to-board (car *history*) *size*))
             "\n\n")
-    (let ((comment (sgf<-comment (car *back-ends*))))
+    (let ((comment (sgf<-comment *back-end*)))
       (when comment
         (insert (make-string (+ 6 (* 2 *size*)) ?=)
                 "\n\n"
@@ -201,7 +201,7 @@
       (sgf-board-mode)
       (when (sgf<-name back-end)
         (rename-buffer (ear-muffs (sgf<-name back-end)) 'unique))
-      (set (make-local-variable '*back-ends*) (list back-end))
+      (set (make-local-variable '*back-end*) back-end)
       (set (make-local-variable '*turn*) :B)
       (set (make-local-variable '*size*) (sgf<-size back-end))
       (set (make-local-variable '*history*)
@@ -243,7 +243,7 @@
                                        (format "[%s] Y pos: " color)
                                        (mapcar #'number-to-string
                                                (range 1 *size*))))))))))
-    (sgf->move (car *back-ends*) move)
+    (sgf->move *back-end* move)
     (apply-turn-to-board (list move))
     (setf *turn* (other-color *turn*))))
 
@@ -276,14 +276,14 @@
 (defun sgf-board-next (&optional count)
   (interactive "p")
   (dotimes (n (or count 1) (or count 1))
-    (apply-turn-to-board (sgf<-turn (car *back-ends*) *turn*))
+    (apply-turn-to-board (sgf<-turn *back-end* *turn*))
     (setf *turn* (other-color *turn*))))
 
 (defun sgf-board-prev (&optional count)
   (interactive "p")
   (dotimes (n (or count 1) (or count 1))
-    (message "index:" (index (car *back-ends*)))
-    (sgf->undo (car *back-ends*))
+    (message "index:" (index *back-end*))
+    (sgf->undo *back-end*)
     (pop *history*)
     (update-display (current-buffer))))
 
