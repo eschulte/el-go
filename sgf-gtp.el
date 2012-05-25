@@ -97,8 +97,10 @@
 
 (defmethod sgf<-turn ((gtp gtp) color) (list (sgf<-move gtp color)))
 
-(defmethod sgf->reset ((gtp gtp))
-  (gtp-command gtp "clear_board"))
+(defmethod sgf->reset ((gtp gtp)) (gtp-command gtp "clear_board"))
+
+(defmethod sgf->undo ((gtp gtp)) (gtp-command gtp "undo"))
+
 
 (provide 'sgf-gtp)
 ;;; sgf-gtp.el ends here

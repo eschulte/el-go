@@ -157,7 +157,7 @@
                    ((equal val :B) black-piece)
                    ((and (stringp val) (= 1 (length val)) val))
                    (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" ".")))))
-        (put-text-property 0 (length str) :pos pos str)
+        (put-text-property 0 (length str) :pos (cons (cdr pos) (car pos)) str)
         str))))
 
 (defun board-row-to-string (board row)
@@ -229,32 +229,35 @@
 (defun sgf-board-act-move (&optional pos)
   (interactive)
   (let* ((color (case *turn* (:B "black") (:W "white")))
-         (move (cons *turn*
-                     (cons :pos
-                           (cons (sgf-gtp-char-to-num
-                                  (aref (downcase
-                                         (org-icompleting-read
-                                          (format "[%s] X pos: " color)
-                                          (mapcar #'string
-                                                  (mapcar #'sgf-gtp-num-to-char
-                                                          (range 1 *size*)))))
-                                        0))
-                                 (1- (string-to-number
-                                      (org-icompleting-read
-                                       (format "[%s] Y pos: " color)
-                                       (mapcar #'number-to-string
-                                               (range 1 *size*))))))))))
+         (pos (or pos (cons (sgf-gtp-char-to-num
+                             (aref (downcase
+                                    (org-icompleting-read
+                                     (format "[%s] X pos: " color)
+                                     (mapcar #'string
+                                             (mapcar #'sgf-gtp-num-to-char
+                                                     (range 1 *size*)))))
+                                   0))
+                            (1- (string-to-number
+                                 (org-icompleting-read
+                                  (format "[%s] Y pos: " color)
+                                  (mapcar #'number-to-string
+                                          (range 1 *size*))))))))
+         (move (cons *turn* (cons :pos pos))))
+    (message "move:%S" move)
     (sgf->move *back-end* move)
     (apply-turn-to-board (list move))
     (setf *turn* (other-color *turn*))))
 
 (defun sgf-board-act-resign ()
   (interactive)
-  (message "resign"))
+  (sgf->reset *back-end*))
 
 (defun sgf-board-act-undo (&optional num)
   (interactive "p")
-  (message "undo: %S" num))
+  (sgf->undo *back-end*)
+  (pop *history*)
+  (update-display (current-buffer))
+  (setf *turn* (other-color *turn*)))
 
 (defun sgf-board-act-comment (&optional comment)
   (interactive "MComment: ")
@@ -266,31 +269,23 @@
     (apply-turn-to-board (sgf<-turn *back-end* *turn*))
     (setf *turn* (other-color *turn*))))
 
-(defun sgf-board-prev (&optional count)
-  (interactive "p")
-  (dotimes (n (or count 1) (or count 1))
-    (message "index:" (index *back-end*))
-    (sgf->undo *back-end*)
-    (pop *history*)
-    (update-display (current-buffer))))
-
 (defun sgf-board-mouse-move (ev)
   (interactive "e")
-  (let ((position (posn-point (event-start ev))))
-    ))
+  (sgf-board-act-move (get-text-property (posn-point (event-start ev)) :pos)))
 
 
 ;;; Display mode
 (defvar sgf-board-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "<down-mouse-1>") 'sgf-board-mouse-move)
     (define-key map (kbd "m") 'sgf-board-act-move)
     (define-key map (kbd "r") 'sgf-board-act-resign)
     (define-key map (kbd "u") 'sgf-board-act-undo)
     (define-key map (kbd "c") 'sgf-board-act-comment)
     (define-key map (kbd "n") 'sgf-board-next)
-    (define-key map (kbd "p") 'sgf-board-prev)
+    (define-key map (kbd "p") 'sgf-board-act-undo)
     (define-key map (kbd "<right>") 'sgf-board-next)
-    (define-key map (kbd "<left>")  'sgf-board-prev)
+    (define-key map (kbd "<left>")  'sgf-board-act-undo)
     (define-key map (kbd "q") (lambda () (interactive)
                                 (kill-buffer (current-buffer))))
     map)
