@@ -271,7 +271,7 @@
 (ert-deftest sgf-display-fresh-sgf-buffer ()
   (with-sgf-display "sgf-files/3-4-joseki.sgf"
     (should *history*)
-    (should *back-ends*)))
+    (should *back-end*)))
 
 (ert-deftest sgf-independent-points-properties ()
   (with-sgf-display "sgf-files/3-4-joseki.sgf"
