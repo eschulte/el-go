@@ -279,7 +279,7 @@
     (should (not (tree-equal (car *history*) (car (last *history*)))))))
 
 (defun stone-counts ()
-  (let ((pieces (car sgf-board-history)))
+  (let ((pieces (car *history*)))
     (flet ((count-for (color) (length (remove-if-not
                                       (lambda (piece) (equal color (car piece)))
                                       pieces))))

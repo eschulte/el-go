@@ -92,7 +92,7 @@
 
 (defmethod sgf<-alt ((sgf sgf)))
 
-(defmethod sgf<-move ((sgf sgf) color)
+(defmethod sgf<-turn ((sgf sgf) color)
   (incf (car (last (index sgf))))
   (current sgf))
 
