@@ -163,11 +163,13 @@
 (defun board-row-to-string (board row)
   (let* ((size (board-size board))
          (label (format "%3d" (1+ row)))
-         (row-body (mapconcat
-                    (lambda (n)
-                      (board-pos-to-string board (cons row n)))
-                    (range size) " ")))
-    (concat label " " row-body label)))
+         (row-body ""))
+    (dotimes (n size)
+      (setq row-body
+            (concat row-body
+                    (board-pos-to-string board (cons row n))
+                    " ")))
+    (concat label " " (substring row-body 0 (1- (length row-body))) label)))
 
 (defun board-body-to-string (board)
   (let ((board (transpose-array board)))
