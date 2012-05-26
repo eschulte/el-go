@@ -26,7 +26,7 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
-(require 'sgf-util)
+(require 'go-util)
 
 (defvar prop-re
   "\\([[:alpha:]]+\\)\\(\\(\\[\\]\\|[[:space:]]*\\[[^\000]*?[^\\]\\]\\)+\\)")

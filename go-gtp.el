@@ -54,7 +54,7 @@
      (t         (+ ?A num)))))
 
 (defun go-pos-to-gtp (pos)
-  (format "%c%d" (num-to-char (1+ (car pos))) (1+ (cdr pos))))
+  (format "%c%d" (go-gtp-num-to-char (1+ (car pos))) (1+ (cdr pos))))
 
 (defun go-gtp-to-pos (color gtp)
   (cons color (cons :pos (cons (go-gtp-char-to-num (aref gtp 0))

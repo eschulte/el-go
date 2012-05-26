@@ -27,11 +27,11 @@
 
 ;;; Code:
 (require 'go-util)
-(require 'go2el)
+(require 'sgf2el)
 (require 'go-board)
 (require 'go-gtp)
 (require 'go-gnugo)
-(require 'go)
+(require 'go-sgf)
 (require 'ert)
 
 
@@ -154,14 +154,14 @@
 
 ;;; GTP and gnugo tests
 (ert-deftest go-test-go-gtp-char-to-gtp ()
-  (should (= 1  (go-gtp-char-to-num ?A)))
-  (should (= 8  (go-gtp-char-to-num ?H)))
-  (should (= 9  (go-gtp-char-to-num ?J)))
-  (should (= 19 (go-gtp-char-to-num ?T)))
-  (should (= 1  (go-gtp-char-to-num ?a)))
-  (should (= 8  (go-gtp-char-to-num ?h)))
-  (should (= 9  (go-gtp-char-to-num ?j)))
-  (should (= 19 (go-gtp-char-to-num ?t))))
+  (should (= 0  (go-gtp-char-to-num ?A)))
+  (should (= 7  (go-gtp-char-to-num ?H)))
+  (should (= 8  (go-gtp-char-to-num ?J)))
+  (should (= 18 (go-gtp-char-to-num ?T)))
+  (should (= 0  (go-gtp-char-to-num ?a)))
+  (should (= 7  (go-gtp-char-to-num ?h)))
+  (should (= 8  (go-gtp-char-to-num ?j)))
+  (should (= 18 (go-gtp-char-to-num ?t))))
 
 (defmacro with-gnugo (&rest body)
   `(let (*gnugo*)

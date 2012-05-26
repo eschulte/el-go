@@ -1,4 +1,4 @@
-;;; sgf-trans.el --- Translate and transfer between GO back ends
+;;; go-trans.el --- Translate and transfer between GO back ends
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -34,20 +34,20 @@
 ;; - the IGS protocol
 
 ;;; Code:
-(require 'sgf-util)
+(require 'go-util)
 (require 'eieio)
 
-(defgeneric sgf->move    (back-end move)    "Send MOVE to BACK-END.")
-(defgeneric sgf->board   (back-end size)    "Send SIZE to BACK-END.")
-(defgeneric sgf->resign  (back-end resign)  "Send RESIGN to BACK-END.")
-(defgeneric sgf->undo    (back-end)         "Tell BACK-END undo the last move.")
-(defgeneric sgf->comment (back-end comment) "Send COMMENT to BACK-END.")
-(defgeneric sgf->reset   (back-end)         "Reset the current BACK-END.")
-(defgeneric sgf<-size    (back-end)         "Get size from BACK-END")
-(defgeneric sgf<-name    (back-end)         "Get a game name from BACK-END.")
-(defgeneric sgf<-alt     (back-end)         "Get an alternative from BACK-END.")
-(defgeneric sgf<-move    (back-end color)   "Get a pos from BACK-END.")
-(defgeneric sgf<-turn    (back-end color)   "Get a full turn from BACK-END.")
-(defgeneric sgf<-comment (back-end)         "Get COMMENT from BACK-END.")
+(defgeneric go->move    (back-end move)    "Send MOVE to BACK-END.")
+(defgeneric go->board   (back-end size)    "Send SIZE to BACK-END.")
+(defgeneric go->resign  (back-end resign)  "Send RESIGN to BACK-END.")
+(defgeneric go->undo    (back-end)         "Tell BACK-END undo the last move.")
+(defgeneric go->comment (back-end comment) "Send COMMENT to BACK-END.")
+(defgeneric go->reset   (back-end)         "Reset the current BACK-END.")
+(defgeneric go<-size    (back-end)         "Get size from BACK-END")
+(defgeneric go<-name    (back-end)         "Get a game name from BACK-END.")
+(defgeneric go<-alt     (back-end)         "Get an alternative from BACK-END.")
+(defgeneric go<-move    (back-end color)   "Get a pos from BACK-END.")
+(defgeneric go<-turn    (back-end color)   "Get a full turn from BACK-END.")
+(defgeneric go<-comment (back-end)         "Get COMMENT from BACK-END.")
 
-(provide 'sgf-trans)
+(provide 'go-trans)

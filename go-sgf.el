@@ -63,10 +63,10 @@
   "Class for the SGF back end.")
 
 (defmethod current ((sgf sgf))
-  (sgf-ref (self sgf) (index sgf)))
+  (go-sgf-ref (self sgf) (index sgf)))
 
 (defmethod root ((sgf sgf))
-  (sgf-ref (self sgf) '(0)))
+  (go-sgf-ref (self sgf) '(0)))
 
 (defmethod go->move ((sgf sgf) move))
 
