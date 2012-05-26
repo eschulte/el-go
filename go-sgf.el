@@ -1,4 +1,4 @@
-;;; sgf.el --- SGF back end
+;;; go-sgf.el --- SGF back end
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -27,13 +27,13 @@
 
 ;; Commentary:
 
-;; This file implements an `sgf-trans' interface into an SGF file.
+;; This file implements an `go-trans' interface into an SGF file.
 
 ;; Code:
-(require 'sgf-util)
-(require 'sgf-trans)
+(require 'go-util)
+(require 'go-trans)
 
-(defun sgf-nthcdr (sgf index)
+(defun go-sgf-nthcdr (sgf index)
   (let ((part sgf))
     (while (cdr index)
       (setq part (nth (car index) part))
@@ -41,19 +41,19 @@
     (setq part (nthcdr (car index) part))
     part))
 
-(defun sgf-ref (sgf index)
+(defun go-sgf-ref (sgf index)
   (let ((part sgf))
     (while (car index)
       (setq part (nth (car index) part))
       (setq index (cdr index)))
     part))
 
-(defun set-sgf-ref (sgf index new)
+(defun set-go-sgf-ref (sgf index new)
   (eval `(setf ,(reduce (lambda (acc el) (list 'nth el acc))
                         index :initial-value 'sgf)
                ',new)))
 
-(defsetf sgf-ref set-sgf-ref)
+(defsetf go-sgf-ref set-go-sgf-ref)
 
 
 ;;; Class and interface
@@ -68,39 +68,39 @@
 (defmethod root ((sgf sgf))
   (sgf-ref (self sgf) '(0)))
 
-(defmethod sgf->move ((sgf sgf) move))
+(defmethod go->move ((sgf sgf) move))
 
-(defmethod sgf->board ((sgf sgf) size))
+(defmethod go->board ((sgf sgf) size))
 
-(defmethod sgf->resign ((sgf sgf) resign))
+(defmethod go->resign ((sgf sgf) resign))
 
-(defmethod sgf->undo ((sgf sgf))
+(defmethod go->undo ((sgf sgf))
   (decf (car (last (index sgf))))
   (alistp (current sgf)))
 
-;; (defmethod sgf->comment ((sgf sgf) comment)
+;; (defmethod go->comment ((sgf sgf) comment)
 ;;   ;; TODO: need a setf method for current
 ;;   (push (cons :C comment) (current sgf)))
 
-(defmethod sgf<-size ((sgf sgf))
+(defmethod go<-size ((sgf sgf))
   (or (aget (root sgf) :S)
       (aget (root sgf) :SZ)))
 
-(defmethod sgf<-name ((sgf sgf))
+(defmethod go<-name ((sgf sgf))
   (or (aget (root sgf) :GN)
       (aget (root sgf) :EV)))
 
-(defmethod sgf<-alt ((sgf sgf)))
+(defmethod go<-alt ((sgf sgf)))
 
-(defmethod sgf<-turn ((sgf sgf) color)
+(defmethod go<-turn ((sgf sgf) color)
   (incf (car (last (index sgf))))
   (current sgf))
 
-(defmethod sgf<-comment ((sgf sgf))
+(defmethod go<-comment ((sgf sgf))
   (aget (current sgf) :C))
 
-(defun sgf-from-file (file)
+(defun go-from-file (file)
   (interactive "f")
   (make-instance 'sgf :self (sgf2el-file-to-el file)))
 
-(provide 'sgf)
+(provide 'go-sgf)

@@ -1,4 +1,4 @@
-;;; sgf-gnugo.el --- functions for interaction with a gnugo process using gtp
+;;; go-gnugo.el --- functions for interaction with a gnugo process using gtp
 
 ;; Copyright (C) 2008 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -30,48 +30,48 @@
 ;; Interaction with gnugo
 
 ;;; CODE:
-(require 'sgf-util)
-(require 'sgf-gtp)
+(require 'go-util)
+(require 'go-gtp)
 (require 'comint)
 
-(defun sgf-gnugo-gtp-commands ()
+(defun go-gnugo-gtp-commands ()
   "Return a list of the gnugo GTP commands."
   (split-string
    (substring
     (shell-command-to-string
-     (format "echo list_commands | %s --mode gtp" sgf-gnugo-program))
+     (format "echo list_commands | %s --mode gtp" go-gnugo-program))
     2 -2) "\n"))
 
-(defvar sgf-gnugo-program "gnugo"
+(defvar go-gnugo-program "gnugo"
   "path to gnugo executable")
 
-(defvar sgf-gnugo-process-name "gnugo"
+(defvar go-gnugo-process-name "gnugo"
   "name for the gnugo process")
 
-(defun sgf-gnugo-start-process (&optional options)
+(defun go-gnugo-start-process (&optional options)
   (let ((buffer (apply 'make-comint
-                       sgf-gnugo-process-name
-                       sgf-gnugo-program nil
+                       go-gnugo-process-name
+                       go-gnugo-program nil
                        "--mode" "gtp" "--quiet"
                        (when options (split-string options)))))
     (with-current-buffer buffer (comint-mode))
     buffer))
 
-(defun sgf-gnugo-command-to-string (gnugo command)
+(defun go-gnugo-command-to-string (gnugo command)
   "Send command to gnugo process and return gnugo's results as a string"
   (interactive "sgnugo command: ")
-  (sgf-gnugo-input-command gnugo command)
-  (sgf-gnugo-last-output gnugo))
+  (go-gnugo-input-command gnugo command)
+  (go-gnugo-last-output gnugo))
 
-(defun sgf-gnugo-input-command (gnugo command)
+(defun go-gnugo-input-command (gnugo command)
   "Pass COMMAND to the gnugo process running in the buffer of GNUGO."
   (with-current-buffer (buffer gnugo)
     (goto-char (process-mark (get-buffer-process (current-buffer))))
     (insert command)
     (comint-send-input))
-  (sgf-gnugo-wait-for-output gnugo))
+  (go-gnugo-wait-for-output gnugo))
 
-(defun sgf-gnugo-wait-for-output (gnugo)
+(defun go-gnugo-wait-for-output (gnugo)
   (with-current-buffer (buffer gnugo)
     (while (progn
 	     (goto-char comint-last-input-end)
@@ -80,7 +80,7 @@
         (error (match-string 1)))
       (accept-process-output (get-buffer-process (current-buffer))))))
 
-(defun sgf-gnugo-last-output (gnugo)
+(defun go-gnugo-last-output (gnugo)
   (with-current-buffer (buffer gnugo)
     (comint-show-output)
     (org-babel-clean-text-properties
@@ -91,10 +91,9 @@
 (defclass gnugo (gtp)
   ((buffer :initarg :buffer
            :accessor buffer
-           :initform (sgf-gnugo-start-process))))
+           :initform (go-gnugo-start-process))))
 
 (defmethod gtp-command ((gnugo gnugo) command)
-  (sgf-gnugo-command-to-string gnugo command))
+  (go-gnugo-command-to-string gnugo command))
 
-(provide 'sgf-gnugo)
-;;; sgf-gnugo.el ends here
+(provide 'go-gnugo)

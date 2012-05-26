@@ -1,4 +1,4 @@
-;;; sgf2el.el --- conversion between sgf and emacs-lisp
+;;; go-tests --- tests for varied GO functionality
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -26,17 +26,17 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
-(require 'sgf-util)
-(require 'sgf2el)
-(require 'sgf-board)
-(require 'sgf-gtp)
-(require 'sgf-gnugo)
-(require 'sgf)
+(require 'go-util)
+(require 'go2el)
+(require 'go-board)
+(require 'go-gtp)
+(require 'go-gnugo)
+(require 'go)
 (require 'ert)
 
 
 ;;; sgf2el tests
-(ert-deftest sgf-parse-simple-tree ()
+(ert-deftest go-sgf-parse-simple-tree ()
   (let* ((str "(;GM[1]FF[4]
                SZ[19]
                GN[GNU Go 3.7.11 load and print]
@@ -48,7 +48,7 @@
     (should (= 10 (length (first sgf))))
     (should (= 6  (length (car (last (first sgf))))))))
 
-(ert-deftest sgf-parse-nested-tree ()
+(ert-deftest go-sgf-parse-nested-tree ()
   (let* ((str "(;GM[1]FF[4]
                SZ[19]
                GN[GNU Go 3.7.11 load and print]
@@ -62,7 +62,7 @@
     (should (= 6 (length (car (first (second sgf))))))
     (should (= 6 (length (car (second (second sgf))))))))
 
-(ert-deftest sgf-parse-tree-w-weird-comment ()
+(ert-deftest go-parse-tree-w-weird-comment ()
   (let* ((str "(;B[kd]N[(c)]LB[ke:a][pf:b]
      C[Black 25 takes larger territory on top, and gives up
      larger territory at the right, as compared to variation
@@ -81,13 +81,13 @@
          (sgf (sgf2el-str-to-el str)))
     (should (= 3 (length sgf)))))
 
-(ert-deftest sgf-parse-file-test ()
+(ert-deftest go-parse-file-test ()
   (let ((sgf (sgf2el-file-to-el "sgf-files/jp-ming-5.sgf")))
     (should (= 247 (length sgf)))))
 
 
 ;;; board tests
-(ert-deftest sgf-empty-board-to-string-test ()
+(ert-deftest go-empty-board-to-string-test ()
   (let ((board (make-vector (* 19 19) nil))
         (string (concat "    A B C D E F G H J K L M N O P Q R S T\n"
                         " 19 . . . . . . . . . . . . . . . . . . . 19\n"
@@ -112,7 +112,7 @@
                         "    A B C D E F G H J K L M N O P Q R S T")))
     (should (string= string (board-to-string board)))))
 
-(ert-deftest sgf-non-empty-board-to-string-test ()
+(ert-deftest go-non-empty-board-to-string-test ()
   (let* ((joseki (sgf2el-file-to-el "sgf-files/3-4-joseki.sgf"))
          (root (car joseki))
          (rest (cdr joseki))
@@ -144,7 +144,7 @@
     (board-to-string board)
     (should t)))
 
-(ert-deftest sgf-neighbors ()
+(ert-deftest go-neighbors ()
   (let ((board (make-board 19)))
     (should (= 2 (length (neighbors board 0))))
     (should (= 2 (length (neighbors board (length board)))))
@@ -153,27 +153,27 @@
 
 
 ;;; GTP and gnugo tests
-(ert-deftest sgf-test-sgf-gtp-char-to-gtp ()
-  (should (= 1  (sgf-gtp-char-to-num ?A)))
-  (should (= 8  (sgf-gtp-char-to-num ?H)))
-  (should (= 9  (sgf-gtp-char-to-num ?J)))
-  (should (= 19 (sgf-gtp-char-to-num ?T)))
-  (should (= 1  (sgf-gtp-char-to-num ?a)))
-  (should (= 8  (sgf-gtp-char-to-num ?h)))
-  (should (= 9  (sgf-gtp-char-to-num ?j)))
-  (should (= 19 (sgf-gtp-char-to-num ?t))))
+(ert-deftest go-test-go-gtp-char-to-gtp ()
+  (should (= 1  (go-gtp-char-to-num ?A)))
+  (should (= 8  (go-gtp-char-to-num ?H)))
+  (should (= 9  (go-gtp-char-to-num ?J)))
+  (should (= 19 (go-gtp-char-to-num ?T)))
+  (should (= 1  (go-gtp-char-to-num ?a)))
+  (should (= 8  (go-gtp-char-to-num ?h)))
+  (should (= 9  (go-gtp-char-to-num ?j)))
+  (should (= 19 (go-gtp-char-to-num ?t))))
 
 (defmacro with-gnugo (&rest body)
   `(let (*gnugo*)
      (unwind-protect
          (progn
            (setf *gnugo* (make-instance 'gnugo))
-           (setf (buffer *gnugo*) (sgf-gnugo-start-process))
+           (setf (buffer *gnugo*) (go-gnugo-start-process))
            ,@body)
        (let ((kill-buffer-query-functions nil))
          (should (kill-buffer (buffer *gnugo*)))))))
 
-(ert-deftest sgf-test-gnugo-interaction-through-gtp ()
+(ert-deftest go-test-gnugo-interaction-through-gtp ()
   (let ((b1 (concat
              "\n"
              "   A B C D E F G H J K L M N O P Q R S T\n"
@@ -227,7 +227,7 @@
     (with-gnugo
      (should (string= b1 (gtp-command *gnugo* "showboard")))
      (should (string= "" (gtp-command *gnugo* "black A1")))
-     (should (string= "" (sgf->move   *gnugo* '(:B :pos . (0 . 1)))))
+     (should (string= "" (go->move   *gnugo* '(:B :pos . (0 . 1)))))
      (should (string= b2 (gtp-command *gnugo* "showboard"))))))
 
 
@@ -241,14 +241,14 @@
                      :index '(0)))
        ,@body)))
 
-(ert-deftest sgf-parse-empty-properties ()
+(ert-deftest go-parse-empty-properties ()
   (with-sgf-from-file "sgf-files/w-empty-properties.sgf"
     (should (remove-if-not (lambda (prop)
                              (let ((val (cdr prop)))
                                (and (sequencep val) (= 0 (length val)))))
                            (root *sgf*)))))
 
-(ert-deftest sgf-test-sgf-class-creation ()
+(ert-deftest go-test-sgf-class-creation ()
   (with-sgf-from-file "sgf-files/jp-ming-5.sgf"
     (should (tree-equal (index *sgf*) '(0)))
     (should (tree-equal (current *sgf*) (root *sgf*)))
@@ -260,7 +260,7 @@
 (defmacro with-sgf-display (file &rest body)
   (declare (indent 1))
   (let ((buffer (gensym "sgf-display-buffer")))
-    `(let ((,buffer (sgf-board-display
+    `(let ((,buffer (go-board-display
                      (make-instance 'sgf
                        :self (sgf2el-file-to-el ,file)
                        :index '(0)))))
@@ -268,14 +268,14 @@
          (should (kill-buffer ,buffer))))))
 (def-edebug-spec parse-many (file body))
 
-(ert-deftest sgf-display-fresh-sgf-buffer ()
+(ert-deftest go-display-fresh-go-buffer ()
   (with-sgf-display "sgf-files/3-4-joseki.sgf"
     (should *history*)
     (should *back-end*)))
 
-(ert-deftest sgf-independent-points-properties ()
+(ert-deftest go-independent-points-properties ()
   (with-sgf-display "sgf-files/3-4-joseki.sgf"
-    (sgf-board-next 4)
+    (go-board-next 4)
     (should (not (tree-equal (car *history*) (car (last *history*)))))))
 
 (defun stone-counts ()
@@ -285,24 +285,24 @@
                                       pieces))))
       (cons (count-for :B) (count-for :W)))))
 
-(ert-deftest sgf-singl-stone-capture ()
+(ert-deftest go-singl-stone-capture ()
   (with-sgf-display "sgf-files/1-capture.sgf"
-    (sgf-board-next 3) (should (tree-equal (stone-counts) '(2 . 0)))))
+    (go-board-next 3) (should (tree-equal (stone-counts) '(2 . 0)))))
 
-(ert-deftest sgf-remove-dead-stone-ko ()
+(ert-deftest go-remove-dead-stone-ko ()
   (with-sgf-display "sgf-files/ko.sgf"
-    (should (tree-equal (stone-counts) '(0 . 0))) (sgf-board-next)
-    (should (tree-equal (stone-counts) '(1 . 0))) (sgf-board-next)
-    (should (tree-equal (stone-counts) '(1 . 1))) (sgf-board-next)
-    (should (tree-equal (stone-counts) '(2 . 1))) (sgf-board-next)
-    (should (tree-equal (stone-counts) '(2 . 2))) (sgf-board-next)
-    (should (tree-equal (stone-counts) '(3 . 2))) (sgf-board-next)
-    (should (tree-equal (stone-counts) '(2 . 3))) (sgf-board-next)
-    (should (tree-equal (stone-counts) '(3 . 2))) (sgf-board-next)
+    (should (tree-equal (stone-counts) '(0 . 0))) (go-board-next)
+    (should (tree-equal (stone-counts) '(1 . 0))) (go-board-next)
+    (should (tree-equal (stone-counts) '(1 . 1))) (go-board-next)
+    (should (tree-equal (stone-counts) '(2 . 1))) (go-board-next)
+    (should (tree-equal (stone-counts) '(2 . 2))) (go-board-next)
+    (should (tree-equal (stone-counts) '(3 . 2))) (go-board-next)
+    (should (tree-equal (stone-counts) '(2 . 3))) (go-board-next)
+    (should (tree-equal (stone-counts) '(3 . 2))) (go-board-next)
     (should (tree-equal (stone-counts) '(2 . 3)))))
 
-(ert-deftest sgf-two-stone-capture ()
+(ert-deftest go-two-stone-capture ()
   (with-sgf-display "sgf-files/2-capture.sgf"
-    (sgf-board-next 8) (should (tree-equal (stone-counts) '(6 . 0)))))
+    (go-board-next 8) (should (tree-equal (stone-counts) '(6 . 0)))))
 
-(provide 'sgf-tests)
+(provide 'go-tests)

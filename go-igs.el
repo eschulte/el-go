@@ -1,4 +1,4 @@
-;;; sgf-igs.el --- IGS backend for sgf-trans
+;;; go-igs.el --- IGS backend for go-trans
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -30,7 +30,7 @@
 ;; http://www.pandanet.co.jp/English/commands/term/Summary.html
 
 ;; Code:
-(require 'sgf-util)
-(require 'sgf-trans)
+(require 'go-util)
+(require 'go-trans)
 
-(provide 'sgf-igs)
+(provide 'go-igs)

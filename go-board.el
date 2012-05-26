@@ -1,4 +1,4 @@
-;;; sgf-board.el --- Smart Game Format GO board visualization
+;;; go-board.el --- Smart Game Format GO board visualization
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -26,8 +26,8 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
-(require 'sgf-util)
-(require 'sgf-trans)
+(require 'go-util)
+(require 'go-trans)
 
 (defvar *history*  nil "Holds the board history for a GO buffer.")
 (defvar *size*     nil "Holds the board size.")
@@ -189,22 +189,22 @@
             (board-to-string
              (pieces-to-board (car *history*) *size*))
             "\n\n")
-    (let ((comment (sgf<-comment *back-end*)))
+    (let ((comment (go<-comment *back-end*)))
       (when comment
         (insert (make-string (+ 6 (* 2 *size*)) ?=)
                 "\n\n"
                 comment)))
     (goto-char (point-min))))
 
-(defun sgf-board-display (back-end)
+(defun go-board-display (back-end)
   (let ((buffer (generate-new-buffer "*GO*")))
     (with-current-buffer buffer
-      (sgf-board-mode)
-      (when (sgf<-name back-end)
-        (rename-buffer (ear-muffs (sgf<-name back-end)) 'unique))
+      (go-board-mode)
+      (when (go<-name back-end)
+        (rename-buffer (ear-muffs (go<-name back-end)) 'unique))
       (set (make-local-variable '*back-end*) back-end)
       (set (make-local-variable '*turn*) :B)
-      (set (make-local-variable '*size*) (sgf<-size back-end))
+      (set (make-local-variable '*size*) (go<-size back-end))
       (set (make-local-variable '*history*)
            (list (board-to-pieces (make-board *size*))))
       (update-display (current-buffer)))
@@ -212,29 +212,29 @@
 
 
 ;;; User input
-(defvar sgf-board-actions '(move resign undo comment)
-  "List of actions which may be taken on an SGF board.")
+(defvar go-board-actions '(move resign undo comment)
+  "List of actions which may be taken on an GO board.")
 
-(defun sgf-board-act ()
-  "Send a command to the current SGF board."
+(defun go-board-act ()
+  "Send a command to the current GO board."
   (interactive)
   (let ((command (org-icompleting-read
-                  "Action: " (mapcar #'symbol-name sgf-board-actions))))
+                  "Action: " (mapcar #'symbol-name go-board-actions))))
     (case (intern command)
       (move    (message "make a move"))
       (resign  (message "game over"))
       (undo    (message "loser"))
       (comment (message "what?")))))
 
-(defun sgf-board-act-move (&optional pos)
+(defun go-board-act-move (&optional pos)
   (interactive)
   (let* ((color (case *turn* (:B "black") (:W "white")))
-         (pos (or pos (cons (sgf-gtp-char-to-num
+         (pos (or pos (cons (go-gtp-char-to-num
                              (aref (downcase
                                     (org-icompleting-read
                                      (format "[%s] X pos: " color)
                                      (mapcar #'string
-                                             (mapcar #'sgf-gtp-num-to-char
+                                             (mapcar #'go-gtp-num-to-char
                                                      (range 1 *size*)))))
                                    0))
                             (1- (string-to-number
@@ -244,54 +244,54 @@
                                           (range 1 *size*))))))))
          (move (cons *turn* (cons :pos pos))))
     (message "move:%S" move)
-    (sgf->move *back-end* move)
+    (go->move *back-end* move)
     (apply-turn-to-board (list move))
     (setf *turn* (other-color *turn*))))
 
-(defun sgf-board-act-resign ()
+(defun go-board-act-resign ()
   (interactive)
-  (sgf->reset *back-end*))
+  (go->reset *back-end*))
 
-(defun sgf-board-act-undo (&optional num)
+(defun go-board-act-undo (&optional num)
   (interactive "p")
-  (sgf->undo *back-end*)
+  (go->undo *back-end*)
   (pop *history*)
   (update-display (current-buffer))
   (setf *turn* (other-color *turn*)))
 
-(defun sgf-board-act-comment (&optional comment)
+(defun go-board-act-comment (&optional comment)
   (interactive "MComment: ")
   (message "comment: %S" comment))
 
-(defun sgf-board-next (&optional count)
+(defun go-board-next (&optional count)
   (interactive "p")
   (dotimes (n (or count 1) (or count 1))
-    (apply-turn-to-board (sgf<-turn *back-end* *turn*))
+    (apply-turn-to-board (go<-turn *back-end* *turn*))
     (setf *turn* (other-color *turn*))))
 
-(defun sgf-board-mouse-move (ev)
+(defun go-board-mouse-move (ev)
   (interactive "e")
-  (sgf-board-act-move (get-text-property (posn-point (event-start ev)) :pos)))
+  (go-board-act-move (get-text-property (posn-point (event-start ev)) :pos)))
 
 
 ;;; Display mode
-(defvar sgf-board-mode-map
+(defvar go-board-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<down-mouse-1>") 'sgf-board-mouse-move)
-    (define-key map (kbd "m") 'sgf-board-act-move)
-    (define-key map (kbd "r") 'sgf-board-act-resign)
-    (define-key map (kbd "u") 'sgf-board-act-undo)
-    (define-key map (kbd "c") 'sgf-board-act-comment)
-    (define-key map (kbd "n") 'sgf-board-next)
-    (define-key map (kbd "p") 'sgf-board-act-undo)
-    (define-key map (kbd "<right>") 'sgf-board-next)
-    (define-key map (kbd "<left>")  'sgf-board-act-undo)
+    (define-key map (kbd "<down-mouse-1>") 'go-board-mouse-move)
+    (define-key map (kbd "m") 'go-board-act-move)
+    (define-key map (kbd "r") 'go-board-act-resign)
+    (define-key map (kbd "u") 'go-board-act-undo)
+    (define-key map (kbd "c") 'go-board-act-comment)
+    (define-key map (kbd "n") 'go-board-next)
+    (define-key map (kbd "p") 'go-board-act-undo)
+    (define-key map (kbd "<right>") 'go-board-next)
+    (define-key map (kbd "<left>")  'go-board-act-undo)
     (define-key map (kbd "q") (lambda () (interactive)
                                 (kill-buffer (current-buffer))))
     map)
-  "Keymap for `sgf-board-mode'.")
+  "Keymap for `go-board-mode'.")
 
-(define-derived-mode sgf-board-mode nil "SGF"
-  "Major mode for editing text written for viewing SGF files.")
+(define-derived-mode go-board-mode nil "GO"
+  "Major mode for viewing a GO board.")
 
-(provide 'sgf-board)
+(provide 'go-board)

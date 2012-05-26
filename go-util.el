@@ -1,4 +1,4 @@
-;;; sgf-util.el --- utility functions for sgf-mode
+;;; go-util.el --- utility functions for GO functions
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -64,4 +64,4 @@
 
 (defun ear-muffs (str) (concat "*" str "*"))
 
-(provide 'sgf-util)
+(provide 'go-util)
