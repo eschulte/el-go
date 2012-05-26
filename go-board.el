@@ -304,4 +304,11 @@
 (define-derived-mode go-board-mode nil "GO"
   "Major mode for viewing a GO board.")
 
+(defun go-board-play (&optional level)
+  (interactive "P")
+  (go-board-display
+   (make-instance 'gnugo
+     :buffer (apply #'go-gnugo-start-process
+                    (when level (list "--level" (number-to-string level)))))))
+
 (provide 'go-board)

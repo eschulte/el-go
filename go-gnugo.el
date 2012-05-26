@@ -48,12 +48,12 @@
 (defvar go-gnugo-process-name "gnugo"
   "name for the gnugo process")
 
-(defun go-gnugo-start-process (&optional options)
+(defun go-gnugo-start-process (&rest options)
   (let ((buffer (apply 'make-comint
                        go-gnugo-process-name
                        go-gnugo-program nil
                        "--mode" "gtp" "--quiet"
-                       (when options (split-string options)))))
+                       options)))
     (with-current-buffer buffer (comint-mode))
     buffer))
 
@@ -89,9 +89,7 @@
 
 ;;; Class and interface
 (defclass gnugo (gtp)
-  ((buffer :initarg :buffer
-           :accessor buffer
-           :initform (go-gnugo-start-process))))
+  ((buffer :initarg :buffer :accessor buffer :initform nil)))
 
 (defmethod gtp-command ((gnugo gnugo) command)
   (go-gnugo-command-to-string gnugo command))
