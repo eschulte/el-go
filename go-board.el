@@ -33,6 +33,7 @@
 (defvar *size*     nil "Holds the board size.")
 (defvar *turn*     nil "Holds the color of the current turn.")
 (defvar *back-end* nil "Holds the primary back-end connected to a board.")
+(defvar *trackers* nil "Holds a list of back-ends which should track the game.")
 
 (defvar black-piece "X")
 (defvar white-piece "O")
@@ -196,22 +197,31 @@
                 comment)))
     (goto-char (point-min))))
 
-(defun go-board-display (back-end)
+(defun go-board-display (back-end &rest trackers)
   (let ((buffer (generate-new-buffer "*GO*")))
     (with-current-buffer buffer
       (go-board-mode)
-      (when (go<-name back-end)
-        (rename-buffer (ear-muffs (go<-name back-end)) 'unique))
+      (let ((name (go<-name back-end)))
+        (when name
+          (rename-buffer (ear-muffs name) 'unique)
+          (mapcar (lambda (tr) (go->name tr name)) trackers)))
       (set (make-local-variable '*back-end*) back-end)
       (set (make-local-variable '*turn*) :B)
       (set (make-local-variable '*size*) (go<-size back-end))
+      (mapcar (lambda (tr) (go->size tr *size*)) trackers)
       (set (make-local-variable '*history*)
            (list (board-to-pieces (make-board *size*))))
+      (set (make-local-variable '*trackers*) trackers)
       (update-display (current-buffer)))
     (pop-to-buffer buffer)))
 
 
 ;;; User input
+(defmacro with-backends (sym &rest body)
+  (declare (indent 1))
+  `(prog1 (let ((,sym *back-end*)) ,@body)
+     (mapcar (lambda (tr) (let ((,sym tr)) ,@body)) *trackers*)))
+
 (defvar go-board-actions '(move resign undo comment)
   "List of actions which may be taken on an GO board.")
 
@@ -243,18 +253,18 @@
                                   (mapcar #'number-to-string
                                           (range 1 *size*))))))))
          (move (cons *turn* (cons :pos pos))))
-    (message "move:%S" move)
-    (go->move *back-end* move)
+    (with-backends back
+      (go->move back move))
     (apply-turn-to-board (list move))
     (setf *turn* (other-color *turn*))))
 
 (defun go-board-act-resign ()
   (interactive)
-  (go->reset *back-end*))
+  (with-backends back (go->reset back)))
 
 (defun go-board-act-undo (&optional num)
   (interactive "p")
-  (go->undo *back-end*)
+  (with-backends back (go->undo back))
   (pop *history*)
   (update-display (current-buffer))
   (setf *turn* (other-color *turn*)))
