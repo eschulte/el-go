@@ -34,6 +34,7 @@
 (defvar *turn*     nil "Holds the color of the current turn.")
 (defvar *back-end* nil "Holds the primary back-end connected to a board.")
 (defvar *trackers* nil "Holds a list of back-ends which should track the game.")
+(defvar *autoplay* nil "Should `*back-end*' automatically respond to moves.")
 
 (defvar black-piece "X")
 (defvar white-piece "O")
@@ -256,7 +257,8 @@
     (with-backends back
       (go->move back move))
     (apply-turn-to-board (list move))
-    (setf *turn* (other-color *turn*))))
+    (setf *turn* (other-color *turn*)))
+  (when *autoplay* (go-board-next)))
 
 (defun go-board-act-resign ()
   (interactive)
@@ -306,9 +308,11 @@
 
 (defun go-board-play (&optional level)
   (interactive "P")
-  (go-board-display
-   (make-instance 'gnugo
-     :buffer (apply #'go-gnugo-start-process
-                    (when level (list "--level" (number-to-string level)))))))
+  (let ((*autoplay* t))
+    (go-board-display
+     (make-instance 'gnugo
+       :buffer (apply #'go-gnugo-start-process
+                      (when level
+                        (list "--level" (number-to-string level))))))))
 
 (provide 'go-board)
