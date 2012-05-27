@@ -56,11 +56,15 @@
 (defsetf go-sgf-ref set-go-sgf-ref)
 
 
-;;; Class and interface
+;;; Class
 (defclass sgf nil
   ((self  :initarg :self  :accessor self  :initform nil)
    (index :initarg :index :accessor index :initform '(0)))
   "Class for the SGF back end.")
+
+(defun sgf-from-file (file)
+  (interactive "f")
+  (make-instance 'sgf :self (sgf2el-file-to-el file)))
 
 (defmethod current ((sgf sgf))
   (go-sgf-ref (self sgf) (index sgf)))
@@ -80,44 +84,90 @@
 
 (defsetf root set-root)
 
-(defmethod go-move ((sgf sgf) move)
-  (if (current sgf)
-      ;; TODO: this overwrites rather than saving alternatives
-      (setf (current sgf) (list move))
-    (rpush (list move) (go-sgf-ref (self sgf) (butlast (index sgf))))))
+(defmethod next ((sgf sgf))
+  (incf (car (last (index sgf)))))
 
-(defmethod go-size ((sgf sgf) size)
+(defmethod prev ((sgf sgf))
+  (decf (car (last (index sgf)))))
+
+
+;;; interface
+(defmethod go-size ((sgf sgf))
+  (or (aget (root sgf) :S)
+      (aget (root sgf) :SZ)))
+
+(defmethod set-go-size ((sgf sgf) size)
   (cond
    ((aget (root sgf)  :S) (setf (cdr (assoc  :S (root sgf))) size))
    ((aget (root sgf) :SZ) (setf (cdr (assoc :SZ (root sgf))) size))
    (t                     (push (cons :S size) (root sgf)))))
 
-(defmethod go-resign ((sgf sgf) resign))
-
-(defmethod go-undo ((sgf sgf))
-  (decf (car (last (index sgf))))
-  (alistp (current sgf)))
-
-(defmethod go-comment ((sgf sgf) comment)
-  (if (aget (current sgf) :C)
-      (setf (cdr (assoc :C (current sgf))) comment)
-    (push (cons :C comment) (current sgf))))
-
-(defmethod go-size ((sgf sgf))
-  (or (aget (root sgf) :S)
-      (aget (root sgf) :SZ)))
-
 (defmethod go-name ((sgf sgf))
   (or (aget (root sgf) :GN)
       (aget (root sgf) :EV)))
 
-(defmethod go-alt ((sgf sgf)))
+(defmethod set-go-name ((sgf sgf) name)
+  (cond
+   ((aget (root sgf) :GN) (setf (cdr (assoc :GN (root sgf))) name))
+   ((aget (root sgf) :EV) (setf (cdr (assoc :EV (root sgf))) name))
+   (t                     (push (cons :GN name) (root sgf)))))
+
+(defmethod go-move ((sgf sgf))
+  (next sgf)
+  (let ((turn (current sgf)))
+    (if turn
+        (or (assoc :B turn) (assoc :W turn))
+      (prev sgf)
+      (error "sgf: no more moves"))))
+
+(defmethod set-go-move ((sgf sgf) move)
+  (if (current sgf)
+      ;; TODO: this overwrites rather than saving alternatives
+      (setf (current sgf) (list move))
+    (rpush (list move) (go-sgf-ref (self sgf) (butlast (index sgf))))))
+
+(defmethod go-labels ((sgf sgf))
+  (next sgf)
+  (let ((turn (current sgf)))
+    (if turn
+        (remove-if (lambda (pair) (member (car pair) '(:B :W))) turn)
+      (prev sgf)
+      (error "sgf: no more moves"))))
+
+(defmethod set-go-lables ((sgf sgf) labels)
+  (if (current sgf)
+      (setf (current sgf) (cons (or (assoc :B (current sgf))
+                                    (assoc :W (current sgf)))
+                                labels))
+    (rpush labels (go-sgf-ref (self sgf) (butlast (index sgf))))))
 
 (defmethod go-comment ((sgf sgf))
   (aget (current sgf) :C))
 
-(defun go-from-file (file)
-  (interactive "f")
-  (make-instance 'sgf :self (sgf2el-file-to-el file)))
+(defmethod set-go-comment ((sgf sgf) comment)
+  (if (aget (current sgf) :C)
+      (setf (cdr (assoc :C (current sgf))) comment)
+    (push (cons :C comment) (current sgf))))
+
+(defmethod go-alt ((sgf sgf))
+  (error "sgf: go-alt not yet supported"))
+
+(defmethod set-go-alt ((sgf sgf) alt)
+  (error "sgf: set-go-alt not yet supported"))
+
+(defmethod go-color ((sgf sgf))
+  (signal 'unsupported-back-end-command (list sgf :move)))
+
+(defmethod set-go-color ((sgf sgf) color)
+  (signal 'unsupported-back-end-command (list sgf :set-color color)))
+
+;; non setf'able generic functions
+(defmethod go-undo ((sgf sgf)) (prev sgf))
+
+(defmethod go-pass ((sgf sgf))
+  (signal 'unsupported-back-end-command (list sgf :pass)))
+
+(defmethod go-resign ((sgf sgf))
+  (signal 'unsupported-back-end-command (list sgf :resign)))
 
 (provide 'go-sgf)
