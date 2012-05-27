@@ -263,7 +263,9 @@
                      (make-instance 'sgf
                        :self (sgf2el-file-to-el ,file)
                        :index '(0)))))
-       (unwind-protect (with-current-buffer ,buffer ,@body)
+       (unwind-protect (with-current-buffer ,buffer
+                         (setf (index *back-end*) (list 0))
+                         ,@body)
          (should (kill-buffer ,buffer))))))
 (def-edebug-spec parse-many (file body))
 
@@ -277,7 +279,7 @@
     (go-board-next 4)
     (should (not (tree-equal (car *history*) (car (last *history*)))))))
 
-(defun stone-counts ()
+(defun go-stone-counts ()
   (let ((pieces (car *history*)))
     (flet ((count-for (color) (length (remove-if-not
                                       (lambda (piece) (equal color (car piece)))
@@ -286,22 +288,22 @@
 
 (ert-deftest go-singl-stone-capture ()
   (with-sgf-display "sgf-files/1-capture.sgf"
-    (go-board-next 3) (should (tree-equal (stone-counts) '(2 . 0)))))
+    (go-board-next 3) (should (tree-equal (go-stone-counts) '(2 . 0)))))
 
 (ert-deftest go-remove-dead-stone-ko ()
   (with-sgf-display "sgf-files/ko.sgf"
-    (should (tree-equal (stone-counts) '(0 . 0))) (go-board-next)
-    (should (tree-equal (stone-counts) '(1 . 0))) (go-board-next)
-    (should (tree-equal (stone-counts) '(1 . 1))) (go-board-next)
-    (should (tree-equal (stone-counts) '(2 . 1))) (go-board-next)
-    (should (tree-equal (stone-counts) '(2 . 2))) (go-board-next)
-    (should (tree-equal (stone-counts) '(3 . 2))) (go-board-next)
-    (should (tree-equal (stone-counts) '(2 . 3))) (go-board-next)
-    (should (tree-equal (stone-counts) '(3 . 2))) (go-board-next)
-    (should (tree-equal (stone-counts) '(2 . 3)))))
+    (should (tree-equal (go-stone-counts) '(0 . 0))) (go-board-next)
+    (should (tree-equal (go-stone-counts) '(1 . 0))) (go-board-next)
+    (should (tree-equal (go-stone-counts) '(1 . 1))) (go-board-next)
+    (should (tree-equal (go-stone-counts) '(2 . 1))) (go-board-next)
+    (should (tree-equal (go-stone-counts) '(2 . 2))) (go-board-next)
+    (should (tree-equal (go-stone-counts) '(3 . 2))) (go-board-next)
+    (should (tree-equal (go-stone-counts) '(2 . 3))) (go-board-next)
+    (should (tree-equal (go-stone-counts) '(3 . 2))) (go-board-next)
+    (should (tree-equal (go-stone-counts) '(2 . 3)))))
 
 (ert-deftest go-two-stone-capture ()
   (with-sgf-display "sgf-files/2-capture.sgf"
-    (go-board-next 8) (should (tree-equal (stone-counts) '(6 . 0)))))
+    (go-board-next 8) (should (tree-equal (go-stone-counts) '(6 . 0)))))
 
 (provide 'go-tests)
