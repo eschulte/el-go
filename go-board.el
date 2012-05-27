@@ -28,6 +28,7 @@
 ;;; Code:
 (require 'go-util)
 (require 'go-trans)
+(require 'go-board-faces)
 
 (defvar *history*  nil "Holds the board history for a GO buffer.")
 (defvar *size*     nil "Holds the board size.")
@@ -152,25 +153,33 @@
                        (= n (/ (- size 1) 2))))
                   ((= size 9)
                    (or (= 2 n)
-                       (= 4 n))))))
+                       (= 4 n)))))
+           (put (str prop val) (put-text-property 0 (length str) prop val str)))
       (let* ((val (aref board (pos-to-index pos size)))
              (str (cond
                    ((equal val :W) white-piece)
                    ((equal val :B) black-piece)
                    ((and (stringp val) (= 1 (length val)) val))
                    (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" ".")))))
-        (put-text-property 0 (length str) :pos (cons (cdr pos) (car pos)) str)
+        (cond
+         ((string= str white-piece) (put str :type :white))
+         ((string= str black-piece) (put str :type :black))
+         ((string= str "+")         (put str :type :hoshi))
+         (t                         (put str :type :background)))
+        (put str :pos (cons (cdr pos) (car pos)))
         str))))
 
 (defun board-row-to-string (board row)
   (let* ((size (board-size board))
          (label (format "%3d" (1+ row)))
-         (row-body ""))
+         (row-body "")
+         (filler " "))
+    (put-text-property 0 1 :type :background filler)
     (dotimes (n size)
       (setq row-body
             (concat row-body
                     (board-pos-to-string board (cons row n))
-                    " ")))
+                    filler)))
     (concat label " " (substring row-body 0 (1- (length row-body))) label)))
 
 (defun board-body-to-string (board)
@@ -180,8 +189,21 @@
 
 (defun board-to-string (board)
   (let ((header (board-header board))
-        (body (board-body-to-string board)))
+        (body   (board-body-to-string board)))
     (mapconcat #'identity (list header body header) "\n")))
+
+(defun go-board-paint (&optional start end)
+  (interactive "r")
+  (flet ((ov (point face)
+             (overlay-put (make-overlay point (1+ point)) 'face face)))
+    (let ((start (or start (point-min)))
+          (end   (or end   (point-max))))
+      (dolist (point (range start end))
+        (case (get-text-property point :type)
+          (:background (ov point 'go-board-background))
+          (:hoshi      (ov point 'go-board-hoshi))
+          (:white      (ov point 'go-board-white))
+          (:black      (ov point 'go-board-black)))))))
 
 (defun update-display (buffer)
   (with-current-buffer buffer
@@ -196,6 +218,7 @@
         (insert (make-string (+ 6 (* 2 *size*)) ?=)
                 "\n\n"
                 comment)))
+    (go-board-paint)
     (goto-char (point-min))))
 
 (defun go-board-display (back-end &rest trackers)
