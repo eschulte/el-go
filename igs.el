@@ -1,4 +1,4 @@
-;;; go-igs.el --- IGS backend for go-trans
+;;; igs.el --- IGS GO back-end
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -33,4 +33,4 @@
 (require 'go-util)
 (require 'go-trans)
 
-(provide 'go-igs)
+(provide 'igs)

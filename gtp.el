@@ -1,4 +1,4 @@
-;;; gtp.el --- GTP GO backend
+;;; gtp.el --- GTP GO back-end
 
 ;; Copyright (C) 2008 2012 Eric Schulte <eric.schulte@gmx.com>
 
