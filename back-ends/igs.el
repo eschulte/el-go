@@ -30,7 +30,6 @@
 ;; http://www.pandanet.co.jp/English/commands/term/Summary.html
 
 ;; Code:
-(require 'go-util)
-(require 'go-trans)
+(require 'go)
 
 (provide 'igs)

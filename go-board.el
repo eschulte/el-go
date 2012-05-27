@@ -26,8 +26,7 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
-(require 'go-util)
-(require 'go-trans)
+(require 'go)
 (require 'go-board-faces)
 
 (defvar *history*  nil "Holds the board history for a GO buffer.")
@@ -330,14 +329,5 @@
 
 (define-derived-mode go-board-mode nil "GO"
   "Major mode for viewing a GO board.")
-
-(defun go-board-play (&optional level)
-  (interactive "P")
-  (let ((*autoplay* t))
-    (go-board
-     (make-instance 'gnugo
-       :buffer (apply #'gnugo-start-process
-                      (when level
-                        (list "--level" (number-to-string level))))))))
 
 (provide 'go-board)

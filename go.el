@@ -1,4 +1,4 @@
-;;; go-trans.el --- Translate and transfer between GO back ends
+;;; go.el --- Play GO, translate and transfer between GO back ends
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -37,6 +37,9 @@
 (require 'go-util)
 (require 'eieio)
 
+(declare-function go-board "go-board" (back-end &rest trackers))
+(declare-function gnugo-start-process "gnugo.el" (&rest options))
+
 (put 'unsupported-back-end-command
      'error-conditions
      '(error unsupported-back-end-command))
@@ -51,6 +54,17 @@
        (defgeneric ,name     (back-end) ,doc)
        (defgeneric ,set-name (back-end new))
        (defsetf ,name ,set-name))))
+
+(defun play-go (&optional level)
+  "Play a game of GO against gnugo.
+Optional argument LEVEL specifies gnugo's level of play."
+  (interactive "P")
+  (let ((*autoplay* t))
+    (go-board
+     (make-instance 'gnugo
+       :buffer (apply #'gnugo-start-process
+                      (when level
+                        (list "--level" (number-to-string level))))))))
 
 ;; setf'able back-end access
 (defgeneric-w-setf go-size    "Access BACK-END size.")
@@ -67,4 +81,4 @@
 (defgeneric go-resign (back-end) "Send resign to BACK-END.")
 (defgeneric go-reset  (back-end) "Send reset to BACK-END.")
 
-(provide 'go-trans)
+(provide 'go)

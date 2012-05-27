@@ -26,13 +26,13 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
-(require 'go-util)
-(require 'sgf2el)
+(require 'ert)
+(require 'go)
 (require 'go-board)
 (require 'gtp)
 (require 'gnugo)
 (require 'sgf)
-(require 'ert)
+(require 'sgf2el)
 
 
 ;;; sgf2el tests

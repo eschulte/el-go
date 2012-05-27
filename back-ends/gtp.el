@@ -32,8 +32,7 @@
 ;; The GMP command set may be implemented as an extension.
 
 ;; Code:
-(require 'go-util)
-(require 'go-trans)
+(require 'go)
 
 (defun gtp-expand-color (turn)
   (case turn

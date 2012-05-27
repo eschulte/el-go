@@ -26,7 +26,7 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; CODE:
-(require 'go-util)
+(require 'go)
 (require 'gtp)
 (require 'comint)
 
