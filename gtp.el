@@ -1,4 +1,4 @@
-;;; go-gtp.el --- GTP backend for go-trans
+;;; gtp.el --- GTP GO backend
 
 ;; Copyright (C) 2008 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -35,14 +35,14 @@
 (require 'go-util)
 (require 'go-trans)
 
-(defun go-gtp-expand-color (turn)
+(defun gtp-expand-color (turn)
   (case turn
     (:B "black")
     (:W "white")
     (t (error "gtp: unknown turn %S" turn))))
 
-(defun go-gtp-char-to-num (char)
-  (flet ((err () (error "go-gtp: invalid char %s" char)))
+(defun gtp-char-to-num (char)
+  (flet ((err () (error "gtp: invalid char %s" char)))
     (cond
      ((< char ?A)  (err))
      ((< char ?I)  (- char ?A))
@@ -52,18 +52,18 @@
      ((<= char ?t) (1- (- char ?a)))
      (t (err)))))
 
-(defun go-gtp-num-to-char (num)
-  (flet ((err () (error "go: invalid num %s" num)))
+(defun gtp-num-to-char (num)
+  (flet ((err () (error "gtp: invalid num %s" num)))
     (cond
      ((< num 1) (err))
      ((< num 9) (+ ?A (1- num)))
      (t         (+ ?A num)))))
 
 (defun go-pos-to-gtp (pos)
-  (format "%c%d" (go-gtp-num-to-char (1+ (car pos))) (1+ (cdr pos))))
+  (format "%c%d" (gtp-num-to-char (1+ (car pos))) (1+ (cdr pos))))
 
-(defun go-gtp-to-pos (color gtp)
-  (cons color (cons :pos (cons (go-gtp-char-to-num (aref gtp 0))
+(defun gtp-to-pos (color gtp)
+  (cons color (cons :pos (cons (gtp-char-to-num (aref gtp 0))
                                (1- (parse-integer (substring gtp 1)))))))
 
 (defun go-to-gtp-command (element)
@@ -98,7 +98,7 @@
 
 (defmethod go-move ((gtp gtp))
   (let ((color (go-color gtp)))
-    (go-gtp-to-pos color
+    (gtp-to-pos color
                    (case color
                      (:B (gtp-command gtp "genmove_black"))
                      (:W (gtp-command gtp "genmove_white"))))))
@@ -136,11 +136,11 @@
 (defmethod go-undo ((gtp gtp)) (gtp-command gtp "undo"))
 
 (defmethod go-pass ((gtp gtp))
-  (gtp-command gtp (format "%s pass" (go-gtp-expand-color (go-color gtp)))))
+  (gtp-command gtp (format "%s pass" (gtp-expand-color (go-color gtp)))))
 
 (defmethod go-resign ((gtp gtp))
-  (gtp-command gtp (format "%s resign" (go-gtp-expand-color (go-color gtp)))))
+  (gtp-command gtp (format "%s resign" (gtp-expand-color (go-color gtp)))))
 
 (defmethod go-reset ((gtp gtp)) (gtp-command gtp "clear_board"))
 
-(provide 'go-gtp)
+(provide 'gtp)

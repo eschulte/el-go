@@ -31,7 +31,7 @@
 
 ;;; CODE:
 (require 'go-util)
-(require 'go-gtp)
+(require 'gtp)
 (require 'comint)
 
 (defun go-gnugo-gtp-commands ()

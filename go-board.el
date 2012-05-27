@@ -264,12 +264,12 @@
 (defun go-board-act-move (&optional pos)
   (interactive)
   (let* ((color (case *turn* (:B "black") (:W "white")))
-         (pos (or pos (cons (go-gtp-char-to-num
+         (pos (or pos (cons (gtp-char-to-num
                              (aref (downcase
                                     (org-icompleting-read
                                      (format "[%s] X pos: " color)
                                      (mapcar #'string
-                                             (mapcar #'go-gtp-num-to-char
+                                             (mapcar #'gtp-num-to-char
                                                      (range 1 *size*)))))
                                    0))
                             (1- (string-to-number
