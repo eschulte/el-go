@@ -127,10 +127,9 @@
     (rpush (list move) (go-sgf-ref (self sgf) (butlast (index sgf))))))
 
 (defmethod go-labels ((sgf sgf))
-  (next sgf)
   (let ((turn (current sgf)))
     (if turn
-        (remove-if (lambda (pair) (member (car pair) '(:B :W))) turn)
+        (remove-if-not (lambda (pair) (member (car pair) '(:LB :LW))) turn)
       (prev sgf)
       (error "sgf: no more moves"))))
 
