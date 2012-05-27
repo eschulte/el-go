@@ -1,4 +1,4 @@
-;;; go-sgf.el --- SGF back end
+;;; sgf.el --- SGF GO back end
 
 ;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
 
@@ -33,7 +33,7 @@
 (require 'go-util)
 (require 'go-trans)
 
-(defun go-sgf-nthcdr (sgf index)
+(defun sgf-nthcdr (sgf index)
   (let ((part sgf))
     (while (cdr index)
       (setq part (nth (car index) part))
@@ -41,19 +41,19 @@
     (setq part (nthcdr (car index) part))
     part))
 
-(defun go-sgf-ref (sgf index)
+(defun sgf-ref (sgf index)
   (let ((part sgf))
     (while (car index)
       (setq part (nth (car index) part))
       (setq index (cdr index)))
     part))
 
-(defun set-go-sgf-ref (sgf index new)
+(defun set-sgf-ref (sgf index new)
   (eval `(setf ,(reduce (lambda (acc el) (list 'nth el acc))
                         index :initial-value 'sgf)
                ',new)))
 
-(defsetf go-sgf-ref set-go-sgf-ref)
+(defsetf sgf-ref set-sgf-ref)
 
 
 ;;; Class
@@ -67,15 +67,15 @@
   (make-instance 'sgf :self (sgf2el-file-to-el file)))
 
 (defmethod current ((sgf sgf))
-  (go-sgf-ref (self sgf) (index sgf)))
+  (sgf-ref (self sgf) (index sgf)))
 
 (defun set-current (sgf new)
-  (setf (go-sgf-ref (self sgf) (index sgf)) new))
+  (setf (sgf-ref (self sgf) (index sgf)) new))
 
 (defsetf current set-current)
 
 (defmethod root ((sgf sgf))
-  (go-sgf-ref (self sgf) '(0)))
+  (sgf-ref (self sgf) '(0)))
 
 (defun set-root (sgf new)
   (if (self sgf)
@@ -139,7 +139,7 @@
       (setf (current sgf) (cons (or (assoc :B (current sgf))
                                     (assoc :W (current sgf)))
                                 labels))
-    (rpush labels (go-sgf-ref (self sgf) (butlast (index sgf))))))
+    (rpush labels (sgf-ref (self sgf) (butlast (index sgf))))))
 
 (defmethod go-comment ((sgf sgf))
   (aget (current sgf) :C))
@@ -170,4 +170,4 @@
 (defmethod go-resign ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :resign)))
 
-(provide 'go-sgf)
+(provide 'sgf)

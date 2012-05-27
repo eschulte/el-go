@@ -31,7 +31,7 @@
 (require 'go-board)
 (require 'go-gtp)
 (require 'go-gnugo)
-(require 'go-sgf)
+(require 'sgf)
 (require 'ert)
 
 
