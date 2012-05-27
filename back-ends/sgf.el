@@ -58,7 +58,7 @@
 ;;; Class
 (defclass sgf nil
   ((self  :initarg :self  :accessor self  :initform nil)
-   (index :initarg :index :accessor index :initform '(0)))
+   (index :initarg :index :accessor index :initform (list 0)))
   "Class for the SGF back end.")
 
 (defun sgf-from-file (file)

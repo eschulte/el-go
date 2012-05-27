@@ -227,7 +227,7 @@
     (with-gnugo
      (should (string= b1 (gtp-command *gnugo* "showboard")))
      (should (string= "" (gtp-command *gnugo* "black A1")))
-     (should (string= "" (go-move   *gnugo* '(:B :pos . (0 . 1)))))
+     (should (string= "" (setf (go-move *gnugo*) '(:B :pos . (0 . 1)))))
      (should (string= b2 (gtp-command *gnugo* "showboard"))))))
 
 
@@ -237,8 +237,7 @@
   `(let (*sgf*)
      (progn
        (setf *sgf* (make-instance 'sgf
-                     :self (sgf2el-file-to-el ,file)
-                     :index '(0)))
+                     :self (sgf2el-file-to-el ,file)))
        ,@body)))
 
 (ert-deftest go-parse-empty-properties ()
@@ -252,8 +251,8 @@
   (with-sgf-from-file "sgf-files/jp-ming-5.sgf"
     (should (tree-equal (index *sgf*) '(0)))
     (should (tree-equal (current *sgf*) (root *sgf*)))
-    (should (string= "Famous Blood Vomiting Game" (sgf<-name *sgf*)))
-    (should (= 19 (sgf<-size *sgf*)))))
+    (should (string= "Famous Blood Vomiting Game" (go-name *sgf*)))
+    (should (= 19 (go-size *sgf*)))))
 
 
 ;;; SGF and board tests
