@@ -306,4 +306,16 @@
   (with-sgf-display "sgf-files/2-capture.sgf"
     (go-board-next 8) (should (tree-equal (go-stone-counts) '(6 . 0)))))
 
+(ert-deftest go-connect-gnugo-to-sgf ()
+  (let ((*sgf* (make-instance 'sgf))
+        (*gnugo* (make-instance 'gnugo :buffer (gnugo-start-process))))
+    (unwind-protect
+        (progn (setf (go-size *sgf*) (go-size *gnugo*))
+               (should (= (go-size *sgf*) (go-size *gnugo*)))
+               (setf (go-name *sgf*) (go-name *gnugo*))
+               (should (string= (go-name *sgf*) (go-name *gnugo*)))
+               (dotimes (n 5) (setf (go-move *sgf*) (go-move *gnugo*))))
+      (let ((kill-buffer-query-functions nil))
+        (should (kill-buffer (buffer *gnugo*)))))))
+
 (provide 'go-tests)
