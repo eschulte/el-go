@@ -30,7 +30,7 @@
 (require 'sgf2el)
 (require 'go-board)
 (require 'gtp)
-(require 'go-gnugo)
+(require 'gnugo)
 (require 'sgf)
 (require 'ert)
 
@@ -168,7 +168,7 @@
      (unwind-protect
          (progn
            (setf *gnugo* (make-instance 'gnugo))
-           (setf (buffer *gnugo*) (go-gnugo-start-process))
+           (setf (buffer *gnugo*) (gnugo-start-process))
            ,@body)
        (let ((kill-buffer-query-functions nil))
          (should (kill-buffer (buffer *gnugo*)))))))

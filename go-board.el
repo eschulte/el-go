@@ -336,7 +336,7 @@
   (let ((*autoplay* t))
     (go-board
      (make-instance 'gnugo
-       :buffer (apply #'go-gnugo-start-process
+       :buffer (apply #'gnugo-start-process
                       (when level
                         (list "--level" (number-to-string level))))))))
 
