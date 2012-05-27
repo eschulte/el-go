@@ -125,8 +125,9 @@
   (signal 'unsupported-back-end-command (list gtp :set-alt alt)))
 
 (defmethod go-color ((gtp gtp))
-  (let ((last (split-string (gtp-command gtp "last_move"))))
-    (case (intern (car last)) ('white :B) ('black :W))))
+  (case (condition-case err
+            (intern (car (split-string (gtp-command gtp "last_move"))))
+          (error 'white)) ('white :B) ('black :W)))
 
 (defmethod set-go-color ((gtp gtp) color)
   (signal 'unsupported-back-end-command (list gtp :set-color color)))

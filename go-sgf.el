@@ -120,11 +120,12 @@
       (prev sgf)
       (error "sgf: no more moves"))))
 
+;; TODO: currently this only works with linear sgf files w/o alternatives
 (defmethod set-go-move ((sgf sgf) move)
+  (next sgf)
   (if (current sgf)
-      ;; TODO: this overwrites rather than saving alternatives
       (setf (current sgf) (list move))
-    (rpush (list move) (go-sgf-ref (self sgf) (butlast (index sgf))))))
+    (setf (self sgf) (rcons (list move) (self sgf)))))
 
 (defmethod go-labels ((sgf sgf))
   (let ((turn (current sgf)))
