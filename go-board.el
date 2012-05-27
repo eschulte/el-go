@@ -221,7 +221,7 @@
     (go-board-paint)
     (goto-char (point-min))))
 
-(defun go-board-display (back-end &rest trackers)
+(defun go-board (back-end &rest trackers)
   (let ((buffer (generate-new-buffer "*GO*")))
     (with-current-buffer buffer
       (go-board-mode)
@@ -332,7 +332,7 @@
 (defun go-board-play (&optional level)
   (interactive "P")
   (let ((*autoplay* t))
-    (go-board-display
+    (go-board
      (make-instance 'gnugo
        :buffer (apply #'go-gnugo-start-process
                       (when level

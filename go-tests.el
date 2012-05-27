@@ -260,7 +260,7 @@
 (defmacro with-sgf-display (file &rest body)
   (declare (indent 1))
   (let ((buffer (gensym "sgf-display-buffer")))
-    `(let ((,buffer (go-board-display
+    `(let ((,buffer (go-board
                      (make-instance 'sgf
                        :self (sgf2el-file-to-el ,file)
                        :index '(0)))))
