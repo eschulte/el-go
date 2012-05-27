@@ -28,6 +28,14 @@
 ;;; Code:
 (eval-when-compile (require 'cl))
 
+(defun rcons (x lst)
+  (append lst (list x)))
+
+(defmacro rpush (x place)
+  "Insert X at the back of the list stored in PLACE."
+  (if (symbolp place) (list 'setq place (list 'rcons x place))
+    (list 'callf2 'rcons x place)))
+
 (defun range (a &optional b)
   (block nil
     (let (tmp)

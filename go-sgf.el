@@ -65,12 +65,32 @@
 (defmethod current ((sgf sgf))
   (go-sgf-ref (self sgf) (index sgf)))
 
+(defun set-current (sgf new)
+  (setf (go-sgf-ref (self sgf) (index sgf)) new))
+
+(defsetf current set-current)
+
 (defmethod root ((sgf sgf))
   (go-sgf-ref (self sgf) '(0)))
 
-(defmethod go->move ((sgf sgf) move))
+(defun set-root (sgf new)
+  (if (self sgf)
+      (setf (car (self sgf)) new)
+    (setf (self sgf) (list new))))
 
-(defmethod go->board ((sgf sgf) size))
+(defsetf root set-root)
+
+(defmethod go->move ((sgf sgf) move)
+  (if (current sgf)
+      ;; TODO: this overwrites rather than saving alternatives
+      (setf (current sgf) (list move))
+    (rpush (list move) (go-sgf-ref (self sgf) (butlast (index sgf))))))
+
+(defmethod go->size ((sgf sgf) size)
+  (cond
+   ((aget (root sgf)  :S) (setf (cdr (assoc  :S (root sgf))) size))
+   ((aget (root sgf) :SZ) (setf (cdr (assoc :SZ (root sgf))) size))
+   (t                     (push (cons :S size) (root sgf)))))
 
 (defmethod go->resign ((sgf sgf) resign))
 
@@ -78,9 +98,10 @@
   (decf (car (last (index sgf))))
   (alistp (current sgf)))
 
-;; (defmethod go->comment ((sgf sgf) comment)
-;;   ;; TODO: need a setf method for current
-;;   (push (cons :C comment) (current sgf)))
+(defmethod go->comment ((sgf sgf) comment)
+  (if (aget (current sgf) :C)
+      (setf (cdr (assoc :C (current sgf))) comment)
+    (push (cons :C comment) (current sgf))))
 
 (defmethod go<-size ((sgf sgf))
   (or (aget (root sgf) :S)

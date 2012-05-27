@@ -38,7 +38,7 @@
 (require 'eieio)
 
 (defgeneric go->move    (back-end move)    "Send MOVE to BACK-END.")
-(defgeneric go->board   (back-end size)    "Send SIZE to BACK-END.")
+(defgeneric go->size    (back-end size)    "Send SIZE to BACK-END.")
 (defgeneric go->resign  (back-end resign)  "Send RESIGN to BACK-END.")
 (defgeneric go->undo    (back-end)         "Tell BACK-END undo the last move.")
 (defgeneric go->comment (back-end comment) "Send COMMENT to BACK-END.")
