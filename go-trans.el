@@ -37,17 +37,34 @@
 (require 'go-util)
 (require 'eieio)
 
-(defgeneric go->move    (back-end move)    "Send MOVE to BACK-END.")
-(defgeneric go->size    (back-end size)    "Send SIZE to BACK-END.")
-(defgeneric go->resign  (back-end resign)  "Send RESIGN to BACK-END.")
-(defgeneric go->undo    (back-end)         "Tell BACK-END undo the last move.")
-(defgeneric go->comment (back-end comment) "Send COMMENT to BACK-END.")
-(defgeneric go->reset   (back-end)         "Reset the current BACK-END.")
-(defgeneric go<-size    (back-end)         "Get size from BACK-END")
-(defgeneric go<-name    (back-end)         "Get a game name from BACK-END.")
-(defgeneric go<-alt     (back-end)         "Get an alternative from BACK-END.")
-(defgeneric go<-move    (back-end color)   "Get a pos from BACK-END.")
-(defgeneric go<-turn    (back-end color)   "Get a full turn from BACK-END.")
-(defgeneric go<-comment (back-end)         "Get COMMENT from BACK-END.")
+(put 'unsupported-back-end-command
+     'error-conditions
+     '(error unsupported-back-end-command))
+
+(defmacro ignoring-unsupported (&rest body)
+  `(condition-case err ,@body
+     (unsupported-back-end-command nil)))
+
+(defmacro defgeneric-w-setf (name doc)
+  (let ((set-name (intern (concat "set-" (symbol-name name)))))
+    `(progn
+       (defgeneric ,name     (back-end) ,doc)
+       (defgeneric ,set-name (back-end new))
+       (defsetf ,name ,set-name))))
+
+;; setf'able back-end access
+(defgeneric-w-setf go-size    "Access BACK-END size.")
+(defgeneric-w-setf go-name    "Access BACK-END name.")
+(defgeneric-w-setf go-move    "Access current BACK-END move.")
+(defgeneric-w-setf go-labels  "Access current BACK-END labels.")
+(defgeneric-w-setf go-comment "Access current BACK-END comment.")
+(defgeneric-w-setf go-alt     "Access current BACK-END alternative move.")
+(defgeneric-w-setf go-color   "Access current BACK-END turn color.")
+
+;; sending messages to the back-end
+(defgeneric go-undo   (back-end) "Send undo to BACK-END.")
+(defgeneric go-pass   (back-end) "Send pass to BACK-END.")
+(defgeneric go-resign (back-end) "Send resign to BACK-END.")
+(defgeneric go-reset  (back-end) "Send reset to BACK-END.")
 
 (provide 'go-trans)

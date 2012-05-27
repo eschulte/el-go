@@ -35,6 +35,12 @@
 (require 'go-util)
 (require 'go-trans)
 
+(defun go-gtp-expand-color (turn)
+  (case turn
+    (:B "black")
+    (:W "white")
+    (t (error "gtp: unknown turn %S" turn))))
+
 (defun go-gtp-char-to-num (char)
   (flet ((err () (error "go-gtp: invalid char %s" char)))
     (cond
@@ -78,28 +84,62 @@
 (defgeneric gtp-command (back-end command)
   "Send gtp COMMAND to OBJECT and return any output.")
 
-(defmethod go->move ((gtp gtp) move)
-  (gtp-command gtp (go-to-gtp-command move)))
-
-(defmethod go<-size ((gtp gtp))
+(defmethod go-size ((gtp gtp))
   (parse-integer (gtp-command gtp "query_boardsize")))
 
-(defmethod go<-name ((gtp gtp))
+(defmethod set-go-size ((gtp gtp) size)
+  (gtp-command gtp (format "boardsize %d" size)))
+
+(defmethod go-name ((gtp gtp))
   (gtp-command gtp "name"))
 
-(defmethod go<-comment ((gtp gtp)) nil)
+(defmethod set-go-name ((gtp gtp) name)
+  (signal 'unsupported-back-end-command (list gtp :set-name name)))
 
-(defmethod go<-move ((gtp gtp) color)
-  (go-gtp-to-pos color
-                  (case color
-                    (:B (gtp-command gtp "genmove_black"))
-                    (:W (gtp-command gtp "genmove_white")))))
+(defmethod go-move ((gtp gtp))
+  (let ((color (go-color gtp)))
+    (go-gtp-to-pos color
+                   (case color
+                     (:B (gtp-command gtp "genmove_black"))
+                     (:W (gtp-command gtp "genmove_white"))))))
 
-(defmethod go<-turn ((gtp gtp) color) (list (go<-move gtp color)))
+(defmethod set-go-move ((gtp gtp) move)
+  (gtp-command gtp (go-to-gtp-command move)))
 
-(defmethod go->reset ((gtp gtp)) (gtp-command gtp "clear_board"))
+(defmethod go-labels ((gtp gtp))
+  (signal 'unsupported-back-end-command (list gtp :labels)))
 
-(defmethod go->undo ((gtp gtp)) (gtp-command gtp "undo"))
+(defmethod set-go-labels ((gtp gtp) labels)
+  (signal 'unsupported-back-end-command (list gtp :set-labels labels)))
 
+(defmethod go-comment ((gtp gtp))
+  (signal 'unsupported-back-end-command (list gtp :comment)))
+
+(defmethod set-go-comment ((gtp gtp) comment)
+  (signal 'unsupported-back-end-command (list gtp :set-comment comment)))
+
+(defmethod go-alt ((gtp gtp))
+  (signal 'unsupported-back-end-command (list gtp :alt)))
+
+(defmethod set-go-alt ((gtp gtp) alt)
+  (signal 'unsupported-back-end-command (list gtp :set-alt alt)))
+
+(defmethod go-color ((gtp gtp))
+  (let ((last (split-string (gtp-command gtp "last_move"))))
+    (case (intern (car last)) ('white :B) ('black :W))))
+
+(defmethod set-go-color ((gtp gtp) color)
+  (signal 'unsupported-back-end-command (list gtp :set-color color)))
+
+;; non setf'able generic functions
+(defmethod go-undo ((gtp gtp)) (gtp-command gtp "undo"))
+
+(defmethod go-pass ((gtp gtp))
+  (gtp-command gtp (format "%s pass" (go-gtp-expand-color (go-color gtp)))))
+
+(defmethod go-resign ((gtp gtp))
+  (gtp-command gtp (format "%s resign" (go-gtp-expand-color (go-color gtp)))))
+
+(defmethod go-reset ((gtp gtp)) (gtp-command gtp "clear_board"))
 
 (provide 'go-gtp)

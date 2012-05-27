@@ -80,44 +80,40 @@
 
 (defsetf root set-root)
 
-(defmethod go->move ((sgf sgf) move)
+(defmethod go-move ((sgf sgf) move)
   (if (current sgf)
       ;; TODO: this overwrites rather than saving alternatives
       (setf (current sgf) (list move))
     (rpush (list move) (go-sgf-ref (self sgf) (butlast (index sgf))))))
 
-(defmethod go->size ((sgf sgf) size)
+(defmethod go-size ((sgf sgf) size)
   (cond
    ((aget (root sgf)  :S) (setf (cdr (assoc  :S (root sgf))) size))
    ((aget (root sgf) :SZ) (setf (cdr (assoc :SZ (root sgf))) size))
    (t                     (push (cons :S size) (root sgf)))))
 
-(defmethod go->resign ((sgf sgf) resign))
+(defmethod go-resign ((sgf sgf) resign))
 
-(defmethod go->undo ((sgf sgf))
+(defmethod go-undo ((sgf sgf))
   (decf (car (last (index sgf))))
   (alistp (current sgf)))
 
-(defmethod go->comment ((sgf sgf) comment)
+(defmethod go-comment ((sgf sgf) comment)
   (if (aget (current sgf) :C)
       (setf (cdr (assoc :C (current sgf))) comment)
     (push (cons :C comment) (current sgf))))
 
-(defmethod go<-size ((sgf sgf))
+(defmethod go-size ((sgf sgf))
   (or (aget (root sgf) :S)
       (aget (root sgf) :SZ)))
 
-(defmethod go<-name ((sgf sgf))
+(defmethod go-name ((sgf sgf))
   (or (aget (root sgf) :GN)
       (aget (root sgf) :EV)))
 
-(defmethod go<-alt ((sgf sgf)))
+(defmethod go-alt ((sgf sgf)))
 
-(defmethod go<-turn ((sgf sgf) color)
-  (incf (car (last (index sgf))))
-  (current sgf))
-
-(defmethod go<-comment ((sgf sgf))
+(defmethod go-comment ((sgf sgf))
   (aget (current sgf) :C))
 
 (defun go-from-file (file)

@@ -227,7 +227,7 @@
     (with-gnugo
      (should (string= b1 (gtp-command *gnugo* "showboard")))
      (should (string= "" (gtp-command *gnugo* "black A1")))
-     (should (string= "" (go->move   *gnugo* '(:B :pos . (0 . 1)))))
+     (should (string= "" (go-move   *gnugo* '(:B :pos . (0 . 1)))))
      (should (string= b2 (gtp-command *gnugo* "showboard"))))))
 
 

@@ -213,7 +213,7 @@
             (board-to-string
              (pieces-to-board (car *history*) *size*))
             "\n\n")
-    (let ((comment (go<-comment *back-end*)))
+    (let ((comment (ignoring-unsupported (go-comment *back-end*))))
       (when comment
         (insert (make-string (+ 6 (* 2 *size*)) ?=)
                 "\n\n"
@@ -225,14 +225,14 @@
   (let ((buffer (generate-new-buffer "*GO*")))
     (with-current-buffer buffer
       (go-board-mode)
-      (let ((name (go<-name back-end)))
+      (let ((name (go-name back-end)))
         (when name
           (rename-buffer (ear-muffs name) 'unique)
-          (mapcar (lambda (tr) (go->name tr name)) trackers)))
+          (mapcar (lambda (tr) (go-name tr name)) trackers)))
       (set (make-local-variable '*back-end*) back-end)
       (set (make-local-variable '*turn*) :B)
-      (set (make-local-variable '*size*) (go<-size back-end))
-      (mapcar (lambda (tr) (go->size tr *size*)) trackers)
+      (set (make-local-variable '*size*) (go-size back-end))
+      (mapcar (lambda (tr) (go-size tr *size*)) trackers)
       (set (make-local-variable '*history*)
            (list (board-to-pieces (make-board *size*))))
       (set (make-local-variable '*trackers*) trackers)
@@ -243,8 +243,9 @@
 ;;; User input
 (defmacro with-backends (sym &rest body)
   (declare (indent 1))
-  `(prog1 (let ((,sym *back-end*)) ,@body)
-     (mapcar (lambda (tr) (let ((,sym tr)) ,@body)) *trackers*)))
+  `(ignoring-unsupported
+    (prog1 (let ((,sym *back-end*)) ,@body)
+      (mapcar (lambda (tr) (let ((,sym tr)) ,@body)) *trackers*))))
 
 (defvar go-board-actions '(move resign undo comment)
   "List of actions which may be taken on an GO board.")
@@ -278,18 +279,18 @@
                                           (range 1 *size*))))))))
          (move (cons *turn* (cons :pos pos))))
     (with-backends back
-      (go->move back move))
+      (setf (go-move back) move))
     (apply-turn-to-board (list move))
     (setf *turn* (other-color *turn*)))
   (when *autoplay* (go-board-next)))
 
 (defun go-board-act-resign ()
   (interactive)
-  (with-backends back (go->reset back)))
+  (with-backends back (go-reset back)))
 
 (defun go-board-act-undo (&optional num)
   (interactive "p")
-  (with-backends back (go->undo back))
+  (with-backends back (go-undo back))
   (pop *history*)
   (update-display (current-buffer))
   (setf *turn* (other-color *turn*)))
@@ -301,7 +302,8 @@
 (defun go-board-next (&optional count)
   (interactive "p")
   (dotimes (n (or count 1) (or count 1))
-    (apply-turn-to-board (go<-turn *back-end* *turn*))
+    (apply-turn-to-board
+     (cons (go-move *back-end*) (ignoring-unsupported (go-labels *back-end*))))
     (setf *turn* (other-color *turn*))))
 
 (defun go-board-mouse-move (ev)
