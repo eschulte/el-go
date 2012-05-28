@@ -65,6 +65,15 @@
   (interactive "f")
   (make-instance 'sgf :self (sgf2el-file-to-el file)))
 
+(defun sgf-to-file (sgf file)
+  (interactive "F")
+  (when (and (file-exists-p file)
+             (not (y-or-n-p (format "overwrite %s? " file))))
+    (error "aborted"))
+  (with-temp-file file
+    (delete-region (point-min) (point-max))
+    (insert (pp (self sgf)))))
+
 (defmethod current ((sgf sgf))
   (sgf-ref (self sgf) (index sgf)))
 
@@ -168,5 +177,9 @@
 
 (defmethod go-resign ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :resign)))
+
+(defmethod go-quit ((sgf sgf))
+  (when (y-or-n-p "Save game to file: ")
+    (sgf-to-file sgf (read-file-name "Save game to: "))))
 
 (provide 'sgf)

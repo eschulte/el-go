@@ -53,6 +53,13 @@
 (defun other-color (color)
   (if (equal color :B) :W :B))
 
+(defun point-of-pos (pos)
+  (catch 'found-pos
+    (dotimes (p (1- (point-max)) (error "go: pos %S not found" pos))
+      (let ((pos-at-point (get-text-property (1+ p) :pos)))
+        (when (and pos-at-point (tree-equal pos pos-at-point))
+          (throw 'found-pos p))))))
+
 (defun apply-turn-to-board (moves)
   (let ((board (pieces-to-board (car *history*) *size*)))
     (clear-labels board)
@@ -206,19 +213,19 @@
 
 (defun update-display (buffer)
   (with-current-buffer buffer
-    (delete-region (point-min) (point-max))
-    (goto-char (point-min))
-    (insert "\n"
-            (board-to-string
-             (pieces-to-board (car *history*) *size*))
-            "\n\n")
-    (let ((comment (ignoring-unsupported (go-comment *back-end*))))
-      (when comment
-        (insert (make-string (+ 6 (* 2 *size*)) ?=)
-                "\n\n"
-                comment)))
-    (go-board-paint)
-    (goto-char (point-min))))
+    (let ((point (point)))
+      (delete-region (point-min) (point-max))
+      (insert "\n"
+              (board-to-string
+               (pieces-to-board (car *history*) *size*))
+              "\n\n")
+      (let ((comment (ignoring-unsupported (go-comment *back-end*))))
+        (when comment
+          (insert (make-string (+ 6 (* 2 *size*)) ?=)
+                  "\n\n"
+                  comment)))
+      (go-board-paint)
+      (goto-char point))))
 
 (defun go-board (back-end &rest trackers)
   (let ((buffer (generate-new-buffer "*GO*")))
@@ -227,11 +234,11 @@
       (let ((name (go-name back-end)))
         (when name
           (rename-buffer (ear-muffs name) 'unique)
-          (mapcar (lambda (tr) (go-name tr name)) trackers)))
+          (mapcar (lambda (tr) (setf (go-name tr) name)) trackers)))
       (set (make-local-variable '*back-end*) back-end)
       (set (make-local-variable '*turn*) :B)
       (set (make-local-variable '*size*) (go-size back-end))
-      (mapcar (lambda (tr) (go-size tr *size*)) trackers)
+      (mapcar (lambda (tr) (setf (go-size tr) *size*)) trackers)
       (set (make-local-variable '*history*)
            (list (board-to-pieces (make-board *size*))))
       (set (make-local-variable '*trackers*) trackers)
@@ -301,13 +308,19 @@
 (defun go-board-next (&optional count)
   (interactive "p")
   (dotimes (n (or count 1) (or count 1))
-    (apply-turn-to-board
-     (cons (go-move *back-end*) (ignoring-unsupported (go-labels *back-end*))))
+    (let ((move (go-move *back-end*)))
+      (apply-turn-to-board
+       (cons move (ignoring-unsupported (go-labels *back-end*)))))
     (setf *turn* (other-color *turn*))))
 
 (defun go-board-mouse-move (ev)
   (interactive "e")
   (go-board-act-move (get-text-property (posn-point (event-start ev)) :pos)))
+
+(defun go-board-quit ()
+  (interactive)
+  (with-backends back (go-quit back))
+  (kill-buffer (current-buffer)))
 
 
 ;;; Display mode
@@ -322,8 +335,7 @@
     (define-key map (kbd "p") 'go-board-act-undo)
     (define-key map (kbd "<right>") 'go-board-next)
     (define-key map (kbd "<left>")  'go-board-act-undo)
-    (define-key map (kbd "q") (lambda () (interactive)
-                                (kill-buffer (current-buffer))))
+    (define-key map (kbd "q") 'go-board-quit)
     map)
   "Keymap for `go-board-mode'.")
 

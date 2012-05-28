@@ -61,12 +61,14 @@
   "Play a game of GO against gnugo.
 Optional argument LEVEL specifies gnugo's level of play."
   (interactive "P")
-  (let ((*autoplay* t))
-    (go-board
-     (make-instance 'gnugo
-       :buffer (apply #'gnugo-start-process
-                      (when level
-                        (list "--level" (number-to-string level))))))))
+  (with-current-buffer
+      (go-board
+       (make-instance 'gnugo
+         :buffer (apply #'gnugo-start-process
+                        (when level
+                          (list "--level" (number-to-string level)))))
+       (make-instance 'sgf))
+    (setq *autoplay* t)))
 
 ;; setf'able back-end access
 (defgeneric-w-setf go-size    "Access BACK-END size.")
@@ -82,5 +84,6 @@ Optional argument LEVEL specifies gnugo's level of play."
 (defgeneric go-pass   (back-end) "Send pass to BACK-END.")
 (defgeneric go-resign (back-end) "Send resign to BACK-END.")
 (defgeneric go-reset  (back-end) "Send reset to BACK-END.")
+(defgeneric go-quit   (back-end) "Quit the BACK-END.")
 
 (provide 'go)

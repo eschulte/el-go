@@ -142,4 +142,6 @@
 
 (defmethod go-reset ((gtp gtp)) (gtp-command gtp "clear_board"))
 
+(defmethod go-quit ((gtp gtp)) (gtp-command gtp "quit"))
+
 (provide 'gtp)
