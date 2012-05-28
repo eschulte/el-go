@@ -58,7 +58,7 @@
     (dotimes (p (1- (point-max)) (error "go: pos %S not found" pos))
       (let ((pos-at-point (get-text-property (1+ p) :pos)))
         (when (and pos-at-point (tree-equal pos pos-at-point))
-          (throw 'found-pos p))))))
+          (throw 'found-pos (1+ p)))))))
 
 (defun apply-turn-to-board (moves)
   (let ((board (pieces-to-board (car *history*) *size*)))
@@ -113,7 +113,7 @@
                                 neighbors)))
          (already (cons piece already)))
     (or (some (lambda (v) (not (or (equal v enemy) ; touching open space
-                              (equal v val))))
+                                   (equal v val))))
               neighbor-vals)
         (some (lambda (n) (alive-p board n already)) ; touching alive dragon
               friendly))))
@@ -267,7 +267,7 @@
       (undo    (message "loser"))
       (comment (message "what?")))))
 
-(defun go-board-act-move (&optional pos)
+(defun go-board-move (&optional pos)
   (interactive)
   (let* ((color (case *turn* (:B "black") (:W "white")))
          (pos (or pos (cons (gtp-char-to-num
@@ -290,18 +290,24 @@
     (setf *turn* (other-color *turn*)))
   (when *autoplay* (go-board-next)))
 
-(defun go-board-act-resign ()
+(defun go-board-resign ()
   (interactive)
   (with-backends back (go-reset back)))
 
-(defun go-board-act-undo (&optional num)
+(defun go-board-pass ()
+  (interactive)
+  (with-backends back (go-pass back))
+  (setf *turn* (other-color *turn*))
+  (when *autoplay* (go-board-next)))
+
+(defun go-board-undo (&optional num)
   (interactive "p")
   (with-backends back (go-undo back))
   (pop *history*)
   (update-display (current-buffer))
   (setf *turn* (other-color *turn*)))
 
-(defun go-board-act-comment (&optional comment)
+(defun go-board-comment (&optional comment)
   (interactive "MComment: ")
   (message "comment: %S" comment))
 
@@ -310,12 +316,14 @@
   (dotimes (n (or count 1) (or count 1))
     (let ((move (go-move *back-end*)))
       (apply-turn-to-board
-       (cons move (ignoring-unsupported (go-labels *back-end*)))))
+       (cons move (ignoring-unsupported (go-labels *back-end*))))
+      (mapcar (lambda (tr) (setf (go-move tr) move)) *trackers*)
+      (goto-char (point-of-pos (cddr move))))
     (setf *turn* (other-color *turn*))))
 
 (defun go-board-mouse-move (ev)
   (interactive "e")
-  (go-board-act-move (get-text-property (posn-point (event-start ev)) :pos)))
+  (go-board-move (get-text-property (posn-point (event-start ev)) :pos)))
 
 (defun go-board-quit ()
   (interactive)
@@ -326,15 +334,14 @@
 ;;; Display mode
 (defvar go-board-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<down-mouse-1>") 'go-board-mouse-move)
-    (define-key map (kbd "m") 'go-board-act-move)
-    (define-key map (kbd "r") 'go-board-act-resign)
-    (define-key map (kbd "u") 'go-board-act-undo)
-    (define-key map (kbd "c") 'go-board-act-comment)
-    (define-key map (kbd "n") 'go-board-next)
-    (define-key map (kbd "p") 'go-board-act-undo)
+    (define-key map (kbd "<mouse-1>") 'go-board-mouse-move)
+    (define-key map (kbd "m") 'go-board-move)
+    (define-key map (kbd "r") 'go-board-resign)
+    (define-key map (kbd "u") 'go-board-undo)
+    (define-key map (kbd "c") 'go-board-comment)
+    (define-key map (kbd "p") 'go-board-pass)
     (define-key map (kbd "<right>") 'go-board-next)
-    (define-key map (kbd "<left>")  'go-board-act-undo)
+    (define-key map (kbd "<left>")  'go-board-undo)
     (define-key map (kbd "q") 'go-board-quit)
     map)
   "Keymap for `go-board-mode'.")
