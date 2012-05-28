@@ -63,7 +63,7 @@
 
 (defun gtp-to-pos (color gtp)
   (cons color (cons :pos (cons (gtp-char-to-num (aref gtp 0))
-                               (1- (parse-integer (substring gtp 1)))))))
+                               (1- (read (substring gtp 1)))))))
 
 (defun go-to-gtp-command (element)
   "Convert an go ELEMENT to a gtp command."
@@ -84,7 +84,7 @@
   "Send gtp COMMAND to OBJECT and return any output.")
 
 (defmethod go-size ((gtp gtp))
-  (parse-integer (gtp-command gtp "query_boardsize")))
+  (read (gtp-command gtp "query_boardsize")))
 
 (defmethod set-go-size ((gtp gtp) size)
   (gtp-command gtp (format "boardsize %d" size)))
