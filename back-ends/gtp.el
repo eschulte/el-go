@@ -96,11 +96,13 @@
   (signal 'unsupported-back-end-command (list gtp :set-name name)))
 
 (defmethod go-move ((gtp gtp))
-  (let ((color (go-color gtp)))
-    (gtp-to-pos color
-                   (case color
-                     (:B (gtp-command gtp "genmove_black"))
-                     (:W (gtp-command gtp "genmove_white"))))))
+  (let* ((color (go-color gtp))
+         (move (case color
+                 (:B (gtp-command gtp "genmove_black"))
+                 (:W (gtp-command gtp "genmove_white")))))
+    (if (string= move "PASS")
+        :pass
+      (gtp-to-pos color move))))
 
 (defmethod set-go-move ((gtp gtp) move)
   (gtp-command gtp (go-to-gtp-command move)))

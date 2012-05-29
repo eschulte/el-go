@@ -315,8 +315,10 @@
   (interactive "p")
   (dotimes (n (or count 1) (or count 1))
     (let ((move (go-move *back-end*)))
-      (apply-turn-to-board
-       (cons move (ignoring-unsupported (go-labels *back-end*))))
+      (if (equal move :pass)
+          (message "pass")
+        (apply-turn-to-board
+         (cons move (ignoring-unsupported (go-labels *back-end*)))))
       (mapcar (lambda (tr) (setf (go-move tr) move)) *trackers*)
       (goto-char (point-of-pos (cddr move))))
     (setf *turn* (other-color *turn*))))
