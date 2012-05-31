@@ -39,10 +39,10 @@
     2 -2) "\n"))
 
 (defvar gnugo-program "gnugo"
-  "path to gnugo executable")
+  "Path to gnugo executable.")
 
 (defvar gnugo-process-name "gnugo"
-  "name for the gnugo process")
+  "Name for the gnugo process.")
 
 (defun gnugo-start-process (&rest options)
   (let ((buffer (apply 'make-comint
