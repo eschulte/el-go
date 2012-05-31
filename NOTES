@@ -1,0 +1,12 @@
+# -*- org-mode -*-
+
+* IGS Support
+- use information in [[file:data/igs.c][igs.c]] and in the cgoban source.
+- [[file:data/igs-session][tcpick output]] collected with while talking with IGS servers
+  #+begin_src sh
+    sudo tcpick -i wlan0 -yP
+  #+end_src
+
+* Asynchronous Process Interaction
+Use process filters (see [[info:elisp#Filter%20Functions][info:elisp#Filter Functions]]) to act only on
+whole completed commands.
