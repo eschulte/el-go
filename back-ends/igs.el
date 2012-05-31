@@ -41,6 +41,51 @@
 (defvar igs-port 6969
   "Port to use when connecting to an IGS server.")
 
+(defvar igs-message-types
+  '((:unknown   . 0)
+    (:AUTOMAT   . 35)   ;; Automatch announcement
+    (:AUTOASK   . 36)   ;; Automatch accept
+    (:CHOICES   . 38)   ;; game choices
+    (:CLIVRFY   . 41)   ;; Client verify message
+    (:BEEP      . 2)    ;; \7 telnet
+    (:BOARD     . 3)    ;; Board being drawn
+    (:DOWN      . 4)    ;; The server is going down
+    (:ERROR     . 5)    ;; An error reported
+    (:FIL       . 6)    ;; File being sent
+    (:GAMES     . 7)    ;; Games listing
+    (:HELP      . 8)    ;; Help file
+    (:INFO      . 9)    ;; Generic info
+    (:LAST      . 10)   ;; Last command
+    (:KIBITZ    . 11)   ;; Kibitz strings
+    (:LOAD      . 12)   ;; Loading a game
+    (:LOOK_M    . 13)   ;; Look
+    (:MESSAGE   . 14)   ;; Message listing
+    (:MOVE      . 15)   ;; Move #:(B) A1
+    (:OBSERVE   . 16)   ;; Observe report
+    (:PROMPT    . 1)    ;; A Prompt (never)
+    (:REFRESH   . 17)   ;; Refresh of a board
+    (:SAVED     . 18)   ;; Stored command
+    (:SAY       . 19)   ;; Say string
+    (:SCORE_M   . 20)   ;; Score report
+    (:SGF_M     . 34)   ;; SGF variation
+    (:SHOUT     . 21)   ;; Shout string
+    (:SHOW      . 29)   ;; Shout string
+    (:STATUS    . 22)   ;; Current Game status
+    (:STORED    . 23)   ;; Stored games
+    (:TEACH     . 33)   ;; teaching game
+    (:TELL      . 24)   ;; Tell string
+    (:DOT       . 40)   ;; your . string
+    (:THIST     . 25)   ;; Thist report
+    (:TIM       . 26)   ;; times command
+    (:TRANS     . 30)   ;; Translation info
+    (:TTT_BOARD . 37)   ;; tic tac toe
+    (:WHO       . 27)   ;; who command
+    (:UNDO      . 28)   ;; Undo report
+    (:USER      . 42)   ;; Long user report
+    (:VERSION   . 39)   ;; IGS Version
+    (:YELL      . 32))) ;; Channel yelling
+
+
 (defvar igs-process-name "igs"
   "Name for the igs process.")
 
