@@ -41,70 +41,119 @@
 (defvar igs-port 6969
   "Port to use when connecting to an IGS server.")
 
-(defvar igs-message-types
-  '((:unknown   . 0)
-    (:AUTOMAT   . 35)   ;; Automatch announcement
-    (:AUTOASK   . 36)   ;; Automatch accept
-    (:CHOICES   . 38)   ;; game choices
-    (:CLIVRFY   . 41)   ;; Client verify message
-    (:BEEP      . 2)    ;; \7 telnet
-    (:BOARD     . 3)    ;; Board being drawn
-    (:DOWN      . 4)    ;; The server is going down
-    (:ERROR     . 5)    ;; An error reported
-    (:FIL       . 6)    ;; File being sent
-    (:GAMES     . 7)    ;; Games listing
-    (:HELP      . 8)    ;; Help file
-    (:INFO      . 9)    ;; Generic info
-    (:LAST      . 10)   ;; Last command
-    (:KIBITZ    . 11)   ;; Kibitz strings
-    (:LOAD      . 12)   ;; Loading a game
-    (:LOOK_M    . 13)   ;; Look
-    (:MESSAGE   . 14)   ;; Message listing
-    (:MOVE      . 15)   ;; Move #:(B) A1
-    (:OBSERVE   . 16)   ;; Observe report
-    (:PROMPT    . 1)    ;; A Prompt (never)
-    (:REFRESH   . 17)   ;; Refresh of a board
-    (:SAVED     . 18)   ;; Stored command
-    (:SAY       . 19)   ;; Say string
-    (:SCORE_M   . 20)   ;; Score report
-    (:SGF_M     . 34)   ;; SGF variation
-    (:SHOUT     . 21)   ;; Shout string
-    (:SHOW      . 29)   ;; Shout string
-    (:STATUS    . 22)   ;; Current Game status
-    (:STORED    . 23)   ;; Stored games
-    (:TEACH     . 33)   ;; teaching game
-    (:TELL      . 24)   ;; Tell string
-    (:DOT       . 40)   ;; your . string
-    (:THIST     . 25)   ;; Thist report
-    (:TIM       . 26)   ;; times command
-    (:TRANS     . 30)   ;; Translation info
-    (:TTT_BOARD . 37)   ;; tic tac toe
-    (:WHO       . 27)   ;; who command
-    (:UNDO      . 28)   ;; Undo report
-    (:USER      . 42)   ;; Long user report
-    (:VERSION   . 39)   ;; IGS Version
-    (:YELL      . 32))) ;; Channel yelling
-
+(defvar igs-username "guest"
+  "User name to use when connecting to an IGS server.")
 
 (defvar igs-process-name "igs"
   "Name for the igs process.")
 
+(defvar igs-message-types
+  '((:unknown   . 0)
+    (:automat   . 35)   ;; Automatch announcement
+    (:autoask   . 36)   ;; Automatch accept
+    (:choices   . 38)   ;; game choices
+    (:clivrfy   . 41)   ;; Client verify message
+    (:beep      . 2)    ;; \7 telnet
+    (:board     . 3)    ;; Board being drawn
+    (:down      . 4)    ;; The server is going down
+    (:error     . 5)    ;; An error reported
+    (:fil       . 6)    ;; File being sent
+    (:games     . 7)    ;; Games listing
+    (:help      . 8)    ;; Help file
+    (:info      . 9)    ;; Generic info
+    (:last      . 10)   ;; Last command
+    (:kibitz    . 11)   ;; Kibitz strings
+    (:load      . 12)   ;; Loading a game
+    (:look_m    . 13)   ;; Look
+    (:message   . 14)   ;; Message listing
+    (:move      . 15)   ;; Move #:(B) A1
+    (:observe   . 16)   ;; Observe report
+    (:prompt    . 1)    ;; A Prompt (never)
+    (:refresh   . 17)   ;; Refresh of a board
+    (:saved     . 18)   ;; Stored command
+    (:say       . 19)   ;; Say string
+    (:score_m   . 20)   ;; Score report
+    (:sgf_m     . 34)   ;; SGF variation
+    (:shout     . 21)   ;; Shout string
+    (:show      . 29)   ;; Shout string
+    (:status    . 22)   ;; Current Game status
+    (:stored    . 23)   ;; Stored games
+    (:teach     . 33)   ;; teaching game
+    (:tell      . 24)   ;; Tell string
+    (:dot       . 40)   ;; your . string
+    (:thist     . 25)   ;; Thist report
+    (:tim       . 26)   ;; times command
+    (:trans     . 30)   ;; Translation info
+    (:ttt_board . 37)   ;; tic tac toe
+    (:who       . 27)   ;; who command
+    (:undo      . 28)   ;; Undo report
+    (:user      . 42)   ;; Long user report
+    (:version   . 39)   ;; IGS Version
+    (:yell      . 32))) ;; Channel yelling
+
+(defvar igs-player-re
+  "\\([[:alpha:][:digit:]]+\\) +\\[ *\\([[:digit:]]+[kd]\\*\\)\\]"
+  "Regular expression used to parse igs player name and rating.")
+
+(defvar igs-game-re
+  (format "\\[\\([[:digit:]]+\\)\\] +%s +vs. +%s +\\((.+)\\) \\((.+)\\)$"
+          igs-player-re igs-player-re)
+  "Regular expression used to parse igs game listings.")
+
+(defvar *igs-ready* nil
+  "Indicates if the IGS server is waiting for input.")
+
+(defvar *igs-games* nil
+  "List holding the current games on the IGS server.")
+
+(defun igs-toggle (setting value)
+  (insert (format "toggle %s %s" setting (if value "true" "false")))
+  (comint-send-input))
+
+(defun igs-filter-process (string)
+  (unless (string-match "^\\([[:digit:]]+\\) \\(.+\\)$" string)
+    (error "igs: malformed response %S" string))
+  (let* ((number  (match-string 1 string))
+         (content (match-string 2 string)))
+    (case (car (rassoc number igs-message-types))
+      (:prompt (set *igs-ready* t))
+      (:info   (message "igs-info: %s" content))
+      (:games  (push (igs-parse-game-string content) *igs-games*)))))
+
+(defun igs-insertion-filter (proc string)
+  (with-current-buffer (process-buffer proc)
+    (let ((moving (= (point) (process-mark proc))))
+      (save-excursion
+	(goto-char (process-mark proc))
+        (insert string)
+        (set-marker (process-mark proc) (point))
+        (igs-filter-process string))
+      (when moving (goto-char (process-mark proc))))))
+
 (defun igs-connect ()
   "Open a connection to `igs-server'."
   (interactive)
-  (let ((buffer (apply 'make-comint
-                       igs-process-name
-                       igs-telnet-command nil
-                       (list igs-server (number-to-string igs-port)))))
-    (with-current-buffer buffer (comint-mode))
-    buffer))
-
-(defun igs-wait-for-output (igs)
-  (with-current-buffer (buffer igs)
-    (while  (progn
-	     (goto-char comint-last-input-end)
-	     (not (re-search-forward "^\#> " nil t)))
-      (accept-process-output (get-buffer-process (current-buffer))))))
+  (flet ((wait (prompt)
+               (while (and (goto-char (or comint-last-input-end (point-min)))
+                           (not (re-search-forward (prompt) nil t)))
+                 (accept-process-output proc))))
+    (let ((buffer (apply 'make-comint
+                         igs-process-name
+                         igs-telnet-command nil
+                         (list igs-server (number-to-string igs-port)))))
+      (with-current-buffer buffer
+        (comint-mode)
+        (set (make-local-variable '*igs-ready*) nil)
+        (set (make-local-variable '*igs-games*) nil)
+        (let ((proc (get-buffer-process (current-buffer))))
+          (wait "^Login:")
+          (goto-char (process-mark proc))
+          (insert igs-username)
+          (comint-send-input)
+          (wait "^\#> ")
+          (igs-toggle "client" t)
+          (set-process-filter proc 'igs-insertion-filter)
+          buffer)))))
 
 (defun igs-last-output (igs)
   (with-current-buffer (buffer igs)
@@ -121,15 +170,6 @@
     (comint-send-input))
   (igs-wait-for-output igs)
   (igs-last-output igs))
-
-(defvar igs-player-re
-  "\\([[:alpha:][:digit:]]+\\) +\\[ *\\([[:digit:]]+[kd]\\*\\)\\]"
-  "Regular expression used to parse igs player name and rating.")
-
-(defvar igs-game-re
-  (format "\\[\\([[:digit:]]+\\)\\] +%s +vs. +%s +\\((.+)\\) \\((.+)\\)$"
-          igs-player-re igs-player-re)
-  "Regular expression used to parse igs game listings.")
 
 (defun igs-parse-game-string (game-string)
   ;; [##] white name [ rk ] black name [ rk ] (Move size H Komi BY FR) (###)
