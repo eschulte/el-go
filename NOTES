@@ -1,5 +1,7 @@
 # -*- org-mode -*-
 
+* TODO make a board back-end so it can receive commands
+* TODO allow an IGS process to send commands to a board
 * IGS Support
 - use information in [[file:data/igs.c][igs.c]] and in the cgoban source.
 - [[file:data/igs-session][tcpick output]] collected with while talking with IGS servers
@@ -10,3 +12,4 @@
 * Asynchronous Process Interaction
 Use process filters (see [[info:elisp#Filter%20Functions][info:elisp#Filter Functions]]) to act only on
 whole completed commands.
+
