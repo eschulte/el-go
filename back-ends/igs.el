@@ -91,34 +91,27 @@
     (:version   . 39)   ;; IGS Version
     (:yell      . 32))) ;; Channel yelling
 
-(defvar igs-player-re
-  "\\([[:alpha:][:digit:]]+\\) +\\[ *\\([[:digit:]]+[kd]\\*\\)\\]"
-  "Regular expression used to parse igs player name and rating.")
-
-(defvar igs-game-re
-  (format "\\[\\([[:digit:]]+\\)\\] +%s +vs. +%s +\\((.+)\\) \\((.+)\\)$"
-          igs-player-re igs-player-re)
-  "Regular expression used to parse igs game listings.")
-
 (defvar *igs-ready* nil
   "Indicates if the IGS server is waiting for input.")
 
 (defvar *igs-games* nil
   "List holding the current games on the IGS server.")
 
-(defun igs-toggle (setting value)
-  (insert (format "toggle %s %s" setting (if value "true" "false")))
-  (comint-send-input))
+(defmacro igs-w-proc (proc &rest body)
+  (declare (indent 1))
+  `(with-current-buffer (process-buffer proc) ,@body))
+(def-edebug-spec igs-w-proc (form body))
 
-(defun igs-filter-process (string)
-  (unless (string-match "^\\([[:digit:]]+\\) \\(.+\\)$" string)
-    (error "igs: malformed response %S" string))
-  (let* ((number  (match-string 1 string))
-         (content (match-string 2 string)))
-    (case (car (rassoc number igs-message-types))
-      (:prompt (set *igs-ready* t))
-      (:info   (message "igs-info: %s" content))
-      (:games  (push (igs-parse-game-string content) *igs-games*)))))
+(defun igs-filter-process (proc string)
+  (when (string-match "^\\([[:digit:]]+\\) \\(.+\\)$" string)
+    (let* ((number  (read (match-string 1 string)))
+           (type    (car (rassoc number igs-message-types)))
+           (content (match-string 2 string)))
+      (case type
+        (:prompt (igs-w-proc proc (setq *igs-ready* t)))
+        (:info   (message "igs-info: %s" content))
+        (:games  (igs-w-proc proc (igs-handle-game content)))
+        (:move   (igs-w-proc proc (igs-handle-move content)))))))
 
 (defun igs-insertion-filter (proc string)
   (with-current-buffer (process-buffer proc)
@@ -127,7 +120,8 @@
 	(goto-char (process-mark proc))
         (insert string)
         (set-marker (process-mark proc) (point))
-        (igs-filter-process string))
+        (mapc (lambda (s) (igs-filter-process proc s))
+              (split-string string "[\n\r]")))
       (when moving (goto-char (process-mark proc))))))
 
 (defun igs-connect ()
@@ -135,7 +129,7 @@
   (interactive)
   (flet ((wait (prompt)
                (while (and (goto-char (or comint-last-input-end (point-min)))
-                           (not (re-search-forward (prompt) nil t)))
+                           (not (re-search-forward prompt nil t)))
                  (accept-process-output proc))))
     (let ((buffer (apply 'make-comint
                          igs-process-name
@@ -155,23 +149,26 @@
           (set-process-filter proc 'igs-insertion-filter)
           buffer)))))
 
-(defun igs-last-output (igs)
-  (with-current-buffer (buffer igs)
-    (comint-show-output)
-    (org-babel-clean-text-properties
-     (buffer-substring (+ 2 (point)) (- (point-max) 2)))))
+(defun igs-toggle (setting value)
+  (insert (format "toggle %s %s" setting (if value "true" "false")))
+  (comint-send-input))
 
-(defun igs-command-to-string (igs command)
-  "Send command to an igs connection and return the results as a string"
-  (interactive "sigs command: ")
-  (with-current-buffer (buffer igs)
-    (goto-char (process-mark (get-buffer-process (current-buffer))))
-    (insert command)
-    (comint-send-input))
-  (igs-wait-for-output igs)
-  (igs-last-output igs))
+(defun igs-observe (game)
+  (insert (format "observe %s" game))
+  (comint-send-input))
 
-(defun igs-parse-game-string (game-string)
+
+;;; Specific handlers
+(defvar igs-player-re
+  "\\([[:alpha:][:digit:]]+\\) +\\[ *\\([[:digit:]]+[kd]\\*\\)\\]"
+  "Regular expression used to parse igs player name and rating.")
+
+(defvar igs-game-re
+  (format "\\[\\([[:digit:]]+\\)\\] +%s +vs. +%s +\\((.+)\\) \\((.+)\\)$"
+          igs-player-re igs-player-re)
+  "Regular expression used to parse igs game listings.")
+
+(defun igs-handle-game (game-string)
   ;; [##] white name [ rk ] black name [ rk ] (Move size H Komi BY FR) (###)
   (when (string-match igs-game-re game-string)
     (let* ((num        (match-string 1 game-string))
@@ -181,24 +178,53 @@
            (black-rank (match-string 5 game-string))
            (other1     (read (match-string 6 game-string)))
            (other2     (read (match-string 7 game-string))))
-      `((:number     . ,(read num))
-        (:white-name . ,white-name)
-        (:white-rank . ,white-rank)
-        (:black-name . ,black-name)
-        (:black-rank . ,black-rank)
-        (:move       . ,(nth 0 other1))
-        (:size       . ,(nth 1 other1))
-        (:h          . ,(nth 2 other1))
-        (:komi       . ,(nth 3 other1))
-        (:by         . ,(nth 4 other1))
-        (:fr         . ,(nth 5 other1))
-        (:other      . ,(car other2))))))
+      (push `((:number     . ,(read num))
+              (:white-name . ,white-name)
+              (:white-rank . ,white-rank)
+              (:black-name . ,black-name)
+              (:black-rank . ,black-rank)
+              (:move       . ,(nth 0 other1))
+              (:size       . ,(nth 1 other1))
+              (:h          . ,(nth 2 other1))
+              (:komi       . ,(nth 3 other1))
+              (:by         . ,(nth 4 other1))
+              (:fr         . ,(nth 5 other1))
+              (:other      . ,(car other2)))
+            *igs-games*))))
 
-(defun igs-games (igs)
-  (let ((games-str (igs-command-to-string igs "games")))
-    (delete nil
-            (mapcar #'igs-parse-game-string
-                    (cdr (split-string games-str "[\n\r]"))))))
+(defvar igs-move-piece-re
+  "[[:digit:]]+(\\([WB]\\)): \\([[:alpha:][:digit:]]+\\)$"
+  "Regular expression used to match an IGS move.")
+
+(defvar igs-move-time-re "TIME")
+
+(defvar igs-move-props-re "GAMEPROPS")
+
+(defvar igs-move-game-re "Game")
+
+(defmacro igs-re-cond (string &rest body)
+  (declare (indent 1))
+  `(cond ,@(mapcar
+            (lambda (part)
+              (cons (if (or (keywordp (car part)))
+                        (car part)
+                      `(string-match ,(car part) ,string))
+                    (cdr part)))
+            body)))
+(def-edebug-spec igs-re-cond (form body))
+
+(defun igs-to-pos (color igs)
+  (cons (make-keyword color)
+        (cons (char-to-num (aref igs 0))
+              (read (substring igs 1)))))
+
+(defun igs-handle-move (move-string)
+  (igs-re-cond move-string
+    (igs-move-piece-re (igs-to-pos (match-string 1 move-string)
+                                   (match-string 2 move-string)))
+    (igs-move-time-re  nil)
+    (igs-move-props-re nil)
+    (igs-move-game-re  nil)))
 
 
 ;;; Class and interface
