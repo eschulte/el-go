@@ -72,6 +72,13 @@
 
 (defun ear-muffs (str) (concat "*" str "*"))
 
+(defun un-ear-muffs (str)
+  (let ((pen-ult (1- (length str))))
+    (if (and (= ?\* (aref str 0))
+             (= ?\* (aref str pen-ult)))
+        (substring str 1 pen-ult)
+      str)))
+
 (defun char-to-num (char)
   (flet ((err () (error "gtp: invalid char %s" char)))
     (cond

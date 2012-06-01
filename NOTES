@@ -1,6 +1,6 @@
-# -*- org-mode -*-
+# -*- mode:org -*-
 
-* TODO make a board back-end so it can receive commands
+* DONE make a board back-end so it can receive commands
 * TODO allow an IGS process to send commands to a board
 * IGS Support
 - use information in [[file:data/igs.c][igs.c]] and in the cgoban source.
