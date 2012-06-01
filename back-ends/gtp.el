@@ -40,29 +40,11 @@
     (:W "white")
     (t (error "gtp: unknown turn %S" turn))))
 
-(defun gtp-char-to-num (char)
-  (flet ((err () (error "gtp: invalid char %s" char)))
-    (cond
-     ((< char ?A)  (err))
-     ((< char ?I)  (- char ?A))
-     ((<= char ?T) (1- (- char ?A)))
-     ((< char ?a)  (err))
-     ((< char ?i)  (- char ?a))
-     ((<= char ?t) (1- (- char ?a)))
-     (t (err)))))
-
-(defun gtp-num-to-char (num)
-  (flet ((err () (error "gtp: invalid num %s" num)))
-    (cond
-     ((< num 1) (err))
-     ((< num 9) (+ ?A (1- num)))
-     (t         (+ ?A num)))))
-
 (defun go-pos-to-gtp (pos)
-  (format "%c%d" (gtp-num-to-char (1+ (car pos))) (1+ (cdr pos))))
+  (format "%c%d" (num-to-char (1+ (car pos))) (1+ (cdr pos))))
 
 (defun gtp-to-pos (color gtp)
-  (cons color (cons :pos (cons (gtp-char-to-num (aref gtp 0))
+  (cons color (cons :pos (cons (char-to-num (aref gtp 0))
                                (1- (read (substring gtp 1)))))))
 
 (defun go-to-gtp-command (element)

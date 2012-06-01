@@ -72,4 +72,22 @@
 
 (defun ear-muffs (str) (concat "*" str "*"))
 
+(defun char-to-num (char)
+  (flet ((err () (error "gtp: invalid char %s" char)))
+    (cond
+     ((< char ?A)  (err))
+     ((< char ?I)  (- char ?A))
+     ((<= char ?T) (1- (- char ?A)))
+     ((< char ?a)  (err))
+     ((< char ?i)  (- char ?a))
+     ((<= char ?t) (1- (- char ?a)))
+     (t (err)))))
+
+(defun num-to-char (num)
+  (flet ((err () (error "gtp: invalid num %s" num)))
+    (cond
+     ((< num 1) (err))
+     ((< num 9) (+ ?A (1- num)))
+     (t         (+ ?A num)))))
+
 (provide 'go-util)
