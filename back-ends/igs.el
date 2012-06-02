@@ -47,7 +47,7 @@
 (defvar igs-process-name "igs"
   "Name for the igs process.")
 
-(defvar igs-server-ping-delay 60
+(defvar igs-server-ping-delay 300
   "Minimum time between pings to remind the IGS server we're still listening.")
 
 (defvar igs-message-types
@@ -93,6 +93,9 @@
     (:user      . 42)   ;; Long user report
     (:version   . 39)   ;; IGS Version
     (:yell      . 32))) ;; Channel yelling
+
+(defvar *igs-instance* nil
+  "IGS instance associated with the current buffer.")
 
 (defvar *igs-time-last-sent* nil
   "Time stamp of the last command sent.
@@ -154,12 +157,15 @@ This is used to re-send messages to keep the IGS server from timing out.")
                (while (and (goto-char (or comint-last-input-end (point-min)))
                            (not (re-search-forward prompt nil t)))
                  (accept-process-output proc))))
-    (let ((buffer (apply 'make-comint
+    (let ((igs-instance (make-instance 'igs))
+          (buffer (apply 'make-comint
                          igs-process-name
                          igs-telnet-command nil
                          (list igs-server (number-to-string igs-port)))))
+      (setf (buffer igs-instance) buffer)
       (with-current-buffer buffer
         (comint-mode)
+        (set (make-local-variable '*igs-instance*) igs-instance)
         (set (make-local-variable '*igs-ready*) nil)
         (set (make-local-variable '*igs-games*) nil)
         (set (make-local-variable '*igs-current-game*) nil)
@@ -170,8 +176,8 @@ This is used to re-send messages to keep the IGS server from timing out.")
           (igs-send igs-username)
           (wait "^\#> ")
           (igs-toggle "client" t)
-          (set-process-filter proc 'igs-insertion-filter)
-          buffer)))))
+          (set-process-filter proc 'igs-insertion-filter)))
+      igs-instance)))
 
 (defun igs-toggle (setting value)
   (igs-send (format "toggle %s %s" setting (if value "true" "false"))))
@@ -302,13 +308,11 @@ This is used to re-send messages to keep the IGS server from timing out.")
 (defun igs-register-game (number)
   (setq *igs-current-game* number)
   (unless (aget (igs-current-game) :board)
-    (let ((sgf (make-instance 'sgf)))
-      (setf (go-size sgf) (aget (igs-current-game) :size))
-      (setf (go-name sgf) (format "igs-%d" number))
-      (setf (aget (igs-current-game) :board)
-            (save-excursion (make-instance 'board
-                              :buffer (go-board sgf))))
-      (igs-send (format "moves %s" number)))))
+    (setf (aget (igs-current-game) :board)
+          (save-excursion (make-instance 'board
+                            :buffer (go-board *igs-instance*
+                                              (make-instance 'sgf)))))
+    (igs-send (format "moves %s" number))))
 
 (defun igs-update-game-info (info)
   (let ((color (car info))
@@ -338,5 +342,85 @@ This is used to re-send messages to keep the IGS server from timing out.")
 ;;; Class and interface
 (defclass igs ()
   ((buffer :initarg :buffer :accessor buffer :initform nil)))
+
+(defmacro with-igs (igs &rest body)
+  (declare (indent 1))
+  `(with-current-buffer (buffer ,igs) ,@body))
+
+(defmethod go-size ((igs igs))
+  (with-igs igs (aget (igs-current-game) :size)))
+
+(defmethod set-go-size ((igs igs) size)
+  (signal 'unsupported-back-end-command (list igs :set-size size)))
+
+(defmethod go-name ((igs igs))
+  (with-igs igs (let ((game (igs-current-game)))
+                  (format "%s vs %s"
+                          (aget game :white-name)
+                          (aget game :black-name)))))
+
+(defmethod set-go-name ((igs igs) name)
+  (signal 'unsupported-back-end-command (list igs :set-name name)))
+
+(defmethod go-move ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :move)))
+
+(defmethod set-go-move ((igs igs) move)
+  (signal 'unsupported-back-end-command (list igs :set-move move)))
+
+(defmethod go-labels ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :labels)))
+
+(defmethod set-go-labels ((igs igs) labels)
+  (signal 'unsupported-back-end-command (list igs :set-labels labels)))
+
+(defmethod go-comment ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :comment)))
+
+(defmethod set-go-comment ((igs igs) comment)
+  (signal 'unsupported-back-end-command (list igs :set-comment comment)))
+
+(defmethod go-alt ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :alt)))
+
+(defmethod set-go-alt ((igs igs) alt)
+  (signal 'unsupported-back-end-command (list igs :set-alt alt)))
+
+(defmethod go-color ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :color)))
+
+(defmethod set-go-color ((igs igs) color)
+  (signal 'unsupported-back-end-command (list igs :set-color color)))
+
+(defmethod go-player-name ((igs igs) color)
+  (with-igs igs (aget (igs-current-game)
+                      (case color
+                        (:W :white-name)
+                        (:B :black-name)))))
+
+(defmethod set-go-player-name ((igs igs) color name)
+  (signal 'unsupported-back-end-command (list igs :set-player-name color name)))
+
+(defmethod go-player-time ((igs igs) color)
+  (signal 'unsupported-back-end-command (list igs :player-time color)))
+
+(defmethod set-go-player-time ((igs igs) color time)
+  (signal 'unsupported-back-end-command (list igs :set-player-time color time)))
+
+;; non setf'able generic functions
+(defmethod go-undo ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :undo)))
+
+(defmethod go-pass ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :pass)))
+
+(defmethod go-resign ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :resign)))
+
+(defmethod go-reset ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :reset)))
+
+(defmethod go-quit ((igs igs))
+  (with-igs igs (igs-send "quit")))
 
 (provide 'igs)
