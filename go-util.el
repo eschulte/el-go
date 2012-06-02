@@ -50,6 +50,13 @@
 
 (defun take (num list) (subseq list 0 num))
 
+(defun set-aget (list key new)
+  (if (aget list key)
+      (setf (cdr (assoc key list)) new)
+    (setf (cdr (last list)) (list (cons key new)))))
+
+(defsetf aget set-aget)
+
 (defmacro until (test &rest body)
   (declare (indent 1))
   `(while (not ,test) ,@body))
