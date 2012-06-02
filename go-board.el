@@ -424,4 +424,4 @@
 (defmethod go-quit ((board board))
   (with-board board (board-quit)))
 
-(provide 'board)
+(provide 'go-board)
