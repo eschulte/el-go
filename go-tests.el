@@ -33,6 +33,7 @@
 (require 'gnugo)
 (require 'sgf)
 (require 'sgf2el)
+(require 'igs)
 
 
 ;;; sgf2el tests
