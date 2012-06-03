@@ -50,10 +50,16 @@
 
 (defun take (num list) (subseq list 0 num))
 
-(defun set-aget (list key new)
-  (if (aget list key)
-      (setf (cdr (assoc key list)) new)
-    (setf (cdr (last list)) (list (cons key new)))))
+(defmacro set-aget (place key new)
+  "Set `aget' of KEY in the list stored in PLACE to NEW."
+  (let ((sym (gensym)))
+    (if (symbolp place)
+        (if (aget (eval place) (eval key))
+            `(setf (cdr (assoc ,key ,place)) ,new)
+          `(callf setq ,place (cons (cons ,key ,new) ,place)))
+      `(let ((,sym ,place))
+         (setf (aget ,sym ,key) ,new)
+         (setf ,place ,sym)))))
 
 (defsetf aget set-aget)
 
