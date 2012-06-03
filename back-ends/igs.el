@@ -313,7 +313,8 @@ This is used to re-send messages to keep the IGS server from timing out.")
           (save-excursion (make-instance 'board
                             :buffer (go-board *igs-instance*
                                               (make-instance 'sgf)))))
-    (igs-send (format "moves %s" number))))
+    (when (aget (igs-current-game) :board)
+      (igs-send (format "moves %s" number)))))
 
 (defun igs-update-game-info (info)
   (let ((color (car info))
