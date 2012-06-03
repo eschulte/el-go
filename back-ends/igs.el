@@ -205,7 +205,7 @@
   "Regular expression used to match igs player name.")
 
 (defvar igs-player-rating-re
-  "[[:digit:]]+[kd]\\*"
+  "[[:digit:]]+[kd]\\*?"
   "Regular expression used to match igs player rating.")
 
 (defvar igs-player-game-info-re "([-[:digit:]]+ [-[:digit:]]+ [-[:digit:]]+)"
@@ -216,8 +216,9 @@
   "Regular expression used to parse igs player name and rating.")
 
 (defvar igs-game-re
-  (format "\\[\\([[:digit:]]+\\)\\] +%s +vs. +%s +\\((.+)\\) \\((.+)\\)$"
-          igs-player-re igs-player-re)
+  (format
+   "\\[\\([[:digit:]]+\\)\\] +%s +vs. +%s +\\((.+)\\) \\((.+)\\)[[:space:]]*$"
+   igs-player-re igs-player-re)
   "Regular expression used to parse igs game listings.")
 
 (defvar igs-move-piece-re
