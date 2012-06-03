@@ -78,6 +78,8 @@ Optional argument LEVEL specifies gnugo's level of play."
 (defgeneric-w-setf go-comment "Access current BACK-END comment.")
 (defgeneric-w-setf go-alt     "Access current BACK-END alternative move.")
 (defgeneric-w-setf go-color   "Access current BACK-END turn color.")
+(defgeneric-w-setf go-player-name "Access current BACK-END player name.")
+(defgeneric-w-setf go-player-time "Access current BACK-END player time.")
 
 ;; sending messages to the back-end
 (defgeneric go-undo   (back-end) "Send undo to BACK-END.")

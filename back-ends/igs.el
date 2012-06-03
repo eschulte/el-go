@@ -114,7 +114,9 @@
         (:prompt (igs-w-proc proc (setq *igs-ready* t)))
         (:info   (message "igs-info: %s" content))
         (:games  (igs-w-proc proc (igs-handle-game content)))
-        (:move   (igs-w-proc proc (igs-handle-move content)))))))
+        (:move   (igs-w-proc proc (igs-handle-move content)))
+        (:beep   nil)
+        (t       (message "igs-unknown: [%s]%s" type content))))))
 
 (defun igs-insertion-filter (proc string)
   (with-current-buffer (process-buffer proc)
@@ -194,8 +196,19 @@
 
 
 ;;; Specific handlers
+(defvar igs-player-name-re
+  "[[:alpha:][:digit:]]+"
+  "Regular expression used to match igs player name.")
+
+(defvar igs-player-rating-re
+  "[[:digit:]]+[kd]\\*"
+  "Regular expression used to match igs player rating.")
+
+(defvar igs-player-game-info-re "([-[:digit:]]+ [-[:digit:]]+ [-[:digit:]]+)"
+  "Regular expression used to match igs player game info.")
+
 (defvar igs-player-re
-  "\\([[:alpha:][:digit:]]+\\) +\\[ *\\([[:digit:]]+[kd]\\*\\)\\]"
+  (format "\\(%s\\) +\\[ *\\(%s\\)\\]" igs-player-name-re igs-player-rating-re)
   "Regular expression used to parse igs player name and rating.")
 
 (defvar igs-game-re
@@ -204,14 +217,18 @@
   "Regular expression used to parse igs game listings.")
 
 (defvar igs-move-piece-re
-  "[[:digit:]]+(\\([WB]\\)): \\([[:alpha:][:digit:]]+\\)$"
+  "[[:digit:]]+(\\([WB]\\)): \\([[:alpha:][:digit:]]+\\)"
   "Regular expression used to match an IGS move.")
 
 (defvar igs-move-time-re "TIME")
 
 (defvar igs-move-props-re "GAMEPROPS")
 
-(defvar igs-move-game-re "Game \\([[:digit:]]+\\)")
+(defvar igs-move-game-re
+  (format "Game \\([[:digit:]]+\\) I: \\(%s\\) \\(%s\\) vs \\(%s\\) \\(%s\\)"
+          igs-player-name-re igs-player-game-info-re
+          igs-player-name-re igs-player-game-info-re)
+  "Regular expression used to match Game updates.")
 
 (defmacro igs-re-cond (string &rest body)
   (declare (indent 1))
@@ -279,6 +296,13 @@
       (insert (format "moves %s" number))
       (comint-send-input))))
 
+(defun igs-update-game-info (info)
+  (let ((color (car info))
+        (name (cadr info))
+        (other (cddr info)))
+    ;; (message "[%s] %s: %s" color name other)
+    ))
+
 (defun igs-handle-move (move-string)
   (igs-re-cond move-string
     (igs-move-piece-re (igs-apply-move
@@ -286,8 +310,15 @@
                                     (match-string 2 move-string))))
     (igs-move-time-re  nil)
     (igs-move-props-re nil)
-    (igs-move-game-re  (igs-register-game
-                        (read (match-string 1 move-string))))))
+    (igs-move-game-re
+     (let ((number (read (match-string 1 move-string)))
+           (white-info (cons (match-string 2 move-string)
+                             (read (match-string 3 move-string))))
+           (black-info (cons (match-string 4 move-string)
+                             (read (match-string 5 move-string)))))
+       (igs-register-game number)
+       (igs-update-game-info (cons :W white-info))
+       (igs-update-game-info (cons :B black-info))))))
 
 
 ;;; Class and interface

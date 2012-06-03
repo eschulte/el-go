@@ -32,6 +32,8 @@
 (defvar *history*  nil "Holds the board history for a GO buffer.")
 (defvar *size*     nil "Holds the board size.")
 (defvar *turn*     nil "Holds the color of the current turn.")
+(defvar *black*    nil "Holds info on black player.")
+(defvar *white*    nil "Holds info on white player.")
 (defvar *back-end* nil "Holds the primary back-end connected to a board.")
 (defvar *trackers* nil "Holds a list of back-ends which should track the game.")
 (defvar *autoplay* nil "Should `*back-end*' automatically respond to moves.")
@@ -237,6 +239,8 @@
           (mapcar (lambda (tr) (setf (go-name tr) name)) trackers)))
       (set (make-local-variable '*back-end*) back-end)
       (set (make-local-variable '*turn*) :B)
+      (set (make-local-variable '*black*) nil)
+      (set (make-local-variable '*white*) nil)
       (set (make-local-variable '*size*) (go-size back-end))
       (mapcar (lambda (tr) (setf (go-size tr) *size*)) trackers)
       (set (make-local-variable '*history*)
@@ -405,6 +409,22 @@
 
 (defmethod set-go-color ((board board) color)
   (with-board board (setq *turn* color)))
+
+(defmethod go-player-name ((board board) color)
+  (with-board board (car (case color (:W *white*) (:B *black*)))))
+
+(defmethod set-go-player-name ((board board) color name)
+  (with-board board
+    (let ((player (case color (:W *white*) (:B *black*))))
+      (setf (car player) name))))
+
+(defmethod go-player-time ((board board) color)
+  (with-board board (cdr (case color (:W *white*) (:B *black*)))))
+
+(defmethod set-go-player-time ((board board) color time)
+  (with-board board
+    (let ((player (case color (:W *white*) (:B *black*))))
+      (setf (cdr player) time))))
 
 ;; non setf'able generic functions
 (defmethod go-undo ((board board))
