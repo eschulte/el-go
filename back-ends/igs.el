@@ -47,6 +47,9 @@
 (defvar igs-process-name "igs"
   "Name for the igs process.")
 
+(defvar igs-server-ping-delay 60
+  "Minimum time between pings to remind the IGS server we're still listening.")
+
 (defvar igs-message-types
   '((:unknown   . 0)
     (:automat   . 35)   ;; Automatch announcement
@@ -91,6 +94,10 @@
     (:version   . 39)   ;; IGS Version
     (:yell      . 32))) ;; Channel yelling
 
+(defvar *igs-time-last-sent* nil
+  "Time stamp of the last command sent.
+This is used to re-send messages to keep the IGS server from timing out.")
+
 (defvar *igs-ready* nil
   "Indicates if the IGS server is waiting for input.")
 
@@ -105,6 +112,13 @@
   `(with-current-buffer (process-buffer proc) ,@body))
 (def-edebug-spec igs-w-proc (form body))
 
+(defun igs-send (command)
+  "Send string COMMAND to the IGS process in the current buffer."
+  (goto-char (process-mark (get-buffer-process (current-buffer))))
+  (insert command)
+  (setq *igs-time-last-sent* (current-time))
+  (comint-send-input))
+
 (defun igs-filter-process (proc string)
   (when (string-match "^\\([[:digit:]]+\\) \\(.+\\)$" string)
     (let* ((number  (read (match-string 1 string)))
@@ -116,7 +130,10 @@
         (:games  (igs-w-proc proc (igs-handle-game content)))
         (:move   (igs-w-proc proc (igs-handle-move content)))
         (:beep   nil)
-        (t       (message "igs-unknown: [%s]%s" type content))))))
+        (t       (message "igs-unknown: [%s]%s" type content)))
+      (when (> (time-to-seconds (time-since *igs-time-last-sent*))
+               igs-server-ping-delay)
+        (igs-send "ayt")))))
 
 (defun igs-insertion-filter (proc string)
   (with-current-buffer (process-buffer proc)
@@ -145,19 +162,18 @@
         (set (make-local-variable '*igs-ready*) nil)
         (set (make-local-variable '*igs-games*) nil)
         (set (make-local-variable '*igs-current-game*) nil)
+        (set (make-local-variable '*igs-time-last-sent*) (current-time))
         (let ((proc (get-buffer-process (current-buffer))))
           (wait "^Login:")
           (goto-char (process-mark proc))
-          (insert igs-username)
-          (comint-send-input)
+          (igs-send igs-username)
           (wait "^\#> ")
           (igs-toggle "client" t)
           (set-process-filter proc 'igs-insertion-filter)
           buffer)))))
 
 (defun igs-toggle (setting value)
-  (insert (format "toggle %s %s" setting (if value "true" "false")))
-  (comint-send-input))
+  (igs-send (format "toggle %s %s" setting (if value "true" "false"))))
 
 (defun igs-observe (&optional game)
   (interactive)
@@ -165,14 +181,12 @@
                               "game: "
                               (mapcar #'number-to-string
                                       (mapcar #'car *igs-games*)))))))
-    (insert (format "observe %s" game))
-    (comint-send-input)))
+    (igs-send (format "observe %s" game))))
 
 (defun igs-games ()
   (interactive)
   (setf *igs-games* nil)
-  (insert "games")
-  (comint-send-input))
+  (igs-send "games"))
 
 (defun igs-game-list (igs)
   (let (games)
@@ -293,8 +307,7 @@
       (setf (aget (igs-current-game) :board)
             (save-excursion (make-instance 'board
                               :buffer (go-board sgf))))
-      (insert (format "moves %s" number))
-      (comint-send-input))))
+      (igs-send (format "moves %s" number)))))
 
 (defun igs-update-game-info (info)
   (let ((color (car info))
