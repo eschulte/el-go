@@ -252,7 +252,7 @@
   (cons (make-keyword color)
         (cons :pos
               (cons (char-to-num (aref igs 0))
-                    (read (substring igs 1))))))
+                    (1- (read (substring igs 1)))))))
 
 (defun igs-current-game ()
   (aget *igs-games* *igs-current-game*))

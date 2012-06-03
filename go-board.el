@@ -378,6 +378,7 @@
 (defmethod set-go-move ((board board) move)
   (with-board board
     (apply-turn-to-board (list move))
+    (goto-char (point-of-pos (cddr move)))
     (setf *turn* (other-color *turn*))))
 
 (defmethod go-labels ((board board))
