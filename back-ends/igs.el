@@ -239,7 +239,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
   "Regular expression used to parse igs game listings.")
 
 (defvar igs-move-piece-re
-  "[[:digit:]]+(\\([WB]\\)): \\([[:alpha:][:digit:]]+\\)"
+  "[[:digit:]]+(\\([WB]\\)): \\([[:alpha:]][[:digit:]]+\\)"
   "Regular expression used to match an IGS move.")
 
 (defvar igs-move-time-re "TIME")
