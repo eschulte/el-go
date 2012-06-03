@@ -1,5 +1,6 @@
 # -*- mode:org -*-
 
+* TODO igs probably needs to periodically ping the server
 * DONE make a board back-end so it can receive commands
 * DONE allow an IGS process to send commands to a board
 * IGS Support
