@@ -97,6 +97,9 @@
 (defvar *igs-games* nil
   "List holding the current games on the IGS server.")
 
+(defvar *igs-current-game* nil
+  "Number of the current IGS game (may change frequently).")
+
 (defmacro igs-w-proc (proc &rest body)
   (declare (indent 1))
   `(with-current-buffer (process-buffer proc) ,@body))
@@ -139,6 +142,7 @@
         (comint-mode)
         (set (make-local-variable '*igs-ready*) nil)
         (set (make-local-variable '*igs-games*) nil)
+        (set (make-local-variable '*igs-current-game*) nil)
         (let ((proc (get-buffer-process (current-buffer))))
           (wait "^Login:")
           (goto-char (process-mark proc))
@@ -153,9 +157,40 @@
   (insert (format "toggle %s %s" setting (if value "true" "false")))
   (comint-send-input))
 
-(defun igs-observe (game)
-  (insert (format "observe %s" game))
+(defun igs-observe (&optional game)
+  (interactive)
+  (let ((game (or game (read (org-icompleting-read
+                              "game: "
+                              (mapcar #'number-to-string
+                                      (mapcar #'car *igs-games*)))))))
+    (insert (format "observe %s" game))
+    (comint-send-input)))
+
+(defun igs-games ()
+  (interactive)
+  (setf *igs-games* nil)
+  (insert "games")
   (comint-send-input))
+
+(defun igs-game-list (igs)
+  (let (games)
+    (with-current-buffer (buffer igs)
+      (setq games *igs-games*))
+    (let* ((my-games (copy-seq games))
+           (list-buf (get-buffer-create "*igs-game-list*")))
+      (with-current-buffer (pop-to-buffer list-buf)
+        (delete-region (point-min) (point-max))
+        (org-mode)
+        (insert (concat (orgtbl-to-orgtbl
+                         (mapcar (lambda (game)
+                                   (cons (car game)
+                                         (mapcar #'cdr
+                                                 (assq-delete-all
+                                                  :board (cdr game)))))
+                                 my-games)
+                         '(:fmt (lambda (cell) (format "%s" cell)))) "\n"))
+        (goto-char (point-min))
+        (org-table-align)))))
 
 
 ;;; Specific handlers
@@ -168,6 +203,27 @@
           igs-player-re igs-player-re)
   "Regular expression used to parse igs game listings.")
 
+(defvar igs-move-piece-re
+  "[[:digit:]]+(\\([WB]\\)): \\([[:alpha:][:digit:]]+\\)$"
+  "Regular expression used to match an IGS move.")
+
+(defvar igs-move-time-re "TIME")
+
+(defvar igs-move-props-re "GAMEPROPS")
+
+(defvar igs-move-game-re "Game \\([[:digit:]]+\\)")
+
+(defmacro igs-re-cond (string &rest body)
+  (declare (indent 1))
+  `(cond ,@(mapcar
+            (lambda (part)
+              (cons (if (or (keywordp (car part)))
+                        (car part)
+                      `(string-match ,(car part) ,string))
+                    (cdr part)))
+            body)))
+(def-edebug-spec igs-re-cond (form body))
+
 (defun igs-handle-game (game-string)
   ;; [##] white name [ rk ] black name [ rk ] (Move size H Komi BY FR) (###)
   (when (string-match igs-game-re game-string)
@@ -178,7 +234,7 @@
            (black-rank (match-string 5 game-string))
            (other1     (read (match-string 6 game-string)))
            (other2     (read (match-string 7 game-string))))
-      (push `((:number     . ,(read num))
+      (push `(,(read num)
               (:white-name . ,white-name)
               (:white-rank . ,white-rank)
               (:black-name . ,black-name)
@@ -192,39 +248,46 @@
               (:other      . ,(car other2)))
             *igs-games*))))
 
-(defvar igs-move-piece-re
-  "[[:digit:]]+(\\([WB]\\)): \\([[:alpha:][:digit:]]+\\)$"
-  "Regular expression used to match an IGS move.")
-
-(defvar igs-move-time-re "TIME")
-
-(defvar igs-move-props-re "GAMEPROPS")
-
-(defvar igs-move-game-re "Game")
-
-(defmacro igs-re-cond (string &rest body)
-  (declare (indent 1))
-  `(cond ,@(mapcar
-            (lambda (part)
-              (cons (if (or (keywordp (car part)))
-                        (car part)
-                      `(string-match ,(car part) ,string))
-                    (cdr part)))
-            body)))
-(def-edebug-spec igs-re-cond (form body))
-
 (defun igs-to-pos (color igs)
   (cons (make-keyword color)
-        (cons (char-to-num (aref igs 0))
-              (read (substring igs 1)))))
+        (cons :pos
+              (cons (char-to-num (aref igs 0))
+                    (read (substring igs 1))))))
+
+(defun igs-current-game ()
+  (aget *igs-games* *igs-current-game*))
+
+(defun set-igs-current-game (new)
+  (setf (aget *igs-games* *igs-current-game*) new))
+
+(defsetf igs-current-game set-igs-current-game)
+
+(defun igs-apply-move (move)
+  (if (aget (igs-current-game) :board)
+      (setf (go-move (aget (igs-current-game) :board)) move)
+    (message "igs-apply-move: no board!")))
+
+(defun igs-register-game (number)
+  (setq *igs-current-game* number)
+  (unless (aget (igs-current-game) :board)
+    (let ((sgf (make-instance 'sgf)))
+      (setf (go-size sgf) (aget (igs-current-game) :size))
+      (setf (go-name sgf) (format "igs-%d" number))
+      (setf (aget (igs-current-game) :board)
+            (save-excursion (make-instance 'board
+                              :buffer (go-board sgf))))
+      (insert (format "moves %s" number))
+      (comint-send-input))))
 
 (defun igs-handle-move (move-string)
   (igs-re-cond move-string
-    (igs-move-piece-re (igs-to-pos (match-string 1 move-string)
-                                   (match-string 2 move-string)))
+    (igs-move-piece-re (igs-apply-move
+                        (igs-to-pos (match-string 1 move-string)
+                                    (match-string 2 move-string))))
     (igs-move-time-re  nil)
     (igs-move-props-re nil)
-    (igs-move-game-re  nil)))
+    (igs-move-game-re  (igs-register-game
+                        (read (match-string 1 move-string))))))
 
 
 ;;; Class and interface
