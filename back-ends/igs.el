@@ -50,9 +50,6 @@
 (defvar igs-server-ping-delay 300
   "Minimum time between pings to remind the IGS server we're still listening.")
 
-(defvar *igs* nil
-  "IGS instance associated with the current buffer.")
-
 (defvar igs-message-types
   '((:unknown   . 0)
     (:automat   . 35)   ;; Automatch announcement
@@ -97,6 +94,22 @@
     (:version   . 39)   ;; IGS Version
     (:yell      . 32))) ;; Channel yelling
 
+(defvar *igs-instance* nil
+  "IGS instance associated with the current buffer.")
+
+(defvar *igs-time-last-sent* nil
+  "Time stamp of the last command sent.
+This is used to re-send messages to keep the IGS server from timing out.")
+
+(defvar *igs-ready* nil
+  "Indicates if the IGS server is waiting for input.")
+
+(defvar *igs-games* nil
+  "List holding the current games on the IGS server.")
+
+(defvar *igs-current-game* nil
+  "Number of the current IGS game (may change frequently).")
+
 (defmacro igs-w-proc (proc &rest body)
   (declare (indent 1))
   `(with-current-buffer (process-buffer proc) ,@body))
@@ -106,7 +119,7 @@
   "Send string COMMAND to the IGS process in the current buffer."
   (goto-char (process-mark (get-buffer-process (current-buffer))))
   (insert command)
-  (setf (last-sent *igs*) (current-time))
+  (setq *igs-time-last-sent* (current-time))
   (comint-send-input))
 
 (defun igs-filter-process (proc string)
@@ -115,14 +128,14 @@
            (type    (car (rassoc number igs-message-types)))
            (content (match-string 2 string)))
       (case type
-        (:prompt (igs-w-proc proc (setf (ready *igs*) t)))
+        (:prompt (igs-w-proc proc (setq *igs-ready* t)))
         (:info   (message "igs-info: %s" content))
         (:games  (igs-w-proc proc (igs-handle-game content)))
         (:move   (igs-w-proc proc (igs-handle-move content)))
         (:kibitz (message "igs-kibitz: %s" content))
         (:beep   nil)
         (t       (message "igs-unknown: [%s]%s" type content)))
-      (when (> (time-to-seconds (time-since (last-sent *igs*)))
+      (when (> (time-to-seconds (time-since *igs-time-last-sent*))
                igs-server-ping-delay)
         (igs-send "ayt")))))
 
@@ -152,7 +165,11 @@
       (setf (buffer igs-instance) buffer)
       (with-current-buffer buffer
         (comint-mode)
-        (set (make-local-variable '*igs*) igs-instance)
+        (set (make-local-variable '*igs-instance*) igs-instance)
+        (set (make-local-variable '*igs-ready*) nil)
+        (set (make-local-variable '*igs-games*) nil)
+        (set (make-local-variable '*igs-current-game*) nil)
+        (set (make-local-variable '*igs-time-last-sent*) (current-time))
         (let ((proc (get-buffer-process (current-buffer))))
           (wait "^Login:")
           (goto-char (process-mark proc))
@@ -170,18 +187,18 @@
   (let ((game (or game (read (org-icompleting-read
                               "game: "
                               (mapcar #'number-to-string
-                                      (mapcar #'car (games *igs*))))))))
+                                      (mapcar #'car *igs-games*)))))))
     (igs-send (format "observe %s" game))))
 
-(defun igs-games (&optional igs)
+(defun igs-games ()
   (interactive)
-  (with-igs igs
-    (setf (games *igs*) nil)
-    (igs-send "games")))
+  (setf *igs-games* nil)
+  (igs-send "games"))
 
 (defun igs-game-list (igs)
   (let (games)
-    (with-igs igs (setq games (games *igs*)))
+    (with-current-buffer (buffer igs)
+      (setq games *igs-games*))
     (let* ((my-games (copy-seq games))
            (list-buf (get-buffer-create "*igs-game-list*")))
       (with-current-buffer (pop-to-buffer list-buf)
@@ -255,22 +272,20 @@
            (black-name (match-string 4 game-string))
            (black-rank (match-string 5 game-string))
            (other1     (read (match-string 6 game-string)))
-           (other2     (read (match-string 7 game-string)))
-           (number     (read num))
-           (game      `((:white-name . ,white-name)
-                        (:white-rank . ,white-rank)
-                        (:black-name . ,black-name)
-                        (:black-rank . ,black-rank)
-                        (:move       . ,(nth 0 other1))
-                        (:size       . ,(nth 1 other1))
-                        (:h          . ,(nth 2 other1))
-                        (:komi       . ,(nth 3 other1))
-                        (:by         . ,(nth 4 other1))
-                        (:fr         . ,(nth 5 other1))
-                        (:other      . ,(car other2))))
-           (games      (games *igs*)))
-      (setf (aget games number) game)
-      (setf (games *igs*) games))))
+           (other2     (read (match-string 7 game-string))))
+      (push `(,(read num)
+              (:white-name . ,white-name)
+              (:white-rank . ,white-rank)
+              (:black-name . ,black-name)
+              (:black-rank . ,black-rank)
+              (:move       . ,(nth 0 other1))
+              (:size       . ,(nth 1 other1))
+              (:h          . ,(nth 2 other1))
+              (:komi       . ,(nth 3 other1))
+              (:by         . ,(nth 4 other1))
+              (:fr         . ,(nth 5 other1))
+              (:other      . ,(car other2)))
+            *igs-games*))))
 
 (defun igs-to-pos (color igs)
   (cons (make-keyword color)
@@ -279,12 +294,10 @@
                     (1- (read (substring igs 1)))))))
 
 (defun igs-current-game ()
-  (aget (games *igs*) (current *igs*)))
+  (aget *igs-games* *igs-current-game*))
 
 (defun set-igs-current-game (new)
-  (let ((games (games *igs*)))
-    (setf (aget games (current *igs*)) new)
-    (setf (games *igs*) games)))
+  (setf (aget *igs-games* *igs-current-game*) new))
 
 (defsetf igs-current-game set-igs-current-game)
 
@@ -294,11 +307,12 @@
     (message "igs-apply-move: no board!")))
 
 (defun igs-register-game (number)
-  (setf (current *igs*) number)
+  (setq *igs-current-game* number)
   (unless (aget (igs-current-game) :board)
     (setf (aget (igs-current-game) :board)
           (save-excursion (make-instance 'board
-                            :buffer (go-board *igs* (make-instance 'sgf)))))
+                            :buffer (go-board *igs-instance*
+                                              (make-instance 'sgf)))))
     (igs-send (format "moves %s" number))))
 
 (defun igs-update-game-info (info)
@@ -328,11 +342,7 @@
 
 ;;; Class and interface
 (defclass igs ()
-  ((buffer    :initarg :buffer    :accessor buffer    :initform nil)
-   (last-sent :initarg :last-sent :accessor last-sent :initform (current-time))
-   (ready     :initarg :ready     :accessor ready     :initform nil)
-   (games     :initarg :games     :accessor games     :initform nil)
-   (current   :initarg :current   :accessor current   :initform nil)))
+  ((buffer :initarg :buffer :accessor buffer :initform nil)))
 
 (defmacro with-igs (igs &rest body)
   (declare (indent 1))
