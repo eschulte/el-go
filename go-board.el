@@ -251,11 +251,16 @@
 
 
 ;;; User input
+(defmacro with-trackers (sym &rest body)
+  (declare (indent 1))
+  `(ignoring-unsupported
+    (mapcar (lambda (tr) (let ((,sym tr)) ,@body)) *trackers*)))
+
 (defmacro with-backends (sym &rest body)
   (declare (indent 1))
   `(ignoring-unsupported
     (prog1 (let ((,sym *back-end*)) ,@body)
-      (mapcar (lambda (tr) (let ((,sym tr)) ,@body)) *trackers*))))
+      (with-trackers ,sym ,@body))))
 
 (defvar go-board-actions '(move resign undo comment)
   "List of actions which may be taken on an GO board.")
@@ -323,7 +328,7 @@
           (message "pass")
         (apply-turn-to-board
          (cons move (ignoring-unsupported (go-labels *back-end*)))))
-      (mapcar (lambda (tr) (setf (go-move tr) move)) *trackers*)
+      (with-trackers tr (setf (go-move tr) move))
       (goto-char (point-of-pos (cddr move))))
     (setf *turn* (other-color *turn*))))
 
@@ -333,7 +338,7 @@
 
 (defun go-board-quit ()
   (interactive)
-  (with-backends back (go-quit back))
+  (with-trackers tr (go-quit tr))
   (kill-buffer (current-buffer)))
 
 
@@ -383,7 +388,7 @@
   (with-board board
     (apply-turn-to-board (list move))
     (goto-char (point-of-pos (cddr move)))
-    (mapcar (lambda (tr) (setf (go-move tr) move)) *trackers*)
+    (with-trackers tr (setf (go-move tr) move))
     (setf *turn* (other-color *turn*))))
 
 (defmethod go-labels ((board board))
