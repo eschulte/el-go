@@ -383,6 +383,7 @@
   (with-board board
     (apply-turn-to-board (list move))
     (goto-char (point-of-pos (cddr move)))
+    (setf (go-move *back-end*) move)
     (mapcar (lambda (tr) (setf (go-move tr) move)) *trackers*)
     (setf *turn* (other-color *turn*))))
 
