@@ -381,8 +381,9 @@
 
 (defun go-board-quit ()
   (interactive)
-  (with-trackers tr (go-quit tr))
-  (kill-buffer (current-buffer)))
+  (when (y-or-n-p "quit: ")
+    (with-trackers tr (go-quit tr))
+    (kill-buffer (current-buffer))))
 
 
 ;;; Display mode
