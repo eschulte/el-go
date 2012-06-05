@@ -76,9 +76,6 @@
 
 
 ;;; Images
-(defvar go-board-image-overlays nil
-  "List of overlays carrying the images of points on a GO board.")
-
 (defun go-board-svg-trans (list)
   (if (and (listp list) (listp (car list)))
       (concat (format "<%s%s" (caar list) (if (cdar list) " " ""))
@@ -132,7 +129,7 @@
      ((stop (offset . 1)   (stop-color . "#777")))))
    ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))))
 
-(defvar go-board-image-back
+(defvar go-board-image-background
   (go-board-image
    ((path (stroke . "#000") (stroke-width . 1) (d . "M0,12.5H25M12.5,0V25")))))
 

@@ -29,6 +29,7 @@
 (require 'ert)
 (require 'go)
 (require 'go-board)
+(require 'go-board-faces)
 (require 'gtp)
 (require 'gnugo)
 (require 'sgf)

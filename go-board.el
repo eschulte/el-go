@@ -41,6 +41,10 @@
 (defvar black-piece "X")
 (defvar white-piece "O")
 
+(defvar go-board-use-images nil)
+(defvar *go-board-overlays* nil
+  "List of overlays carrying GO board painting information.")
+
 
 ;;; Board manipulation functions
 (defun make-board (size) (make-vector (* size size) nil))
@@ -203,15 +207,23 @@
 (defun go-board-paint (&optional start end)
   (interactive "r")
   (flet ((ov (point face)
-             (overlay-put (make-overlay point (1+ point)) 'face face)))
+             (let ((ovly (make-overlay point (1+ point))))
+               (overlay-put ovly 'go-pt point)
+               (overlay-put ovly 'face (intern (concat "go-board-"
+                                                           (symbol-name face))))
+               (when go-board-use-images
+                 (overlay-put ovly 'display
+                              (eval (intern (concat "go-board-image-"
+                                                    (symbol-name face))))))
+               (push ovly go-board-overlays))))
     (let ((start (or start (point-min)))
           (end   (or end   (point-max))))
       (dolist (point (range start end))
         (case (get-text-property point :type)
-          (:background (ov point 'go-board-background))
-          (:hoshi      (ov point 'go-board-hoshi))
-          (:white      (ov point 'go-board-white))
-          (:black      (ov point 'go-board-black)))))))
+          (:background (ov point 'background))
+          (:hoshi      (ov point 'hoshi))
+          (:white      (ov point 'white))
+          (:black      (ov point 'black)))))))
 
 (defun update-display (buffer)
   (with-current-buffer buffer
@@ -242,9 +254,12 @@
       (set (make-local-variable '*black*) nil)
       (set (make-local-variable '*white*) nil)
       (set (make-local-variable '*size*) (go-size back-end))
+      (set (make-local-variable '*autoplay*) nil)
+      (set (make-local-variable '*go-board-overlays*) nil)
       (mapcar (lambda (tr) (setf (go-size tr) *size*)) trackers)
       (set (make-local-variable '*history*)
            (list (board-to-pieces (make-board *size*))))
+      (set (make-local-variable '*trackers*) trackers)
       (set (make-local-variable '*trackers*) trackers)
       (update-display (current-buffer)))
     (pop-to-buffer buffer)))
