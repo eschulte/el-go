@@ -45,6 +45,12 @@
 (defvar *go-board-overlays* nil
   "List of overlays carrying GO board painting information.")
 
+(defvar go-board-use-move-sound nil)
+(defvar go-board-move-sound
+  `(sound :file ,(expand-file-name "stone.wav"
+                                   (file-name-directory
+                                    (or load-file-name (buffer-file-name))))))
+
 
 ;;; Board manipulation functions
 (defun make-board (size) (make-vector (* size size) nil))
@@ -69,6 +75,7 @@
 (defun apply-turn-to-board (moves)
   (let ((board (pieces-to-board (car *history*) *size*)))
     (clear-labels board)
+    (when go-board-use-move-sound (play-sound go-board-move-sound))
     (dolist (move moves) (apply-move board move))
     (push (board-to-pieces board) *history*)
     (update-display (current-buffer))))
