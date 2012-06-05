@@ -80,92 +80,101 @@
   "List of overlays carrying the images of points on a GO board.")
 
 (defun go-board-svg-trans (list)
-  (concat (format "<%s%s" (caar list) (if (cdar list) " " ""))
-          (mapconcat (lambda (pair) (format "%s=\"%s\"" (car pair) (cdr pair)))
-                     (cdar list) " ")
-          (if (cdr list)
-              (concat ">"
-                      (mapconcat #'go-board-svg-trans (cdr list) " ")
-                      (format "</%s>" (caar list)))
-            "/>")))
+  (if (and (listp list) (listp (car list)))
+      (concat (format "<%s%s" (caar list) (if (cdar list) " " ""))
+              (mapconcat (lambda (pair) (format "%s=\"%s\"" (car pair) (cdr pair)))
+                         (cdar list) " ")
+              (if (cdr list)
+                  (concat ">"
+                          (mapconcat #'go-board-svg-trans (cdr list) " ")
+                          (format "</%s>" (caar list)))
+                "/>"))
+    list))
 
-(defmacro go-board-wrap (body)
-  (declare (indent 0))
-  `(concat "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-           (go-board-svg-trans ',body)))
+(defmacro go-board-wrap (&rest body)
+  `(concat
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+    (go-board-svg-trans
+     '((svg (xmlns . "http://www.w3.org/2000/svg")
+            (xmlns:xlink . "http://www.w3.org/1999/xlink")
+            (width . 25) (height . 25) (version . 1.0))
+       ,@body))))
 
-(defvar go-board-image-black
-  `(image
-    :type svg :ascent center :data
-    ,(go-board-wrap
-       ((svg (xmlns . "http://www.w3.org/2000/svg")
-             (xmlns:xlink . "http://www.w3.org/1999/xlink")
-             (width . 25) (height . 25) (version . 1.0))
-        ((defs)
-         ((radialGradient (id . "$rg") (cx . ".3") (cy . ".3") (r . ".8"))
-          ((stop (offset . 0)   (stop-color . "#777")))
-          ((stop (offset . 0.3) (stop-color . "#222")))
-          ((stop (offset . 1)   (stop-color . "#000")))))
-        ((rect (width . 25) (height . 25) (fill . "#dcb35c")))
-        ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))))))
+(defmacro go-board-image (&rest body)
+  ``(image :type svg :ascent center :data
+           ,(go-board-wrap
+              ((rect (width . 25) (height . 25) (fill . "#dcb35c")))
+              ,@body)))
 
-(defvar go-board-image-white
-  `(image
-    :type svg :ascent center :data
-    ,(concat
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-      "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-      "xmlns:xlink=\"http://www.w3.org/1999/xlink\" "
-      "width=\"25\" height=\"25\" version=\"1.0\">"
-      "<defs><radialGradient id=\"$rg\" cx=\".47\" cy=\".49\" r=\".48\">"
-      " <stop offset=\".7\" stop-color=\"#FFF\"/>"
-      " <stop offset=\".9\" stop-color=\"#DDD\"/>"
-      " <stop offset=\"1\" stop-color=\"#777\"/>"
-      "</radialGradient></defs>"
-      "<rect width=\"25\" height=\"25\" fill=\"#dcb35c\"/>"
-      "<circle cx=\"12.5\" cy=\"12.5\" r=\"6.125\" fill=\"url(#$rg)\"/>"
-      "</svg>")))
+(defmacro go-board-side (path)
+  `(go-board-image ((path (stroke . "#000") (stroke-width . 1) (d . ,path)))))
 
-(defvar go-board-image-back
-  `(image
-    :type svg :ascent center :data
-    ,(concat
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-      "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-      "width=\"25\" height=\"25\">"
-      "<rect width=\"25\" height=\"25\" fill=\"#DCB35C\"/>"
-      "<path stroke=\"#000\" stroke-width=\"1\" "
-      "d=\"M0,12.5H25M12.5,0V25\"/>"
-      "</svg>")))
-
-(defvar go-board-image-hoshi
-  `(image
-    :type svg :ascent center :data
-    ,(concat
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-      "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-      "width=\"25\" height=\"25\">"
-      "<rect width=\"25\" height=\"25\" fill=\"#DCB35C\"/>"
-      "<path stroke=\"#000\" stroke-width=\"1\" "
-      "d=\"M0,12.5H25M12.5,0V25\"/>"
-      "<circle cx=\"12.5\" cy=\"12.5\" r=\"2.5\"/>"
-      "</svg>")))
-
-(defvar go-board-image-left
-  `(image
-    :type svg :ascent center :data
-    ,(concat
-      "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-      "<svg xmlns=\"http://www.w3.org/2000/svg\" "
-      "width=\"25\" height=\"25\">"
-      "<rect width=\"25\" height=\"25\" fill=\"#DCB35C\"/>"
-      "<path stroke=\"#000\" stroke-width=\"1\" "
-      "d=\"M12,12.5H25M12.5,0V25\"/>"
-      "</svg>")))
-
-(defun go-board-image (point image)
+(defun go-board-add-image (point image)
   (let ((ov (make-overlay point (1+ point))))
     (overlay-put ov 'display image)
     (push ov go-board-image-overlays)))
+
+(defvar go-board-image-black
+  (go-board-image
+   ((defs)
+    ((radialGradient (id . "$rg") (cx . ".3") (cy . ".3") (r . ".8"))
+     ((stop (offset . 0)   (stop-color . "#777")))
+     ((stop (offset . 0.3) (stop-color . "#222")))
+     ((stop (offset . 1)   (stop-color . "#000")))))
+   ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))))
+
+(defvar go-board-image-white
+  (go-board-image
+   ((defs)
+    ((radialGradient (id . "$rg") (cx . ".47") (cy . ".49") (r . ".48"))
+     ((stop (offset . 0.7) (stop-color . "#FFF")))
+     ((stop (offset . 0.9) (stop-color . "#DDD")))
+     ((stop (offset . 1)   (stop-color . "#777")))))
+   ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))))
+
+(defvar go-board-image-back
+  (go-board-image
+   ((path (stroke . "#000") (stroke-width . 1) (d . "M0,12.5H25M12.5,0V25")))))
+
+(defvar go-board-image-hoshi
+  (go-board-image
+   ((path (stroke . "#000") (stroke-width . 1) (d . "M0,12.5H25M12.5,0V25")))
+   ((circle (cx . 12.5) (cy . 12.5) (r . 2.5)))))
+
+(defvar go-board-image-left         (go-board-side "M12,12.5H25M12.5,0V25"))
+(defvar go-board-image-right        (go-board-side "M0,12.5H13M12.5,0V25"))
+(defvar go-board-image-top          (go-board-side "M0,12.5H25M12.5,12V25"))
+(defvar go-board-image-bottom       (go-board-side "M0,12.5H25M12.5,0V12.5"))
+(defvar go-board-image-top-left     (go-board-side "M12,12.5H25M12.5,12V25"))
+(defvar go-board-image-top-right    (go-board-side "M0,12.5H13M12.5,12V25"))
+(defvar go-board-image-bottom-left  (go-board-side "M12,12.5H25M12.5,0V13"))
+(defvar go-board-image-bottom-right (go-board-side "M0,12.5H13M12.5,0V13"))
+
+(defmacro go-board-image-label (label)
+  `(go-board-image
+    ((text (x . 8.75) (y . 16.25) (r . 12.25) (style . "font-size:12.5;"))
+     ,label)))
+
+(defmacro go-board-image-white-label (label)
+  `(go-board-image
+    ((defs)
+     ((radialGradient (id . "$rg") (cx . ".47") (cy . ".49") (r . ".48"))
+      ((stop (offset . 0.7) (stop-color . "#FFF")))
+      ((stop (offset . 0.9) (stop-color . "#DDD")))
+      ((stop (offset . 1)   (stop-color . "#777")))))
+    ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))
+    ((text (x . 8.75) (y . 16.25) (r . 12.25) (style . "font-size:12.5;"))
+     ,label)))
+
+(defmacro go-board-image-black-label (label)
+  `(go-board-image
+    ((defs)
+     ((radialGradient (id . "$rg") (cx . ".3") (cy . ".3") (r . ".8"))
+      ((stop (offset . 0)   (stop-color . "#777")))
+      ((stop (offset . 0.3) (stop-color . "#222")))
+      ((stop (offset . 1)   (stop-color . "#000")))))
+    ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))
+    ((text (x . 8.75) (y . 16.25) (r . 12.25)
+           (style . "font-size:12.5;fill:#ffffff;")) ,label)))
 
 (provide 'go-board-faces)
