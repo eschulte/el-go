@@ -75,7 +75,7 @@
   "white piece on white territory")
 
 
-;;; Images
+;;; Image utility functions
 (defun go-board-svg-trans (list)
   (if (and (listp list) (listp (car list)))
       (concat (format "<%s%s" (caar list) (if (cdar list) " " ""))
@@ -104,6 +104,7 @@
               ,@body)))
 
 (defmacro go-board-image-sides (name &rest base)
+  (declare (indent 1))
   `(progn
      ,@(mapcar
         (lambda (p)
@@ -122,30 +123,30 @@
           (bottom-right . "M0,12.5H13M12.5,0V13")
           (nil          . "M0,12.5H25M12.5,0V25")))))
 
+
+;;; SVG Images
+(go-board-image-sides background)
+
+(go-board-image-sides black
+  ((defs)
+   ((radialGradient (id . "$rg") (cx . ".3") (cy . ".3") (r . ".8"))
+    ((stop (offset . 0)   (stop-color . "#777")))
+    ((stop (offset . 0.3) (stop-color . "#222")))
+    ((stop (offset . 1)   (stop-color . "#000")))))
+  ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)"))))
+
+(go-board-image-sides white
+  ((defs)
+   ((radialGradient (id . "$rg") (cx . ".47") (cy . ".49") (r . ".48"))
+    ((stop (offset . 0.7) (stop-color . "#FFF")))
+    ((stop (offset . 0.9) (stop-color . "#DDD")))
+    ((stop (offset . 1)   (stop-color . "#777")))))
+  ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)"))))
+
 (defvar go-board-image-hoshi
   (go-board-image
    ((path (stroke . "#000") (stroke-width . 1) (d . "M0,12.5H25M12.5,0V25")))
    ((circle (cx . 12.5) (cy . 12.5) (r . 2.5)))))
-
-(defvar go-board-image-black-svg
-  '(((defs)
-     ((radialGradient (id . "$rg") (cx . ".3") (cy . ".3") (r . ".8"))
-      ((stop (offset . 0)   (stop-color . "#777")))
-      ((stop (offset . 0.3) (stop-color . "#222")))
-      ((stop (offset . 1)   (stop-color . "#000")))))
-    ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))))
-
-(defvar go-board-image-white-svg
-  '(((defs)
-     ((radialGradient (id . "$rg") (cx . ".47") (cy . ".49") (r . ".48"))
-      ((stop (offset . 0.7) (stop-color . "#FFF")))
-      ((stop (offset . 0.9) (stop-color . "#DDD")))
-      ((stop (offset . 1)   (stop-color . "#777")))))
-    ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))))
-
-(go-board-image-sides background)
-(eval `(go-board-image-sides black ,@go-board-image-black-svg))
-(eval `(go-board-image-sides white ,@go-board-image-white-svg))
 
 (defmacro go-board-image-label (label)
   `(go-board-image
