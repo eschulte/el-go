@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="500" height="500" version="1.0">
+<defs><radialGradient id="$rg" cx=".3" cy=".3" r=".8">
+ <stop offset="0" stop-color="#777"/>
+ <stop offset=".3" stop-color="#222"/>
+ <stop offset="1" stop-color="#000"/>
+</radialGradient></defs>
+<rect width="500" height="500" fill="#dcb35c"/>
+<circle cx="250" cy="250" r="245" fill="url(#$rg)"/>
+</svg>

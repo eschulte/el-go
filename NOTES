@@ -1,5 +1,15 @@
 # -*- mode:org -*-
 
+* better looking board
+could try to make wider characters or could just use images
+
+For images look at these images (go with wikipedia svg images).
+- http://en.wikipedia.org/wiki/File:Go_b.svg
+- http://en.wikipedia.org/wiki/File:Go_w.svg
+- or at ruby go http://rubygo.rubyforge.org/
+- see the go image source at
+  http://en.wikipedia.org/wiki/Blood-vomiting_game
+
 * TODO igs probably needs to periodically ping the server
 * DONE make a board back-end so it can receive commands
 * DONE allow an IGS process to send commands to a board
