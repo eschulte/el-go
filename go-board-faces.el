@@ -143,12 +143,6 @@
       ((stop (offset . 1)   (stop-color . "#777")))))
     ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))))
 
-(defvar go-board-image-black
-  (eval (cons 'go-board-image go-board-image-black-svg)))
-
-(defvar go-board-image-white
-  (eval (cons 'go-board-image go-board-image-white-svg)))
-
 (go-board-image-sides background)
 (eval `(go-board-image-sides black ,@go-board-image-black-svg))
 (eval `(go-board-image-sides white ,@go-board-image-white-svg))

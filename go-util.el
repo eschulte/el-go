@@ -104,4 +104,7 @@
      ((< num 9) (+ ?A (1- num)))
      (t         (+ ?A num)))))
 
+(defun sym-cat (&rest syms)
+  (intern (mapconcat #'symbol-name (delq nil syms) "-")))
+
 (provide 'go-util)

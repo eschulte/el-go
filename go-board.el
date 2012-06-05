@@ -216,9 +216,6 @@
         (body   (board-body-to-string board)))
     (mapconcat #'identity (list header body header) "\n")))
 
-(defun sym-cat (&rest syms)
-  (intern (mapconcat #'symbol-name (delq nil syms) "-")))
-
 (defun go-board-paint (&optional start end)
   (interactive "r")
   (flet ((ov (point face &optional back)
@@ -228,11 +225,11 @@
                (when go-board-use-images
                  (overlay-put ovly 'display
                               (eval (sym-cat 'go-board 'image face back))))
-               (push ovly go-board-overlays)))
+               (push ovly *go-board-overlays*)))
          (hide (point)
                (let ((ovly (make-overlay point (1+ point))))
                  (overlay-put ovly 'invisible t)
-                 (push ovly go-board-overlays))))
+                 (push ovly *go-board-overlays*))))
     (let ((start (or start (point-min)))
           (end   (or end   (point-max))))
       (dolist (point (range start end))
