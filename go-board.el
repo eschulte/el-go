@@ -173,12 +173,23 @@
                    ((equal val :B) black-piece)
                    ((and (stringp val) (= 1 (length val)) val))
                    (t  (if (and (emph (car pos)) (emph (cdr pos))) "+" ".")))))
-        (cond
-         ((string= str white-piece) (put str :type :white))
-         ((string= str black-piece) (put str :type :black))
-         ((string= str "+")         (put str :type :hoshi))
-         ((string= str ".")         (put str :type :background-1))
-         (t                         (put str :type :background)))
+        (put str :type
+             (cons (cond ;; foreground
+                    ((string= str white-piece) :white)
+                    ((string= str black-piece) :black)
+                    ((string= str "+")         :hoshi)
+                    ((string= str ".")         :background-1)
+                    (t                         :background))
+                   (cond ;; background
+                    ((and (= 0 (car pos)) (= 0 (cdr pos)))                 :bl)
+                    ((and (= 0 (car pos)) (= (1- size) (cdr pos)))         :br)
+                    ((and (= (1- size) (car pos)) (= 0 (cdr pos)))         :tl)
+                    ((and (= (1- size) (car pos)) (= (1- size) (cdr pos))) :tr)
+                    ((= 0 (car pos))                                       :b)
+                    ((= (1- size) (car pos))                               :t)
+                    ((= 0 (cdr pos))                                       :l)
+                    ((= (1- size) (cdr pos))                               :r)
+                    (t nil))))
         (put str :pos (cons (cdr pos) (car pos)))
         str))))
 
@@ -187,7 +198,7 @@
          (label (format "%3d" (1+ row)))
          (row-body "")
          (filler " "))
-    (put-text-property 0 1 :type :background filler)
+    (put-text-property 0 1 :type (cons :background nil) filler)
     (dotimes (n size)
       (setq row-body
             (concat row-body
@@ -224,14 +235,23 @@
     (let ((start (or start (point-min)))
           (end   (or end   (point-max))))
       (dolist (point (range start end))
-        (case (get-text-property point :type)
-          (:background  (if go-board-use-images
-                            (hide point)
-                            (ov point 'background)))
-          (:background-1 (ov point 'background))
+        (case (car (get-text-property point :type))
           (:hoshi        (ov point 'hoshi))
           (:white        (ov point 'white))
-          (:black        (ov point 'black)))))))
+          (:black        (ov point 'black))
+          (:background  (if go-board-use-images
+                            (hide point)
+                          (ov point 'background)))
+          (:background-1 (ov point (case (cdr (get-text-property point :type))
+                                     (:tl 'top-left)
+                                     (:tr 'top-right)
+                                     (:bl 'bottom-left)
+                                     (:br 'bottom-right)
+                                     (:t  'top)
+                                     (:b  'bottom)
+                                     (:l  'left)
+                                     (:r  'right)
+                                     (t   'background)))))))))
 
 (defun update-display (buffer)
   (with-current-buffer buffer
