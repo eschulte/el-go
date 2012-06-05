@@ -41,7 +41,7 @@
 (defvar black-piece "X")
 (defvar white-piece "O")
 
-(defvar go-board-use-images nil)
+(defvar go-board-use-images t)
 (defvar *go-board-overlays* nil
   "List of overlays carrying GO board painting information.")
 
@@ -177,6 +177,7 @@
          ((string= str white-piece) (put str :type :white))
          ((string= str black-piece) (put str :type :black))
          ((string= str "+")         (put str :type :hoshi))
+         ((string= str ".")         (put str :type :background-1))
          (t                         (put str :type :background)))
         (put str :pos (cons (cdr pos) (car pos)))
         str))))
@@ -215,15 +216,22 @@
                  (overlay-put ovly 'display
                               (eval (intern (concat "go-board-image-"
                                                     (symbol-name face))))))
-               (push ovly go-board-overlays))))
+               (push ovly go-board-overlays)))
+         (hide (point)
+               (let ((ovly (make-overlay point (1+ point))))
+                 (overlay-put ovly 'invisible t)
+                 (push ovly go-board-overlays))))
     (let ((start (or start (point-min)))
           (end   (or end   (point-max))))
       (dolist (point (range start end))
         (case (get-text-property point :type)
-          (:background (ov point 'background))
-          (:hoshi      (ov point 'hoshi))
-          (:white      (ov point 'white))
-          (:black      (ov point 'black)))))))
+          (:background  (if go-board-use-images
+                            (hide point)
+                            (ov point 'background)))
+          (:background-1 (ov point 'background))
+          (:hoshi        (ov point 'hoshi))
+          (:white        (ov point 'white))
+          (:black        (ov point 'black)))))))
 
 (defun update-display (buffer)
   (with-current-buffer buffer
