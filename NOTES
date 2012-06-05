@@ -1,9 +1,13 @@
 # -*- mode:org -*-
 
 * better looking board
-could try to make wider characters or could just use images
+See [[info:elisp#Image%20Descriptors][info:elisp#Image Descriptors]], can just use the text svg data
+directly, no need for files.  Also look at [[info:elisp#Pointer%20Shape][info:elisp#Pointer Shape]]
+for controlling the shape of the map.
 
-For images look at these images (go with wikipedia svg images).
+: '(image :type 'svg :data )
+
+** For images look at these images (go with wikipedia svg images).
 - http://en.wikipedia.org/wiki/File:Go_b.svg
 - http://en.wikipedia.org/wiki/File:Go_w.svg
 - or at ruby go http://rubygo.rubyforge.org/
