@@ -153,14 +153,17 @@
 
 ;;; Visualization
 (defun board-header (board)
-  (let ((size (board-size board)))
-    (concat "    "
-            (mapconcat (lambda (n)
-                         (let ((char (+ ?A n)))
-                           (when (>= char ?I)
-                             (setq char (+ 1 char)))
-                           (string char)))
-                       (range size) " "))))
+  (flet ((hd (str hd)
+             (put-text-property 0 1 :type `(,hd . :offboard) str)
+             str))
+    (let ((size (board-size board)))
+      (concat "   "
+              (hd " " :filler)
+              (mapconcat (lambda (n)
+                           (let ((char (+ ?A n)))
+                             (when (>= char ?I) (setq char (+ 1 char)))
+                             (hd (string char) :header)))
+                         (range size) (hd " " :filler))))))
 
 (defun board-pos-to-string (board pos)
   (let ((size (board-size board)))
@@ -231,7 +234,9 @@
                (overlay-put ovly 'face (sym-cat 'go-board face))
                (when go-board-use-images
                  (overlay-put ovly 'display
-                              (eval (sym-cat 'go-board 'image face back))))
+                              (if (equal face 'filler)
+                                  '(space :width (18))
+                                (eval (sym-cat 'go-board 'image face back)))))
                (push ovly *go-board-overlays*)))
          (hide (point)
                (let ((ovly (make-overlay point (1+ point))))
@@ -248,8 +253,11 @@
                       (:t  'top)
                       (:b  'bottom)
                       (:l  'left)
-                      (:r  'right))))
+                      (:r  'right)
+                      (:offboard 'offboard))))
           (case (car (get-text-property point :type))
+            (:header       nil)
+            (:filler       (ov point 'filler back))
             (:hoshi        (ov point 'hoshi))
             (:white        (ov point 'white back))
             (:black        (ov point 'black back))
