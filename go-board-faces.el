@@ -133,7 +133,7 @@
     ((stop (offset . 0)   (stop-color . "#777")))
     ((stop (offset . 0.3) (stop-color . "#222")))
     ((stop (offset . 1)   (stop-color . "#000")))))
-  ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)"))))
+  ((circle (cx . 12.5) (cy . 12.5) (r . 9.375) (fill . "url(#$rg)"))))
 
 (go-board-image-sides white
   ((defs)
@@ -141,7 +141,7 @@
     ((stop (offset . 0.7) (stop-color . "#FFF")))
     ((stop (offset . 0.9) (stop-color . "#DDD")))
     ((stop (offset . 1)   (stop-color . "#777")))))
-  ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)"))))
+  ((circle (cx . 12.5) (cy . 12.5) (r . 9.375) (fill . "url(#$rg)"))))
 
 (defvar go-board-image-hoshi
   (go-board-image
@@ -160,7 +160,7 @@
       ((stop (offset . 0.7) (stop-color . "#FFF")))
       ((stop (offset . 0.9) (stop-color . "#DDD")))
       ((stop (offset . 1)   (stop-color . "#777")))))
-    ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))
+    ((circle (cx . 12.5) (cy . 12.5) (r . 9.375) (fill . "url(#$rg)")))
     ((text (x . 8.75) (y . 16.25) (r . 12.25) (style . "font-size:12.5;"))
      ,label)))
 
@@ -171,7 +171,7 @@
       ((stop (offset . 0)   (stop-color . "#777")))
       ((stop (offset . 0.3) (stop-color . "#222")))
       ((stop (offset . 1)   (stop-color . "#000")))))
-    ((circle (cx . 12.5) (cy . 12.5) (r . 6.125) (fill . "url(#$rg)")))
+    ((circle (cx . 12.5) (cy . 12.5) (r . 9.375) (fill . "url(#$rg)")))
     ((text (x . 8.75) (y . 16.25) (r . 12.25)
            (style . "font-size:12.5;fill:#ffffff;")) ,label)))
 
