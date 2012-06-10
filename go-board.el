@@ -395,7 +395,7 @@
 (defun go-board-quit ()
   (interactive)
   (when (y-or-n-p "quit: ")
-    (with-trackers tr (go-quit tr))
+    (with-backends tr (go-quit tr))
     (kill-buffer (current-buffer))))
 
 
