@@ -46,17 +46,30 @@
 (require 'sgf2el          "back-ends/sgf2el.el")
 (require 'igs             "back-ends/igs.el")
 
-(defun play-go (&optional level)
-  "Play a game of GO against gnugo.
-Optional argument LEVEL specifies gnugo's level of play."
-  (interactive "P")
-  (with-current-buffer
-      (go-board
-       (make-instance 'gnugo
-         :buffer (apply #'gnugo-start-process
-                        (when level
-                          (list "--level" (number-to-string level)))))
-       (make-instance 'sgf))
-    (setq *autoplay* t)))
+(defun go-instantiate (back-end)
+  (interactive)
+  ;; TODO: read and set handicap.
+  (let ((it (make-instance back-end))
+        (size (read (org-icompleting-read
+                     "board size: "
+                     (mapcar #'number-to-string '(9 13 19)))))
+        (name (read-from-minibuffer "name: ")))
+    (setf (go-size it) size)
+    (ignoring-unsupported (setf (go-name it) name))
+    it))
+
+(defun play-go ()
+  "Play a game of GO."
+  (interactive)
+  (let ((back-end (case (intern (org-icompleting-read
+                                 "play against: " '("gnugo" "person")))
+                    (gnugo  (go-instantiate 'gnugo))
+                    (person (go-instantiate 'sgf)))))
+    (with-current-buffer (apply #'go-board
+                                (cons back-end
+                                      (unless (equal (class-of back-end) 'sgf)
+                                        (list (make-instance 'sgf)))))
+      (unless (equal (class-of back-end) 'sgf)
+        (setq *autoplay* t)))))
 
 (provide 'go)
