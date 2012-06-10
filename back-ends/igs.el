@@ -132,10 +132,12 @@ This is used to re-send messages to keep the IGS server from timing out.")
            (content (match-string 2 string)))
       (case type
         (:prompt (igs-w-proc proc (setq *igs-ready* t)))
-        (:info   (message "igs-info: %s" content))
+        (:info   (unless (string= content "yes")
+                   (message "igs-info: %s" content)))
         (:games  (igs-w-proc proc (igs-handle-game content)))
         (:move   (igs-w-proc proc (igs-handle-move content)))
         (:kibitz (message "igs-kibitz: %s" content))
+        (:tell   (igs-handle-tell content))
         (:beep   nil)
         (t       (message "igs-unknown: [%s]%s" type content)))
       (when (> (time-to-seconds (time-since *igs-time-last-sent*))
@@ -311,6 +313,14 @@ This is used to re-send messages to keep the IGS server from timing out.")
   (setf (aget *igs-games* *igs-current-game*) new))
 
 (defsetf igs-current-game set-igs-current-game)
+
+(defun igs-handle-tell (string)
+  (unless (string-match (format "\\*\\(%s\\)\\*: \\(.*\\)$" igs-player-name-re)
+                        string)
+    (error "igs: malformed tell string %S" string))
+  ;; TODO: keep a message buffer for each user in which conversations
+  ;;       may be saved... during games store messages as SGF comments.
+  (message "igs[%s]: %s" (match-string 1 string) (match-string 2 string)))
 
 (defun igs-apply-move (move)
   (if (aget (igs-current-game) :board)
