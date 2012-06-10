@@ -1,6 +1,6 @@
 # -*- mode:org -*-
 
-* better looking board
+* DONE better looking board
 See [[info:elisp#Image%20Descriptors][info:elisp#Image Descriptors]], can just use the text svg data
 directly, no need for files.  Also look at [[info:elisp#Pointer%20Shape][info:elisp#Pointer Shape]]
 for controlling the shape of the map.
@@ -14,7 +14,7 @@ for controlling the shape of the map.
 - see the go image source at
   http://en.wikipedia.org/wiki/Blood-vomiting_game
 
-* TODO igs probably needs to periodically ping the server
+* DONE igs probably needs to periodically ping the server
 * DONE make a board back-end so it can receive commands
 * DONE allow an IGS process to send commands to a board
 * IGS Support
