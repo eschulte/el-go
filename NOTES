@@ -1,5 +1,15 @@
 # -*- mode:org -*-
 
+* ability to call back-end functions through the board
+e.g., it would be nice to be able to call gnugo commands and display
+the output.  This should be extensible however...
+
+* support for calculating scores
+This could be built right into the board but would require
+- ability to assign contiguous open spaces
+- ability to mark stones as captured
+
+* track and display captured stones on board
 * DONE better looking board
 See [[info:elisp#Image%20Descriptors][info:elisp#Image Descriptors]], can just use the text svg data
 directly, no need for files.  Also look at [[info:elisp#Pointer%20Shape][info:elisp#Pointer Shape]]
