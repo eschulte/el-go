@@ -26,7 +26,7 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Code:
-(require 'go)
+(require 'go-api)
 (require 'go-board-faces)
 
 (defvar *history*  nil "Holds the board history for a GO buffer.")

@@ -36,26 +36,15 @@
 ;; - TODO: the IGS protocol
 
 ;;; Code:
-(require 'go-util)
-(require 'eieio)
-
-(declare-function go-board "go-board" (back-end &rest trackers))
-(declare-function gnugo-start-process "gnugo.el" (&rest options))
-
-(put 'unsupported-back-end-command
-     'error-conditions
-     '(error unsupported-back-end-command))
-
-(defmacro ignoring-unsupported (&rest body)
-  `(condition-case err ,@body
-     (unsupported-back-end-command nil)))
-
-(defmacro defgeneric-w-setf (name doc)
-  (let ((set-name (intern (concat "set-" (symbol-name name)))))
-    `(progn
-       (defgeneric ,name     (back-end) ,doc)
-       (defgeneric ,set-name (back-end new))
-       (defsetf ,name ,set-name))))
+(require 'go-util         "go-util.el")
+(require 'go-api          "go-api.el")
+(require 'go-board        "go-board.el")
+(require 'go-board-faces  "go-board-faces.el")
+(require 'gtp             "back-ends/gtp.el")
+(require 'gnugo           "back-ends/gnugo.el")
+(require 'sgf             "back-ends/sgf.el")
+(require 'sgf2el          "back-ends/sgf2el.el")
+(require 'igs             "back-ends/igs.el")
 
 (defun play-go (&optional level)
   "Play a game of GO against gnugo.
@@ -69,23 +58,5 @@ Optional argument LEVEL specifies gnugo's level of play."
                           (list "--level" (number-to-string level)))))
        (make-instance 'sgf))
     (setq *autoplay* t)))
-
-;; setf'able back-end access
-(defgeneric-w-setf go-size    "Access BACK-END size.")
-(defgeneric-w-setf go-name    "Access BACK-END name.")
-(defgeneric-w-setf go-move    "Access current BACK-END move.")
-(defgeneric-w-setf go-labels  "Access current BACK-END labels.")
-(defgeneric-w-setf go-comment "Access current BACK-END comment.")
-(defgeneric-w-setf go-alt     "Access current BACK-END alternative move.")
-(defgeneric-w-setf go-color   "Access current BACK-END turn color.")
-(defgeneric-w-setf go-player-name "Access current BACK-END player name.")
-(defgeneric-w-setf go-player-time "Access current BACK-END player time.")
-
-;; sending messages to the back-end
-(defgeneric go-undo   (back-end) "Send undo to BACK-END.")
-(defgeneric go-pass   (back-end) "Send pass to BACK-END.")
-(defgeneric go-resign (back-end) "Send resign to BACK-END.")
-(defgeneric go-reset  (back-end) "Send reset to BACK-END.")
-(defgeneric go-quit   (back-end) "Quit the BACK-END.")
 
 (provide 'go)

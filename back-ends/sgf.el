@@ -30,7 +30,7 @@
 ;; This file implements an `go-trans' interface into an SGF file.
 
 ;; Code:
-(require 'go)
+(require 'go-api)
 
 (defun sgf-nthcdr (sgf index)
   (let ((part sgf))

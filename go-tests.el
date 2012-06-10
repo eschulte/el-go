@@ -28,13 +28,6 @@
 ;;; Code:
 (require 'ert)
 (require 'go)
-(require 'go-board)
-(require 'go-board-faces)
-(require 'gtp)
-(require 'gnugo)
-(require 'sgf)
-(require 'sgf2el)
-(require 'igs)
 
 
 ;;; sgf2el tests

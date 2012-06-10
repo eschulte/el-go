@@ -30,7 +30,7 @@
 ;; http://www.pandanet.co.jp/English/commands/term/Summary.html
 
 ;; Code:
-(require 'go)
+(require 'go-api)
 
 (defvar igs-telnet-command "telnet"
   "Telnet command used by igs.")
