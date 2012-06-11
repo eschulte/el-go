@@ -90,4 +90,10 @@
 (defmethod gtp-command ((gnugo gnugo) command)
   (gnugo-command-to-string gnugo command))
 
+(defmethod go-player-name ((gnugo gnugo) color)
+  "GNU GO")
+
+(defmethod set-player-name ((gnugo gnugo) color name)
+  (signal 'unsupported-back-end-command (list gnugo :set-player-name name)))
+
 (provide 'gnugo)

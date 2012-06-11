@@ -64,6 +64,8 @@
 (defgeneric-w-setf go-color   "Access current BACK-END turn color.")
 (defgeneric-w-setf go-player-name "Access current BACK-END player name.")
 (defgeneric-w-setf go-player-time "Access current BACK-END player time.")
+(defgeneric-w-setf
+  go-player-prisoners         "Access current BACK-END player prisoners.")
 
 ;; sending messages to the back-end
 (defgeneric go-undo   (back-end) "Send undo to BACK-END.")

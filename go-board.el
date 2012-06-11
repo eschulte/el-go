@@ -32,8 +32,8 @@
 (defvar *history*  nil "Holds the board history for a GO buffer.")
 (defvar *size*     nil "Holds the board size.")
 (defvar *turn*     nil "Holds the color of the current turn.")
-(defvar *black*    nil "Holds info on black player.")
-(defvar *white*    nil "Holds info on white player.")
+(defvar *black*    nil "Plist of info on black player.")
+(defvar *white*    nil "Plist of info on white player.")
 (defvar *back-end* nil "Holds the primary back-end connected to a board.")
 (defvar *trackers* nil "Holds a list of back-ends which should track the game.")
 (defvar *autoplay* nil "Should `*back-end*' automatically respond to moves.")
@@ -56,6 +56,15 @@
 (defun make-board (size) (make-vector (* size size) nil))
 
 (defun board-size (board) (round (sqrt (length board))))
+
+(defun go-player-get (color property)
+  (plist-get (case color (:W *white*) (:B *black*)) property))
+
+(defun go-player-set (color property value)
+  (let ((player (case color (:W *white*) (:B *black*))))
+    (plist-put player property value)))
+
+(defsetf go-player-get go-player-set)
 
 (defun move-type (move)
   (cond
@@ -137,6 +146,7 @@
     (dotimes (n (length board) board)
       (when (and (equal (aref board n) color) (not (alive-p board n)))
         (push n cull)))
+    (incf (go-player-get (other-color color) :prisoners) (length cull))
     (dolist (n cull cull) (setf (aref board n) nil))))
 
 (defun board-to-pieces (board)
@@ -173,9 +183,12 @@
                    (or (= 3 n)
                        (= 4 (- size n))
                        (= n (/ (- size 1) 2))))
+                  ((= size 13)
+                   (or (= 3 n)
+                       (= 9 n)))
                   ((= size 9)
                    (or (= 2 n)
-                       (= 4 n)))))
+                       (= 6 n)))))
            (put (str prop val) (put-text-property 0 (length str) prop val str)))
       (let* ((val (aref board (pos-to-index pos size)))
              (str (cond
@@ -245,26 +258,35 @@
     (let ((start (or start (point-min)))
           (end   (or end   (point-max))))
       (dolist (point (range start end))
-        (let ((back (case (cdr (get-text-property point :type))
-                      (:tl 'top-left)
-                      (:tr 'top-right)
-                      (:bl 'bottom-left)
-                      (:br 'bottom-right)
-                      (:t  'top)
-                      (:b  'bottom)
-                      (:l  'left)
-                      (:r  'right)
-                      (:offboard 'offboard))))
-          (case (car (get-text-property point :type))
-            (:header       nil)
-            (:filler       (ov point 'filler back))
-            (:hoshi        (ov point 'hoshi))
-            (:white        (ov point 'white back))
-            (:black        (ov point 'black back))
-            (:background  (if go-board-use-images
-                              (hide point)
-                            (ov point 'background)))
-            (:background-1 (ov point 'background back))))))))
+        (if (get-text-property point :turn)
+            (font-lock-prepend-text-property point (1+ point) 'face 'underline)
+          (let ((back (case (cdr (get-text-property point :type))
+                        (:tl 'top-left)
+                        (:tr 'top-right)
+                        (:bl 'bottom-left)
+                        (:br 'bottom-right)
+                        (:t  'top)
+                        (:b  'bottom)
+                        (:l  'left)
+                        (:r  'right)
+                        (:offboard 'offboard))))
+            (case (car (get-text-property point :type))
+              (:header       nil)
+              (:filler       (ov point 'filler back))
+              (:hoshi        (ov point 'hoshi))
+              (:white        (ov point 'white back))
+              (:black        (ov point 'black back))
+              (:background  (if go-board-use-images
+                                (hide point)
+                              (ov point 'background)))
+              (:background-1 (ov point 'background back)))))))))
+
+(defun player-to-string (color)
+  (format "%10s: %3d"
+          (let ((name (go-player-get color :name)))
+            (put-text-property 0 (length name) :turn (equal *turn* color) name)
+            name)
+          (go-player-get color :prisoners)))
 
 (defun update-display (buffer)
   (with-current-buffer buffer
@@ -272,8 +294,9 @@
       (delete-region (point-min) (point-max))
       (insert "\n"
               (board-to-string
-               (pieces-to-board (car *history*) *size*))
-              "\n\n")
+               (pieces-to-board (car *history*) *size*)) "\n\n"
+              (player-to-string :W) "\n"
+              (player-to-string :B) "\n")
       (let ((comment (ignoring-unsupported (go-comment *back-end*))))
         (when comment
           (insert (make-string (+ 6 (* 2 *size*)) ?=)
@@ -292,8 +315,8 @@
           (mapcar (lambda (tr) (setf (go-name tr) name)) trackers)))
       (set (make-local-variable '*back-end*) back-end)
       (set (make-local-variable '*turn*) :B)
-      (set (make-local-variable '*black*) nil)
-      (set (make-local-variable '*white*) nil)
+      (set (make-local-variable '*black*) '(:name "black" :prisoners 0))
+      (set (make-local-variable '*white*) '(:name "white" :prisoners 0))
       (set (make-local-variable '*size*) (go-size back-end))
       (set (make-local-variable '*autoplay*) nil)
       (set (make-local-variable '*go-board-overlays*) nil)
@@ -351,8 +374,8 @@
          (move (cons *turn* (cons :pos pos))))
     (with-backends back
       (setf (go-move back) move))
-    (apply-turn-to-board (list move))
-    (setf *turn* (other-color *turn*)))
+    (setf *turn* (other-color *turn*))
+    (apply-turn-to-board (list move)))
   (when *autoplay* (go-board-next)))
 
 (defun go-board-resign ()
@@ -382,11 +405,11 @@
     (let ((move (go-move *back-end*)))
       (if (equal move :pass)
           (message "pass")
+        (setf *turn* (other-color *turn*))
         (apply-turn-to-board
          (cons move (ignoring-unsupported (go-labels *back-end*)))))
       (with-trackers tr (setf (go-move tr) move))
-      (goto-char (point-of-pos (cddr move))))
-    (setf *turn* (other-color *turn*))))
+      (goto-char (point-of-pos (cddr move))))))
 
 (defun go-board-mouse-move (ev)
   (interactive "e")
@@ -443,10 +466,10 @@
 
 (defmethod set-go-move ((board board) move)
   (with-board board
+    (setf *turn* (other-color *turn*))
     (apply-turn-to-board (list move))
     (goto-char (point-of-pos (cddr move)))
-    (with-trackers tr (setf (go-move tr) move))
-    (setf *turn* (other-color *turn*))))
+    (with-trackers tr (setf (go-move tr) move))))
 
 (defmethod go-labels ((board board))
   (signal 'unsupported-back-end-command (list board :labels)))
@@ -473,20 +496,22 @@
   (with-board board (setq *turn* color)))
 
 (defmethod go-player-name ((board board) color)
-  (with-board board (car (case color (:W *white*) (:B *black*)))))
+  (with-board board (go-player-get color :name)))
 
 (defmethod set-go-player-name ((board board) color name)
-  (with-board board
-    (let ((player (case color (:W *white*) (:B *black*))))
-      (setf (car player) name))))
+  (with-board board (go-player-set color :name name)))
 
 (defmethod go-player-time ((board board) color)
-  (with-board board (cdr (case color (:W *white*) (:B *black*)))))
+  (with-board board (go-player-get color :time)))
 
 (defmethod set-go-player-time ((board board) color time)
-  (with-board board
-    (let ((player (case color (:W *white*) (:B *black*))))
-      (setf (cdr player) time))))
+  (with-board board (go-player-set color :time time)))
+
+(defmethod go-player-prisoners ((board board) color)
+  (with-board board (go-player-get color :prisoners)))
+
+(defmethod set-go-player-prisoners ((board board) color prisoners)
+  (with-board board (go-player-set color :prisoners prisoners)))
 
 ;; non setf'able generic functions
 (defmethod go-undo ((board board))
