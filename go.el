@@ -52,7 +52,7 @@
   (let ((it (make-instance back-end))
         (size (read (org-icompleting-read
                      "board size: "
-                     (mapcar #'number-to-string '(9 13 19))))))
+                     (mapcar #'number-to-string '(19 13 9))))))
     (setf (go-size it) size)
     it))
 
