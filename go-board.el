@@ -358,7 +358,7 @@
 (defun go-board-move (&optional pos)
   (interactive)
   (let* ((color (case *turn* (:B "black") (:W "white")))
-         (pos (or pos (cons (gtp-char-to-num
+         (pos (or pos (cons (char-to-num
                              (aref (downcase
                                     (org-icompleting-read
                                      (format "[%s] X pos: " color)

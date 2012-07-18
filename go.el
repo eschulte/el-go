@@ -52,10 +52,8 @@
   (let ((it (make-instance back-end))
         (size (read (org-icompleting-read
                      "board size: "
-                     (mapcar #'number-to-string '(9 13 19)))))
-        (name (read-from-minibuffer "name: ")))
+                     (mapcar #'number-to-string '(9 13 19))))))
     (setf (go-size it) size)
-    (ignoring-unsupported (setf (go-name it) name))
     it))
 
 (defun play-go ()
