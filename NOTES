@@ -1,4 +1,4 @@
-# -*- mode:org -*-
+#+Options: ^:nil                                      -*- mode:org -*-
 
 * ability to call back-end functions through the board
 e.g., it would be nice to be able to call gnugo commands and display
