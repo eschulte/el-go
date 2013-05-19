@@ -340,6 +340,7 @@
   `(ignoring-unsupported
     (prog1 (let ((,sym *back-end*)) ,@body)
       (with-trackers ,sym ,@body))))
+(def-edebug-spec with-backends (sexp body))
 
 (defvar go-board-actions '(move resign undo comment)
   "List of actions which may be taken on an GO board.")
