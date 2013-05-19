@@ -71,6 +71,12 @@
 (defmethod set-go-size ((gtp gtp) size)
   (gtp-command gtp (format "boardsize %d" size)))
 
+(defmethod go-level ((gtp gtp))
+  (signal 'unsupported-back-end-command (list gtp :go-level)))
+
+(defmethod set-go-level ((gtp gtp) level)
+  (gtp-command gtp (format "level %d" level)))
+
 (defmethod go-name ((gtp gtp))
   (gtp-command gtp "name"))
 

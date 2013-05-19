@@ -371,6 +371,12 @@ This is used to re-send messages to keep the IGS server from timing out.")
   (declare (indent 1))
   `(with-current-buffer (buffer ,igs) ,@body))
 
+(defmethod go-level ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :level)))
+
+(defmethod set-go-level ((igs igs) level)
+  (signal 'unsupported-back-end-command (list igs :set-level level)))
+
 (defmethod go-size ((igs igs))
   (with-igs igs (aget (igs-current-game) :size)))
 

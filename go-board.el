@@ -340,7 +340,7 @@
   `(ignoring-unsupported
     (prog1 (let ((,sym *back-end*)) ,@body)
       (with-trackers ,sym ,@body))))
-(def-edebug-spec with-backends (sexp body))
+(def-edebug-spec with-backends (place body))
 
 (defvar go-board-actions '(move resign undo comment)
   "List of actions which may be taken on an GO board.")
@@ -400,6 +400,10 @@
   (interactive "MComment: ")
   (message "comment: %S" comment))
 
+(defun go-board-level (&optional level)
+  (interactive "nLevel: ")
+  (with-backends back (setf (go-level back) level)))
+
 (defun go-board-next (&optional count)
   (interactive "p")
   (dotimes (n (or count 1) (or count 1))
@@ -435,6 +439,7 @@
     (define-key map (kbd "r") 'go-board-resign)
     (define-key map (kbd "u") 'go-board-undo)
     (define-key map (kbd "c") 'go-board-comment)
+    (define-key map (kbd "l") 'go-board-level)
     (define-key map (kbd "p") 'go-board-pass)
     (define-key map (kbd "<right>") 'go-board-next)
     (define-key map (kbd "<left>")  'go-board-undo)

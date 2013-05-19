@@ -110,6 +110,12 @@
    ((aget (root sgf) :SZ) (setf (cdr (assoc :SZ (root sgf))) size))
    (t                     (push (cons :S size) (root sgf)))))
 
+(defmethod go-level ((sgf sgf))
+  (signal 'unsupported-back-end-command (list sgf :go-level)))
+
+(defmethod set-go-level ((sgf sgf) level)
+  (signal 'unsupported-back-end-command (list sgf :set-go-level level)))
+
 (defmethod go-name ((sgf sgf))
   (or (aget (root sgf) :GN)
       (aget (root sgf) :EV)))

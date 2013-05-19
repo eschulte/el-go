@@ -56,6 +56,7 @@
 
 ;; setf'able back-end access
 (defgeneric-w-setf go-size    "Access BACK-END size.")
+(defgeneric-w-setf go-level   "Access level of BACK-END.")
 (defgeneric-w-setf go-name    "Access BACK-END name.")
 (defgeneric-w-setf go-move    "Access current BACK-END move.")
 (defgeneric-w-setf go-labels  "Access current BACK-END labels.")
