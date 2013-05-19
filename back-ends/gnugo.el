@@ -85,7 +85,10 @@
 
 ;;; Class and interface
 (defclass gnugo (gtp)
-  ((buffer :initarg :buffer :accessor buffer :initform (gnugo-start-process))))
+  ((buffer :initarg :buffer :accessor buffer)))
+
+(defmethod go-connect ((gnugo gnugo))
+  (setf (buffer gnugo) (gnugo-start-process)))
 
 (defmethod gtp-command ((gnugo gnugo) command)
   (gnugo-command-to-string gnugo command))

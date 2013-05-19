@@ -162,22 +162,21 @@ This is used to re-send messages to keep the IGS server from timing out.")
           (mapc (lambda (s) (igs-filter-process proc s)) lines)))
       (when moving (goto-char (process-mark proc))))))
 
-(defun igs-connect ()
+(defun igs-connect (igs)
   "Open a connection to `igs-server'."
   (interactive)
   (flet ((wait (prompt)
                (while (and (goto-char (or comint-last-input-end (point-min)))
                            (not (re-search-forward prompt nil t)))
                  (accept-process-output proc))))
-    (let ((igs-instance (make-instance 'igs))
-          (buffer (apply 'make-comint
+    (let ((buffer (apply 'make-comint
                          igs-process-name
                          igs-telnet-command nil
                          (list igs-server (number-to-string igs-port)))))
-      (setf (buffer igs-instance) buffer)
+      (setf (buffer igs) buffer)
       (with-current-buffer buffer
         (comint-mode)
-        (set (make-local-variable '*igs-instance*) igs-instance)
+        (set (make-local-variable '*igs-instance*) igs)
         (set (make-local-variable '*igs-ready*) nil)
         (set (make-local-variable '*igs-games*) nil)
         (set (make-local-variable '*igs-current-game*) nil)
@@ -191,7 +190,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
           (igs-toggle "client" t)
           (set-process-filter proc 'igs-insertion-filter))
         (igs-games))
-      igs-instance)))
+      buffer)))
 
 (defun igs-toggle (setting value)
   (igs-send (format "toggle %s %s" setting (if value "true" "false"))))
@@ -365,6 +364,8 @@ This is used to re-send messages to keep the IGS server from timing out.")
 ;;; Class and interface
 (defclass igs ()
   ((buffer :initarg :buffer :accessor buffer :initform nil)))
+
+(defmethod go-connect ((igs igs)) (igs-connect igs))
 
 (defmacro with-igs (igs &rest body)
   (declare (indent 1))

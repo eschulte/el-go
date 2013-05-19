@@ -53,6 +53,7 @@
         (size (read (org-icompleting-read
                      "board size: "
                      (mapcar #'number-to-string '(19 13 9))))))
+    (go-connect it)
     (setf (go-size it) size)
     it))
 

@@ -68,6 +68,7 @@
   go-player-prisoners         "Access current BACK-END player prisoners.")
 
 ;; sending messages to the back-end
+(defgeneric go-connect (back-end) "Connect to BACK-END.")
 (defgeneric go-undo   (back-end) "Send undo to BACK-END.")
 (defgeneric go-pass   (back-end) "Send pass to BACK-END.")
 (defgeneric go-resign (back-end) "Send resign to BACK-END.")
