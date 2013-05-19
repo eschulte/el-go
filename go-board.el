@@ -421,6 +421,10 @@
     (with-backends tr (go-quit tr))
     (kill-buffer (current-buffer))))
 
+(defun go-board-safe-quit ()
+  (ignore-errors (with-backends tr (go-quit tr)))
+  t)
+
 
 ;;; Display mode
 (defvar go-board-mode-map
@@ -438,7 +442,9 @@
   "Keymap for `go-board-mode'.")
 
 (define-derived-mode go-board-mode nil "GO"
-  "Major mode for viewing a GO board.")
+  "Major mode for viewing a GO board."
+  (set (make-local-variable 'kill-buffer-query-functions)
+       (add-to-list 'kill-buffer-query-functions 'go-board-safe-quit)))
 
 
 ;;; Class and interface
