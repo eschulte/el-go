@@ -165,7 +165,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
 (defun igs-connect (igs)
   "Open a connection to `igs-server'."
   (interactive)
-  (flet ((wait (prompt)
+  (cl-flet ((wait (prompt)
                (while (and (goto-char (or comint-last-input-end (point-min)))
                            (not (re-search-forward prompt nil t)))
                  (accept-process-output proc))))

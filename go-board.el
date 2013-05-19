@@ -90,7 +90,7 @@
     (update-display (current-buffer))))
 
 (defun apply-move (board move)
-  (flet ((bset (val data)
+  (cl-flet ((bset (val data)
                (let ((data (if (listp (car data)) data (list data))))
                  (setf (aref board (pos-to-index (aget data :pos)
                                                  (board-size board)))
@@ -163,7 +163,7 @@
 
 ;;; Visualization
 (defun board-header (board)
-  (flet ((hd (str hd)
+  (cl-flet ((hd (str hd)
              (put-text-property 0 1 :type `(,hd . :offboard) str)
              str))
     (let ((size (board-size board)))
@@ -177,7 +177,7 @@
 
 (defun board-pos-to-string (board pos)
   (let ((size (board-size board)))
-    (flet ((emph (n)
+    (cl-flet ((emph (n)
                  (cond
                   ((= size 19)
                    (or (= 3 n)
@@ -241,7 +241,7 @@
 
 (defun go-board-paint (&optional start end)
   (interactive "r")
-  (flet ((ov (point face &optional back)
+  (cl-flet ((ov (point face &optional back)
              (let ((ovly (make-overlay point (1+ point))))
                (overlay-put ovly 'go-pt point)
                (overlay-put ovly 'face (sym-cat 'go-board face))

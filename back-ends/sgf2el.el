@@ -150,7 +150,7 @@
 (add-to-list 'sgf2el-special-properties (cons :DT #'process-date))
 
 (defun process-position (position-string)
-  (flet ((char-to-num (char)
+  (cl-flet ((char-to-num (char)
                       (cond
                        ((or (< char ?A) (< ?z char))
                         (error "sgf: invalid char %s" char))

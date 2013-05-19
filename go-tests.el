@@ -276,7 +276,7 @@
 
 (defun go-stone-counts ()
   (let ((pieces (car *history*)))
-    (flet ((count-for (color) (length (remove-if-not
+    (cl-flet ((count-for (color) (length (remove-if-not
                                       (lambda (piece) (equal color (car piece)))
                                       pieces))))
       (cons (count-for :B) (count-for :W)))))

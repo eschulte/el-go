@@ -87,7 +87,7 @@
       str)))
 
 (defun char-to-num (char)
-  (flet ((err () (error "gtp: invalid char %s" char)))
+  (cl-flet ((err () (error "gtp: invalid char %s" char)))
     (cond
      ((< char ?A)  (err))
      ((< char ?I)  (- char ?A))
@@ -98,7 +98,7 @@
      (t (err)))))
 
 (defun num-to-char (num)
-  (flet ((err () (error "gtp: invalid num %s" num)))
+  (cl-flet ((err () (error "gtp: invalid num %s" num)))
     (cond
      ((< num 1) (err))
      ((< num 9) (+ ?A (1- num)))
