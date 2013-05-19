@@ -414,7 +414,9 @@
         (apply-turn-to-board
          (cons move (ignoring-unsupported (go-labels *back-end*)))))
       (with-trackers tr (setf (go-move tr) move))
-      (goto-char (point-of-pos (cddr move))))))
+      (if (equal move :pass)
+          (goto-char (point-min))
+        (goto-char (point-of-pos (cddr move)))))))
 
 (defun go-board-mouse-move (ev)
   (interactive "e")
