@@ -79,7 +79,7 @@
 (defun gnugo-last-output (gnugo)
   (with-current-buffer (buffer gnugo)
     (comint-show-output)
-    (org-babel-clean-text-properties
+    (go-clean-text-properties
      (buffer-substring (+ 2 (point)) (- (point-max) 2)))))
 
 

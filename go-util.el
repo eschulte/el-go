@@ -107,4 +107,16 @@
 (defun sym-cat (&rest syms)
   (intern (mapconcat #'symbol-name (delq nil syms) "-")))
 
+(defun go-number-p (string)
+  "If STRING represents a number return its value."
+  (if (and (string-match "[0-9]+" string)
+	   (string-match "^-?[0-9]*\\.?[0-9]*$" string)
+           (= (length (substring string (match-beginning 0)
+				 (match-end 0)))
+	      (length string)))
+      (string-to-number string)))
+
+(defun go-clean-text-properties (string)
+  (set-text-properties 0 (length string) nil string) string)
+
 (provide 'go-util)

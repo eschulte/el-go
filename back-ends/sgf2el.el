@@ -46,7 +46,7 @@
 
 (defun sgf2el-read-prop (val)
   (when (and (stringp val) (not (equal val "")))
-    (or (org-babel-number-p val) val)))
+    (or (go-number-p val) val)))
 
 (defun sgf2el-convert-prop-vals (key vals)
   "Convert a property value to elisp."
@@ -62,7 +62,7 @@
       (insert str)
       (goto-char (point-min))
       (loop while (re-search-forward re nil t)
-            collect (org-babel-clean-text-properties
+            collect (go-clean-text-properties
                      (match-string (or sub-exp 0)))))))
 
 (defun sgf2el-region (&optional start end)
