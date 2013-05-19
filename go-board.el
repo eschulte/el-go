@@ -337,10 +337,11 @@
 
 (defmacro with-backends (sym &rest body)
   (declare (indent 1))
-  `(ignoring-unsupported
-    (prog1 (let ((,sym *back-end*)) ,@body)
-      (with-trackers ,sym ,@body))))
-(def-edebug-spec with-backends (place body))
+  `(save-window-excursion
+     (ignoring-unsupported
+      (prog1 (let ((,sym *back-end*)) ,@body)
+        (with-trackers ,sym ,@body)))))
+(def-edebug-spec with-backends (sexp body))
 
 (defvar go-board-actions '(move resign undo comment)
   "List of actions which may be taken on an GO board.")
@@ -386,8 +387,12 @@
 (defun go-board-pass ()
   (interactive)
   (with-backends back (go-pass back))
-  (setf *turn* (other-color *turn*))
-  (when *autoplay* (go-board-next)))
+  (save-window-excursion
+    (setf *turn* (other-color *turn*))
+    (when *autoplay*
+      (when (equalp :pass (go-board-next))
+        ;; TODO: print the score
+        (message "Game Over")))))
 
 (defun go-board-undo (&optional num)
   (interactive "p")
@@ -406,8 +411,9 @@
 
 (defun go-board-next (&optional count)
   (interactive "p")
-  (dotimes (n (or count 1) (or count 1))
-    (let ((move (go-move *back-end*)))
+  (let (move)
+    (dotimes (n (or count 1) move)
+      (setf move (go-move *back-end*))
       (if (equal move :pass)
           (message "pass")
         (setf *turn* (other-color *turn*))
