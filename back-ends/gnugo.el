@@ -64,7 +64,7 @@
   (with-current-buffer (buffer gnugo)
     (goto-char (process-mark (get-buffer-process (current-buffer))))
     (insert command)
-    (comint-send-input))
+    (when (get-buffer-process (current-buffer)) (comint-send-input)))
   (gnugo-wait-for-output gnugo))
 
 (defun gnugo-wait-for-output (gnugo)
