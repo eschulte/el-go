@@ -134,4 +134,6 @@
 
 (defmethod go-quit ((gtp gtp)) (gtp-command gtp "quit"))
 
+(defmethod go-score ((gtp gtp)) (gtp-command gtp "final_score"))
+
 (provide 'gtp)

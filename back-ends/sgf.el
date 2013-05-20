@@ -188,4 +188,7 @@
   (when (y-or-n-p "Save game to file: ")
     (sgf-to-file sgf (read-file-name "Save game to: "))))
 
+(defmethod go-score ((sgf sgf))
+  (signal 'unsupported-back-end-command (list sgf :score)))
+
 (provide 'sgf)

@@ -392,7 +392,8 @@
     (when *autoplay*
       (when (equalp :pass (go-board-next))
         ;; TODO: print the score
-        (message "Game Over")))))
+        (message "final score: %s"
+                 (with-backends back (go-score back)))))))
 
 (defun go-board-undo (&optional num)
   (interactive "p")
