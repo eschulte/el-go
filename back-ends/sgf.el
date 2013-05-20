@@ -191,4 +191,7 @@
 (defmethod go-score ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :score)))
 
+(defmethod go-territory ((sgf sgf))
+  (signal 'unsupported-back-end-command (list sgf :territory)))
+
 (provide 'sgf)

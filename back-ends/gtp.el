@@ -58,6 +58,14 @@
       (:KM      (format "komi %s" val))
       (t        nil))))
 
+(defun gtp-territory (gtp color)
+  (let ((output (ecase color
+                  (:B (gtp-command gtp "final_status_list black_territory"))
+                  (:W (gtp-command gtp "final_status_list white_territory")))))
+    (mapcar (lambda (gtp-point) (gtp-to-pos color gtp-point))
+            (mapcar #'symbol-name
+                    (read (format "(%s)" output))))))
+
 
 ;;; Class and interface
 (defclass gtp nil nil "Class for the GTP GO GO back end.")
@@ -135,5 +143,8 @@
 (defmethod go-quit ((gtp gtp)) (gtp-command gtp "quit"))
 
 (defmethod go-score ((gtp gtp)) (gtp-command gtp "final_score"))
+
+(defmethod go-territory ((gtp gtp))
+  (append (gtp-territory gtp :B) (gtp-territory gtp :W)))
 
 (provide 'gtp)

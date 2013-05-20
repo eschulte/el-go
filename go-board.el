@@ -391,9 +391,10 @@
     (setf *turn* (other-color *turn*))
     (when *autoplay*
       (when (equalp :pass (go-board-next))
-        ;; TODO: print the score
-        (message "final score: %s"
-                 (with-backends back (go-score back)))))))
+        (message "final score: %s territory:%s"
+                 (with-backends back (go-score back))
+                 ;; TODO: mark the territory
+                 (with-backends back (go-territory back)))))))
 
 (defun go-board-undo (&optional num)
   (interactive "p")
@@ -404,7 +405,7 @@
 
 (defun go-board-comment (&optional comment)
   (interactive "MComment: ")
-  (message "comment: %S" comment))
+  (with-backends back (setf (go-comment back) comment)))
 
 (defun go-board-level (&optional level)
   (interactive "nLevel: ")

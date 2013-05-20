@@ -75,6 +75,7 @@
 (defgeneric go-resign (back-end) "Send resign to BACK-END.")
 (defgeneric go-reset  (back-end) "Send reset to BACK-END.")
 (defgeneric go-quit   (back-end) "Quit the BACK-END.")
-(defgeneric go-score  (back-end) "Ask BACK-END to report the final score.")
+(defgeneric go-score  (back-end) "Ask BACK-END to report the score.")
+(defgeneric go-territory (back-end) "Ask BACK-END to report the territory.")
 
 (provide 'go-api)

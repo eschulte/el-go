@@ -458,4 +458,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
 (defmethod go-score ((igs igs))
   (signal 'unsupported-back-end-command (list igs :score)))
 
+(defmethod go-territory ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :territory)))
+
 (provide 'igs)
