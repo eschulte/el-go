@@ -1,5 +1,12 @@
 #+Options: ^:nil                                      -*- mode:org -*-
 
+* TODO scale image sizes
+See the TODO and note in file:go-board-faces.el.
+
+We'll need to have =go-board-image= return a function rather than a
+list, and then somehow hook in with the =face-remap-add-relative=
+function.
+
 * ability to call back-end functions through the board
 e.g., it would be nice to be able to call gnugo commands and display
 the output.  This should be extensible however...

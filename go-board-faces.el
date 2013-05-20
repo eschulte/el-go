@@ -74,6 +74,8 @@
   '((t (:background "#cd9c67" :foreground "white")))
   "white piece on white territory")
 
+;; Maybe use `face-remap-add-relative' to change image sizes.
+
 
 ;;; Image utility functions
 (defun go-board-svg-trans (list)
@@ -97,6 +99,10 @@
             (width . 25) (height . 25) (version . 1.0))
        ,@body))))
 
+;; TODO: To allow images to scale with text, this should return a
+;;       function instead of a list.  This function should take a base
+;;       size (e.g., 12.5), and should return the image list
+;;       appropriate for that size.
 (defmacro go-board-image (&rest body)
   ``(image :type svg :ascent center :data
            ,(go-board-wrap
