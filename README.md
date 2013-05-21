@@ -1,14 +1,17 @@
-el-go --- Emacs interface to GO protocols and backends
-------------------------------------------------------
+el-go --- Emacs interface to the game of GO
+-------------------------------------------
 
 - play GO
 - interact with GO back ends and protocols through a board
-- translate between GO back ends and protocols
+- translate between multiple GO back ends and protocols
 
-A board-based interface to GO games which may be connected to a number
-of GO back-ends through a generic API.  To play a game of GO run
-`play-go`.  Back-ends include the SGF format, the Go Text Protocol
-(GTP), the IGS protocol (in progress).
+A board-based interface to the game of GO which may be connected to a
+number of GO back-ends through a generic API.  Back-ends include the
+[Smart Game Format](http://senseis.xmp.net/?SmartGameFormat) (SGF),
+the [Go Text Protocol](http://www.lysator.liu.se/~gunnar/gtp/) (GTP)
+which may be used to play against gnugo, and the
+[Internet Go Server](http://en.wikipedia.org/wiki/IGS_Go_server) (IGS)
+protocol (in progress).
 
 Usage
 -----
@@ -16,7 +19,11 @@ Usage
 1. Load this library.
 
         (require 'go)
-    
+
 2. Play Go.
 
-        (play-go)
+        M-x go-play
+
+3. View an SGF file of a saved game.
+
+        M-x go-view-sgf
