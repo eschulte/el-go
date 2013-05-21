@@ -398,13 +398,13 @@
     (setf *turn* (other-color *turn*))
     (when *autoplay*
       (when (equalp :pass (go-board-next))
-        (message "final score: %s" (with-backends back (go-score back)))
         (mapc (lambda (move)
                 (go-board-mark-point (point-of-pos (cddr move))
                                      (go-board-cross (ecase (car move)
                                                        (:B 'black)
                                                        (:W 'white)))))
-              (with-backends back (go-territory back)))))))
+              (with-backends back (go-territory back)))
+        (message "final score: %s" (with-backends back (go-score back)))))))
 
 (defun go-board-undo (&optional num)
   (interactive "p")
