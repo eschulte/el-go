@@ -98,12 +98,19 @@
                       (style . ,(format "stroke: %s;" color)))))
              ""))
 
-(defun go-board-mark (overlay color)
+(defun go-board-label (color label)
+  (go-board-svg-trans
+   `((text (x . 8.75) (y . 16.25) (r . 12.25)
+           (style . ,(format "font-size:12.5;fill:%s;" color)))
+     ,label)))
+
+(defun go-board-mark (overlay mark)
+  "Write MARK over top of the SVG image in OVERLAY."
   (let* ((disp (cdr (overlay-get overlay 'display)))
          (data (plist-get disp :data)))
     (when (and data (string-match (regexp-quote "</svg>") data))
       (plist-put disp :data (concat (substring data 0 (match-beginning 0))
-                                    (go-board-cross color)
+                                    mark
                                     (substring data (match-beginning 0))))
       (overlay-put overlay 'display (cons 'image disp)))))
 
@@ -170,32 +177,5 @@
   (go-board-image
    ((path (stroke . "#000") (stroke-width . 1) (d . "M0,12.5H25M12.5,0V25")))
    ((circle (cx . 12.5) (cy . 12.5) (r . 2.5)))))
-
-(defmacro go-board-image-label (label)
-  `(go-board-image
-    ((text (x . 8.75) (y . 16.25) (r . 12.25) (style . "font-size:12.5;"))
-     ,label)))
-
-(defmacro go-board-image-white-label (label)
-  `(go-board-image
-    ((defs)
-     ((radialGradient (id . "$rg") (cx . ".47") (cy . ".49") (r . ".48"))
-      ((stop (offset . 0.7) (stop-color . "#FFF")))
-      ((stop (offset . 0.9) (stop-color . "#DDD")))
-      ((stop (offset . 1)   (stop-color . "#777")))))
-    ((circle (cx . 12.5) (cy . 12.5) (r . 9.375) (fill . "url(#$rg)")))
-    ((text (x . 8.75) (y . 16.25) (r . 12.25) (style . "font-size:12.5;"))
-     ,label)))
-
-(defmacro go-board-image-black-label (label)
-  `(go-board-image
-    ((defs)
-     ((radialGradient (id . "$rg") (cx . ".3") (cy . ".3") (r . ".8"))
-      ((stop (offset . 0)   (stop-color . "#777")))
-      ((stop (offset . 0.3) (stop-color . "#222")))
-      ((stop (offset . 1)   (stop-color . "#000")))))
-    ((circle (cx . 12.5) (cy . 12.5) (r . 9.375) (fill . "url(#$rg)")))
-    ((text (x . 8.75) (y . 16.25) (r . 12.25)
-           (style . "font-size:12.5;fill:#ffffff;")) ,label)))
 
 (provide 'go-board-faces)
