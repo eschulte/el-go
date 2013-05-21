@@ -106,7 +106,7 @@
 
 (defun go-board-mark (overlay mark)
   "Write MARK over top of the SVG image in OVERLAY."
-  (let* ((disp (cdr (overlay-get overlay 'display)))
+  (let* ((disp (cdr (copy-tree (overlay-get overlay 'display))))
          (data (plist-get disp :data)))
     (when (and data (string-match (regexp-quote "</svg>") data))
       (plist-put disp :data (concat (substring data 0 (match-beginning 0))
