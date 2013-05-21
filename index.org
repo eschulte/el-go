@@ -1,0 +1,55 @@
+#+HTML_HEAD: <style>pre{background:#232323; color:#E6E1DC;} @media(min-width:800px){div#content{max-width:800px; padding:2em; margin:auto;}}</style>
+#+Title: el-go -- Emacs interface to the game of GO
+#+Author: Eric Schulte
+#+Options: toc:1 ^:nil
+
+* Introduction
+  :PROPERTIES:
+  :CUSTOM_ID: introduction
+  :END:
+The =el-go= library provides an Emacs interface to the game of GO.
+Specifically, a number of GO backends including the [[http://senseis.xmp.net/?SmartGameFormat][Smart Game Format]]
+(SGF) file format, the [[http://www.lysator.liu.se/~gunnar/gtp/][Go Text Protocol]] (GTP) which may be used to
+play against the [[http://www.gnu.org/software/gnugo/][gnugo]] program, and partial support for the [[http://en.wikipedia.org/wiki/IGS_Go_server][Internet
+Go Server]] (IGS) format which is /not/ an open standard and is thus
+reverse engineered from sanctioned IGS clients (currently this backend
+only really supports watching games, not playing them).
+
+* Installation
+  :PROPERTIES:
+  :CUSTOM_ID: installation
+  :END:
+1. Grab this [[https://github.com/eschulte/el-go][git repository]].
+   #+begin_src sh
+     git clone git://github.com/eschulte/el-go.git
+   #+end_src
+
+2. Add the path to the cloned repository to your load-path.
+   #+begin_src emacs-lisp
+     (add-to-list 'load-path "/path/to/el-go")
+   #+end_src
+
+3. Load =el-go=.
+   #+begin_src emacs-lisp
+     (require 'el-go)
+   #+end_src
+
+* Usage
+  :PROPERTIES:
+  :CUSTOM_ID: usage
+  :END:
+- go-play :: Use the =play-go= function (=M-x play-go=) to play a game
+             of GO either against the =gnugo= program or against
+             another person on the same machine.
+
+- go-view-sgf :: Use the =view-sgf= function (=M-x view-sgf=) to load
+                 an SGF file and replay the saved game.  Use the right
+                 and left arrows to navigate the saved game.
+
+* License
+  :PROPERTIES:
+  :CUSTOM_ID: license
+  :END:
+
+Licensed under the GPLV3, see the [[file:COPYING]] file in this directory
+for more information.

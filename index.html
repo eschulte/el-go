@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>el-go &#x2013; Emacs interface to the game of GO</title>
+<!-- 2013-05-21 Tue 10:24 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
+
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  /*]]>*/-->
+</style>
+<style>pre{background:#232323; color:#E6E1DC;} @media(min-width:800px){div#content{max-width:800px; padding:2em; margin:auto;}}</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012  Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">el-go &#x2013; Emacs interface to the game of GO</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#introduction">1. Introduction</a></li>
+<li><a href="#installation">2. Installation</a></li>
+<li><a href="#usage">3. Usage</a></li>
+<li><a href="#license">4. License</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-introduction" class="outline-2">
+<h2 id="introduction"><a id="sec-1" name="sec-1"></a><span class="section-number-2">1</span> Introduction</h2>
+<div class="outline-text-2" id="text-introduction">
+<p>
+The <code>el-go</code> library provides an Emacs interface to the game of GO.
+Specifically, a number of GO backends including the <a href="http://senseis.xmp.net/?SmartGameFormat">Smart Game Format</a>
+(SGF) file format, the <a href="http://www.lysator.liu.se/~gunnar/gtp/">Go Text Protocol</a> (GTP) which may be used to
+play against the <a href="http://www.gnu.org/software/gnugo/">gnugo</a> program, and partial support for the <a href="http://en.wikipedia.org/wiki/IGS_Go_server">Internet
+Go Server</a> (IGS) format which is <i>not</i> an open standard and is thus
+reverse engineered from sanctioned IGS clients (currently this backend
+only really supports watching games, not playing them).
+</p>
+</div>
+</div>
+<div id="outline-container-installation" class="outline-2">
+<h2 id="installation"><a id="sec-2" name="sec-2"></a><span class="section-number-2">2</span> Installation</h2>
+<div class="outline-text-2" id="text-installation">
+<ol class="org-ol">
+<li>Grab this <a href="https://github.com/eschulte/el-go">git repository</a>.
+<div class="org-src-container">
+
+<pre class="src src-sh">git clone git://github.com/eschulte/el-go.git
+</pre>
+</div>
+</li>
+
+<li>Add the path to the cloned repository to your load-path.
+<div class="org-src-container">
+
+<pre class="src src-emacs-lisp"><span style="color: #7f7f7f;">(</span>add-to-list 'load-path <span style="color: #e9b96e;">"/path/to/el-go"</span><span style="color: #7f7f7f;">)</span>
+</pre>
+</div>
+</li>
+
+<li>Load <code>el-go</code>.
+<div class="org-src-container">
+
+<pre class="src src-emacs-lisp"><span style="color: #7f7f7f;">(</span><span style="color: #b4fa70;">require</span> '<span style="color: #e6a8df;">el-go</span><span style="color: #7f7f7f;">)</span>
+</pre>
+</div>
+</li>
+</ol>
+</div>
+</div>
+<div id="outline-container-usage" class="outline-2">
+<h2 id="usage"><a id="sec-3" name="sec-3"></a><span class="section-number-2">3</span> Usage</h2>
+<div class="outline-text-2" id="text-usage">
+<dl class="org-dl">
+<dt> go-play </dt><dd>Use the <code>play-go</code> function (<code>M-x play-go</code>) to play a game
+of GO either against the <code>gnugo</code> program or against
+another person on the same machine.
+</dd>
+
+<dt> go-view-sgf </dt><dd>Use the <code>view-sgf</code> function (<code>M-x view-sgf</code>) to load
+an SGF file and replay the saved game.  Use the right
+and left arrows to navigate the saved game.
+</dd>
+</dl>
+</div>
+</div>
+<div id="outline-container-license" class="outline-2">
+<h2 id="license"><a id="sec-4" name="sec-4"></a><span class="section-number-2">4</span> License</h2>
+<div class="outline-text-2" id="text-license">
+
+<p>
+Licensed under the GPLV3, see the <a href="COPYING">COPYING</a> file in this directory
+for more information.
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="author">Author: Eric Schulte</p>
+<p class="date">Created: 2013-05-21 Tue 10:24</p>
+<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.3.1 (<a href="http://orgmode.org">Org</a> mode 8.0.3)</p>
+<p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
