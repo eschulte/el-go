@@ -71,4 +71,12 @@
       (unless (equal (class-of back-end) 'sgf)
         (setq *autoplay* t)))))
 
+(defun view-sgf (&optional file)
+  "View an SGF file."
+  (interactive "fSGF file: ")
+  (let* ((sgf (make-instance 'sgf :self (sgf2el-file-to-el file) :index '(0)))
+         (buffer (go-board sgf)))
+    (with-current-buffer buffer
+      (setf (index *back-end*) (list 0)))))
+
 (provide 'go)
