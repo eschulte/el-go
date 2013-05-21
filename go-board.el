@@ -384,6 +384,9 @@
   (interactive)
   (with-backends back (go-reset back)))
 
+(defun go-board-mark-point (point mark)
+  (mapc (lambda (ov) (go-board-mark ov mark)) (overlays-at point)))
+
 (defun go-board-pass ()
   (interactive)
   (with-backends back (go-pass back))
@@ -391,10 +394,13 @@
     (setf *turn* (other-color *turn*))
     (when *autoplay*
       (when (equalp :pass (go-board-next))
-        (message "final score: %s territory:%s"
-                 (with-backends back (go-score back))
-                 ;; TODO: mark the territory
-                 (with-backends back (go-territory back)))))))
+        (message "final score: %s" (with-backends back (go-score back)))
+        (mapc (lambda (move)
+                (go-board-mark-point (point-of-pos (cddr move))
+                                     (go-board-cross (ecase (car move)
+                                                       (:B 'black)
+                                                       (:W 'white)))))
+              (with-backends back (go-territory back)))))))
 
 (defun go-board-undo (&optional num)
   (interactive "p")
