@@ -39,12 +39,20 @@ only really supports watching games, not playing them).
   :CUSTOM_ID: usage
   :END:
 - go-play :: Use the =play-go= function (=M-x play-go=) to play a game
-             of GO either against the =gnugo= program or against
-             another person on the same machine.
+             of GO either against the gnugo program or against another
+             person on the same machine.  Click on the board with the
+             mouse to move.  Other commands are bound to keys and may
+             be with listed (=C-h b=).
+
+             #+Caption: Playing gnugo on a 9 by 9 board with key bindings shown.
+             file:help.png
 
 - go-view-sgf :: Use the =view-sgf= function (=M-x view-sgf=) to load
                  an SGF file and replay the saved game.  Use the right
                  and left arrows to navigate the saved game.
+
+                 #+Caption: This example shows the game in [[file:sgf-files/jp-ming-5.sgf]].
+                 file:jp-ming-5.png
 
 * License
   :PROPERTIES:
