@@ -380,6 +380,10 @@
     (apply-turn-to-board (list move)))
   (when *autoplay* (go-board-next)))
 
+(defun go-board-refresh ()
+  (interactive)
+  (update-display (current-buffer)))
+
 (defun go-board-resign ()
   (interactive)
   (with-backends back (go-reset back)))
@@ -452,7 +456,8 @@
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<mouse-1>") 'go-board-mouse-move)
     (define-key map (kbd "m") 'go-board-move)
-    (define-key map (kbd "r") 'go-board-resign)
+    (define-key map (kbd "r") 'go-board-refresh)
+    (define-key map (kbd "R") 'go-board-resign)
     (define-key map (kbd "u") 'go-board-undo)
     (define-key map (kbd "c") 'go-board-comment)
     (define-key map (kbd "l") 'go-board-level)
