@@ -19,7 +19,7 @@ only really supports watching games, not playing them).
   :PROPERTIES:
   :CUSTOM_ID: installation
   :END:
-1. Grab this [[https://github.com/eschulte/el-go][git repository]].
+1. Clone the [[https://github.com/eschulte/el-go][git repository]].
    #+begin_src sh
      git clone git://github.com/eschulte/el-go.git
    #+end_src
