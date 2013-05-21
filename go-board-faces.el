@@ -90,6 +90,23 @@
                 "/>"))
     list))
 
+(defun go-board-cross (color)
+  (mapconcat #'go-board-svg-trans
+             `(((line (x1 . 3.125) (y1 . 3.125) (x2 . 21.875) (y2 . 21.875)
+                      (style . ,(format "stroke: %s;" color))))
+               ((line (x1 . 3.125) (y1 . 21.875) (x2 . 21.875) (y2 . 3.125)
+                      (style . ,(format "stroke: %s;" color)))))
+             ""))
+
+(defun go-board-mark (overlay color)
+  (let* ((disp (cdr (overlay-get overlay 'display)))
+         (data (plist-get disp :data)))
+    (when (and data (string-match (regexp-quote "</svg>") data))
+      (plist-put disp :data (concat (substring data 0 (match-beginning 0))
+                                    (go-board-cross color)
+                                    (substring data (match-beginning 0))))
+      (overlay-put overlay 'display (cons 'image disp)))))
+
 (defmacro go-board-wrap (&rest body)
   `(concat
     "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
