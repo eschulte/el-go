@@ -57,7 +57,8 @@
     (setf (go-size it) size)
     it))
 
-(defun play-go ()
+;;;###autoload
+(defun go-play ()
   "Play a game of GO."
   (interactive)
   (let ((back-end (case (intern (org-icompleting-read
@@ -71,7 +72,8 @@
       (unless (equal (class-of back-end) 'sgf)
         (setq *autoplay* t)))))
 
-(defun view-sgf (&optional file)
+;;;###autoload
+(defun go-view-sgf (&optional file)
   "View an SGF file."
   (interactive "fSGF file: ")
   (let* ((sgf (make-instance 'sgf :self (sgf2el-file-to-el file) :index '(0)))
