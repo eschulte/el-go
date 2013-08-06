@@ -27,6 +27,7 @@
 
 ;;; Code:
 (eval-when-compile (require 'cl))
+(require 'go-util)
 
 (defvar *buffer-list* nil
   "List associated with the current list buffer.")
@@ -51,19 +52,16 @@
           widths row)))
 
 (defun list-buffer-refresh ()
-  (let* ((strings (mapcar (lambda (row)
-                            (mapcar (lambda (cell) (format "%s" cell)) row))
-                          *buffer-list*))
-         (lengths (mapcar (lambda (row) (mapcar #'length row)) strings))
-         (widths (apply #'cl-mapcar #'max lengths)))
+  (let* ((strings (mapcar (curry #'mapcar (curry #'format "%s")) *buffer-list*))
+         (lengths (mapcar (curry #'mapcar #'length) strings))
+         (widths (apply #'cl-mapcar (compose '1+ #'max) lengths)))
     ;; write headers
     (when *buffer-headers*
       (set (make-local-variable 'header-line-format)
            (list-format-row widths *buffer-headers*)))
     ;; write rows
     (delete (point-min) (point-max))
-    (insert (mapconcat (lambda (row) (list-format-row widths row))
-                       strings "\n"))))
+    (insert (mapconcat (curry #'list-format-row widths) strings "\n"))))
 
 (defun list-buffer-sort (key predicate)
   (set *buffer-list* (cl-sort *buffer-list* predicate :key key)))
