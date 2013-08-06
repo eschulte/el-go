@@ -52,7 +52,7 @@
           (lambda (width cell)
             (if (< (length cell) width)
                 (concat cell (make-list (- width (length cell)) ?\ ))
-              (concat (subseq cell 0 (- width 4)) "... ")))
+              (concat (subseq cell 0 (- width 2)) "… ")))
           widths row)))
 
 (defun list-buffer-refresh ()
