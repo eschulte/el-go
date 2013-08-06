@@ -65,7 +65,7 @@
       (set (make-local-variable 'header-line-format)
            (concat " " (list-format-row widths *buffer-headers*))))
     ;; write rows
-    (delete (point-min) (point-max))
+    (delete-region (point-min) (point-max))
     (insert (mapconcat (curry #'list-format-row widths) strings "\n"))))
 
 (defun list-buffer-sort (key predicate)
