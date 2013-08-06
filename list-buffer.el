@@ -72,12 +72,15 @@
            (concat " " (list-format-row widths *buffer-headers*))))
     ;; write rows
     (delete-region (point-min) (point-max))
-    (insert (mapconcat (curry #'list-format-row widths) strings "\n"))))
+    (insert (mapconcat (curry #'list-format-row widths) strings "\n")))
+  (goto-char (point-min)))
 
-(defun list-buffer-sort (key predicate)
-  (set *buffer-list* (cl-sort *buffer-list* predicate :key key)))
+(defun list-buffer-sort (col predicate)
+  (set *buffer-list* (cl-sort *buffer-list* predicate :key (curry #'nth col)))
+  (list-buffer-refresh))
 
-(defun list-buffer-filter (key filter)
-  (set *buffer-list* (cl-remove-if-not *buffer-list* filter :key key)))
+(defun list-buffer-filter (col filter)
+  (set *buffer-list* (cl-remove-if-not *buffer-list* filter :key (curry #'nth col)))
+  (list-buffer-refresh))
 
 (provide 'list-buffer)
