@@ -40,6 +40,9 @@
   (set (make-local-variable '*buffer-list*) list)
   (set (make-local-variable '*buffer-headers*)
        (mapcar (curry #'format "%s") headers))
+  ;; refresh every time the buffer changes size
+  (set (make-local-variable 'window-size-change-functions)
+       (cons (lambda (b) (list-buffer-refresh)) window-size-change-functions))
   ;; set commands at the bottom
   (list-buffer-refresh))
 
