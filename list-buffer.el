@@ -54,7 +54,10 @@
 
 (defun list-buffer-refresh ()
   (let* ((strings (mapcar (curry #'mapcar (curry #'format "%s")) *buffer-list*))
-         (lengths (mapcar (curry #'mapcar #'length) strings))
+         (lengths (mapcar (curry #'mapcar #'length)
+                          (if *buffer-headers*
+                              (cons *buffer-headers* strings)
+                            strings)))
          (widths (apply #'cl-mapcar (compose '1+ #'max) lengths))
          ;; scale widths by buffer width
          (widths (mapcar (compose #'floor (curry #'* (/ (window-total-width)
