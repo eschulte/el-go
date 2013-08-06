@@ -38,7 +38,8 @@
 (defun list-buffer-create (buffer list &optional headers)
   (pop-to-buffer buffer)
   (set (make-local-variable '*buffer-list*) list)
-  (set (make-local-variable '*buffer-headers*) headers)
+  (set (make-local-variable '*buffer-headers*)
+       (mapcar (curry #'format "%s") headers))
   ;; set commands at the bottom
   (list-buffer-refresh))
 
@@ -54,11 +55,15 @@
 (defun list-buffer-refresh ()
   (let* ((strings (mapcar (curry #'mapcar (curry #'format "%s")) *buffer-list*))
          (lengths (mapcar (curry #'mapcar #'length) strings))
-         (widths (apply #'cl-mapcar (compose '1+ #'max) lengths)))
+         (widths (apply #'cl-mapcar (compose '1+ #'max) lengths))
+         ;; scale widths by buffer width
+         (widths (mapcar (compose #'floor (curry #'* (/ (window-total-width)
+                                              (float (apply #'+ widths)))))
+                         widths)))
     ;; write headers
     (when *buffer-headers*
       (set (make-local-variable 'header-line-format)
-           (list-format-row widths *buffer-headers*)))
+           (concat " " (list-format-row widths *buffer-headers*))))
     ;; write rows
     (delete (point-min) (point-max))
     (insert (mapconcat (curry #'list-format-row widths) strings "\n"))))
