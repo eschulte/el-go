@@ -38,13 +38,22 @@
 (defvar *buffer-width* nil
   "Width associated with the current list buffer.")
 
-(defun list-buffer-create (buffer list &optional headers)
+(defvar *enter-function* nil
+  "Function used to enter a list element.
+The function should take two arguments, the current row and
+column respectively and may access the current buffer list
+through the `*buffer-list*' variable.")
+
+(defun list-buffer-create (buffer list &optional headers enter-function)
   (pop-to-buffer buffer)
   (list-mode)
   (set (make-local-variable '*buffer-width*) (window-total-width))
   (set (make-local-variable '*buffer-list*) list)
   (set (make-local-variable '*buffer-headers*)
        (mapcar (curry #'format "%s") headers))
+  (set (make-local-variable '*enter-function*)
+       (or enter-function (lambda (row col)
+                            (message "%S" (nth col (nth row *buffer-list*))))))
   ;; refresh every time the buffer changes size
   (set (make-local-variable 'window-size-change-functions)
        (cons (lambda (b)
@@ -126,7 +135,7 @@
 
 (defun list-enter ()
   (interactive)
-  (funcall *list-enter-function* (nth (list-current-row) *buffer-list*)))
+  (funcall *enter-function* (list-current-row) (list-current-col)))
 
 (defun list-filter ()
   (interactive)
