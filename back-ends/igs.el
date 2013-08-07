@@ -1,11 +1,11 @@
 ;;; igs.el --- IGS GO back-end
 
-;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
+;; Copyright (C) 2012-2013 Eric Schulte <schulte.eric@gmail.com>
 
-;; Author: Eric Schulte <eric.schulte@gmx.com>
+;; Author: Eric Schulte <schulte.eric@gmail.com>
 ;; Created: 2012-05-15
 ;; Version: 0.1
-;; Keywords: game go sgf
+;; Keywords: game go sgf igs
 
 ;; This file is not (yet) part of GNU Emacs.
 ;; However, it is distributed under the same license.
@@ -31,6 +31,7 @@
 
 ;; Code:
 (require 'go-api)
+(require 'list-buffer)
 
 (defvar igs-telnet-command "telnet"
   "Telnet command used by igs.")
@@ -122,7 +123,8 @@ This is used to re-send messages to keep the IGS server from timing out.")
   "Send string COMMAND to the IGS process in the current buffer."
   (goto-char (process-mark (get-buffer-process (current-buffer))))
   (insert command)
-  (setq *igs-time-last-sent* (current-time))
+  (setq *igs-time-last-sent* (current-time)
+        *igs-ready* nil)
   (comint-send-input))
 
 (defun igs-filter-process (proc string)
@@ -164,11 +166,10 @@ This is used to re-send messages to keep the IGS server from timing out.")
 
 (defun igs-connect (igs)
   "Open a connection to `igs-server'."
-  (interactive)
   (cl-flet ((wait (prompt)
-               (while (and (goto-char (or comint-last-input-end (point-min)))
-                           (not (re-search-forward prompt nil t)))
-                 (accept-process-output proc))))
+                  (while (and (goto-char (or comint-last-input-end (point-min)))
+                              (not (re-search-forward prompt nil t)))
+                    (accept-process-output proc))))
     (let ((buffer (apply 'make-comint
                          igs-process-name
                          igs-telnet-command nil
@@ -188,8 +189,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
           (igs-send igs-username)
           (wait "^\#> ")
           (igs-toggle "client" t)
-          (set-process-filter proc 'igs-insertion-filter))
-        (igs-games))
+          (set-process-filter proc 'igs-insertion-filter)))
       buffer)))
 
 (defun igs-toggle (setting value)
@@ -202,30 +202,6 @@ This is used to re-send messages to keep the IGS server from timing out.")
                               (mapcar #'number-to-string
                                       (mapcar #'car *igs-games*)))))))
     (igs-send (format "observe %s" game))))
-
-(defun igs-games ()
-  (interactive)
-  (setf *igs-games* nil)
-  (igs-send "games"))
-
-(defun igs-game-list (igs)
-  (let (games)
-    (with-igs igs (setq games *igs-games*))
-    (let* ((my-games (copy-seq games))
-           (list-buf (get-buffer-create "*igs-game-list*")))
-      (with-current-buffer (pop-to-buffer list-buf)
-        (delete-region (point-min) (point-max))
-        (org-mode)
-        (insert (concat (orgtbl-to-orgtbl
-                         (mapcar (lambda (game)
-                                   (cons (car game)
-                                         (mapcar #'cdr
-                                                 (assq-delete-all
-                                                  :board (cdr game)))))
-                                 my-games)
-                         '(:fmt (lambda (cell) (format "%s" cell)))) "\n"))
-        (goto-char (point-min))
-        (org-table-align)))))
 
 
 ;;; Specific handlers
@@ -297,7 +273,12 @@ This is used to re-send messages to keep the IGS server from timing out.")
               (:by         . ,(nth 4 other1))
               (:fr         . ,(nth 5 other1))
               (:other      . ,(car other2)))
-            *igs-games*))))
+            *igs-games*)
+      ;; update the game list buffer
+      (when (get-buffer "*igs-game-list*")
+        (save-excursion
+          (set-buffer (get-buffer "*igs-game-list*"))
+          (list-buffer-refresh))))))
 
 (defun igs-to-pos (color igs)
   (cons (make-keyword color)
@@ -359,6 +340,43 @@ This is used to re-send messages to keep the IGS server from timing out.")
        (igs-register-game number)
        (igs-update-game-info (cons :W white-info))
        (igs-update-game-info (cons :B black-info))))))
+
+
+;;; IGS interface
+;;
+;; If we find another backend providing game lists and observations
+;; then this could be generalized to an interface.
+
+(defun igs-start (&optional name)
+  "Connect to an IGS server and return the `igs' instance."
+  (interactive)
+  (set-buffer (get-buffer-create (or name "*igs*")))
+  (if (get-buffer-process (current-buffer))
+      *igs-instance*
+    (let ((*igs* (make-instance 'igs)))
+      (igs-connect *igs*)
+      *igs*)))
+
+(defun igs-get-games (&optional instance)
+  "List the games of the igs instance."
+  (interactive)
+  (set-buffer (buffer (or instance (igs-start))))
+  (setf *igs-games* nil)
+  (message "requesting games...")
+  (igs-send "games")
+  (while (not *igs-ready*)
+    (accept-process-output (get-buffer-process (current-buffer))))
+  (with-igs *igs-instance*
+    (lexical-let ((instance *igs-instance*))
+      (list-buffer-create
+       "*igs-game-list*"
+       (cl-mapcar #'cons
+                  (mapcar #'car *igs-games*)
+                  (mapcar (curry #'mapcar #'cdr) (mapcar #'cdr *igs-games*)))
+       '("#" "white" "rk" "black" "rk" "move" "size" "H" "Komi" "by" "fr" "#")
+       (lambda (row col)
+         (let ((id (car (nth row *buffer-list*))))
+           (with-igs instance (igs-observe id))))))))
 
 
 ;;; Class and interface

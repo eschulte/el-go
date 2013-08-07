@@ -27,3 +27,8 @@ Usage
 3. View an SGF file of a saved game.
 
         M-x go-view-sgf
+
+4. Connect to the internet go server.  Currently this only supports
+   browsing and observing games.
+
+        M-x igs-get-games
