@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>el-go &#x2013; Emacs interface to the game of GO</title>
-<!-- 2013-05-21 Tue 14:39 -->
+<!-- 2013-08-07 Wed 00:29 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 
@@ -186,7 +186,7 @@ only really supports watching games, not playing them).
 <li>Load <code>el-go</code>.
 <div class="org-src-container">
 
-<pre class="src src-emacs-lisp"><span style="color: #7f7f7f;">(</span><span style="color: #b4fa70;">require</span> '<span style="color: #e6a8df;">el-go</span><span style="color: #7f7f7f;">)</span>
+<pre class="src src-emacs-lisp"><span style="color: #7f7f7f;">(</span><span style="color: #b4fa70;">require</span> '<span style="color: #e6a8df;">go</span><span style="color: #7f7f7f;">)</span>
 </pre>
 </div>
 </li>
@@ -205,8 +205,9 @@ be with listed (<code>C-h b</code>).
 
 
 <div class="figure">
-<p><img  src="help.png" alt="help.png" /></p>
-<p>Playing gnugo on a 9 by 9 board with key bindings shown.</p>
+<p><img src="help.png" alt="help.png" />
+</p>
+<p><span class="figure-number">Figure 1:</span> Playing gnugo on a 9 by 9 board with key bindings shown.</p>
 </div>
 </dd>
 
@@ -216,9 +217,18 @@ right and left arrows to navigate the saved game.
 
 
 <div class="figure">
-<p><img  src="jp-ming-5.png" alt="jp-ming-5.png" /></p>
-<p>This example shows the game in <a href="sgf-files/jp-ming-5.sgf">sgf-files/jp-ming-5.sgf</a>.</p>
+<p><img src="jp-ming-5.png" alt="jp-ming-5.png" />
+</p>
+<p><span class="figure-number">Figure 2:</span> This example shows the game in <a href="sgf-files/jp-ming-5.sgf">sgf-files/jp-ming-5.sgf</a>.</p>
 </div>
+</dd>
+
+<dt> igs-get-games </dt><dd>List the games currently being played on the
+<a href="http://en.wikipedia.org/wiki/IGS_Go_server">Internet Go Server</a>.  Currently only browsing and
+observing active games is supported.  When browsing
+games use the "up" and "down" arrows to sort by the
+current column, and press "enter" to observe the
+game on the current row.
 </dd>
 </dl>
 </div>
@@ -236,8 +246,8 @@ for more information.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: Eric Schulte</p>
-<p class="date">Created: 2013-05-21 Tue 14:39</p>
-<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.3.1 (<a href="http://orgmode.org">Org</a> mode 8.0.3)</p>
+<p class="date">Created: 2013-08-07 Wed 00:29</p>
+<p class="creator"><a href="http://www.gnu.org/software/emacs/">Emacs</a> 24.3.1 (<a href="http://orgmode.org">Org</a> mode 8.0.6)</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

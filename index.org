@@ -31,7 +31,7 @@ only really supports watching games, not playing them).
 
 3. Load =el-go=.
    #+begin_src emacs-lisp
-     (require 'el-go)
+     (require 'go)
    #+end_src
 
 * Usage
@@ -53,6 +53,13 @@ only really supports watching games, not playing them).
 
                  #+Caption: This example shows the game in [[file:sgf-files/jp-ming-5.sgf]].
                  file:jp-ming-5.png
+
+- igs-get-games :: List the games currently being played on the
+                   [[http://en.wikipedia.org/wiki/IGS_Go_server][Internet Go Server]].  Currently only browsing and
+                   observing active games is supported.  When browsing
+                   games use the "up" and "down" arrows to sort by the
+                   current column, and press "enter" to observe the
+                   game on the current row.
 
 * License
   :PROPERTIES:
