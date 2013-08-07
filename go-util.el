@@ -46,6 +46,9 @@
              more-functions
              :initial-value function))
 
+(defun indexed (list)
+  (loop for el in list as i from 0 collect (list i el)))
+
 (defun rcons (x lst)
   (append lst (list x)))
 
