@@ -303,7 +303,8 @@
                   "\n\n"
                   comment)))
       (go-board-paint)
-      (goto-char point))))
+      (goto-char point)))
+  buffer)
 
 (defun go-board (back-end &rest trackers)
   (let ((buffer (generate-new-buffer "*GO*")))
@@ -323,10 +324,11 @@
       (mapcar (lambda (tr) (setf (go-size tr) *size*)) trackers)
       (set (make-local-variable '*history*)
            (list (board-to-pieces (make-board *size*))))
-      (set (make-local-variable '*trackers*) trackers)
-      (set (make-local-variable '*trackers*) trackers)
-      (update-display (current-buffer)))
-    (pop-to-buffer buffer)))
+      (set (make-local-variable '*trackers*) trackers))
+    (pop-to-buffer buffer)
+    (plist-put *black* :prisoners 0)
+    (plist-put *white* :prisoners 0)
+    (update-display buffer)))
 
 
 ;;; User input

@@ -28,6 +28,27 @@
 ;;; Code:
 (eval-when-compile (require 'cl))
 
+(defun curry (function &rest arguments)
+  (lexical-let ((function function)
+                (arguments arguments))
+    (lambda (&rest more) (apply function (append arguments more)))))
+
+(defun rcurry (function &rest arguments)
+  (lexical-let ((function function)
+                (arguments arguments))
+    (lambda (&rest more) (apply function (append more arguments)))))
+
+(defun compose (function &rest more-functions)
+  (cl-reduce (lambda (f g)
+               (lexical-let ((f f) (g g))
+                 (lambda (&rest arguments)
+                   (funcall f (apply g arguments)))))
+             more-functions
+             :initial-value function))
+
+(defun indexed (list)
+  (loop for el in list as i from 0 collect (list i el)))
+
 (defun rcons (x lst)
   (append lst (list x)))
 
