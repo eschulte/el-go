@@ -142,8 +142,18 @@ This is used to re-send messages to keep the IGS server from timing out.")
            ("^games" (igs-list-games *igs-instance* *igs-games*))
            (t nil))
          (setq *igs-last-command* nil))
-        (:info   (unless (string= content "yes")
-                   (message "igs-info: %s" content)))
+        (:info
+         (igs-re-cond content
+           ;; Game NN: name1 vs name2 has adjourned.
+           ("^Game \\([0-9]*\\): .*adjourned.$"
+            (igs-handle-adjournment (match-string 1 content)))
+           ;; {Game NN: name1 vs name2 : color resigns.}
+           ("^{Game \\([0-9]*\\): \\(Black\\|White\\) resigns.}$"
+            (igs-handle-resignation (igs-re-cond (match-string 2 content)
+                                      ("black" :black)
+                                      ("white" :white))))
+           (t (unless (string= content "yes")
+                (message "igs-info: %s" content)))))
         (:games  (igs-w-proc proc (igs-handle-game content)))
         (:move   (igs-w-proc proc (igs-handle-move content)))
         (:kibitz (message "igs-kibitz: %s" content))
@@ -300,6 +310,24 @@ This is used to re-send messages to keep the IGS server from timing out.")
           (set-buffer (get-buffer "*igs-game-list*"))
           (list-buffer-refresh))))))
 
+(defun igs-handle-adjournment (number-string)
+  (if (aget (igs-current-game) :board)
+      (with-current-buffer (buffer (aget (igs-current-game) :board))
+        (with-backends backend
+          (when (equal (class-of backend) 'igs)
+            (setf (active backend) nil))))
+    (error "igs-handle-adjournment: no board!")))
+
+(defun igs-handle-resignation (color)
+  (if (aget (igs-current-game) :board)
+      (progn
+        (go-resign (aget (igs-current-game) :board))
+        (with-current-buffer (buffer (aget (igs-current-game) :board))
+          (with-backends backend
+            (when (equal (class-of backend) 'igs)
+              (setf (active backend) nil)))))
+    (error "igs-handle-adjournment: no board!")))
+
 (defun igs-to-pos (color igs)
   (cons (make-keyword color)
         (cons :pos
@@ -396,7 +424,8 @@ This is used to re-send messages to keep the IGS server from timing out.")
 (defclass igs ()
   ((buffer :initarg :buffer :accessor buffer :initform nil)
    ;; number of an observed IGS game
-   (number :initarg :number :accessor number :initform nil)))
+   (number :initarg :number :accessor number :initform nil)
+   (active :initarg :active :accessor active :initform t)))
 
 (defmethod go-connect ((igs igs)) (igs-connect igs))
 
@@ -491,7 +520,8 @@ This is used to re-send messages to keep the IGS server from timing out.")
         (progn
           ;; TOOD: ensure still on our server-side observation list
           ;;       (e.g., hasn't been removed after a resignation)
-          (igs-send (format "observe %d" (number igs)))
+          (when (active igs)
+            (igs-send (format "observe %d" (number igs))))
           (setf (number igs) nil))
       (igs-send "quit"))))
 
