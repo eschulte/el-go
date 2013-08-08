@@ -317,8 +317,6 @@ This is used to re-send messages to keep the IGS server from timing out.")
   (message "igs[%s]: %s" (match-string 1 string) (match-string 2 string)))
 
 (defun igs-handle-shout (string)
-  ;; !GAO!: miss click  :)
-  ;; !Myselium1!: was a nice game...Dominico to bad you missed the left corner-side.
   (unless (string-match "^\\([^:]*\\): \\(.*\\)$" string)
     (error "igs: malformed shout string %S" string))
   (message "IGS[%s]: %s" (match-string 1 string) (match-string 2 string)))
