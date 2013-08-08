@@ -328,6 +328,7 @@
     (pop-to-buffer buffer)
     (plist-put *black* :prisoners 0)
     (plist-put *white* :prisoners 0)
+    (toggle-truncate-lines)
     (update-display buffer)))
 
 
