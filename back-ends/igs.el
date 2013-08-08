@@ -146,6 +146,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
         (:kibitz (message "igs-kibitz: %s" content))
         (:tell   (igs-handle-tell content))
         (:beep   nil)
+        (:shout  (igs-handle-shout content))
         (t       (message "igs-unknown: [%s]%s" type content)))
       (when (and *igs-time-last-sent*
                  (> (time-to-seconds (time-since *igs-time-last-sent*))
@@ -314,6 +315,13 @@ This is used to re-send messages to keep the IGS server from timing out.")
   ;; TODO: keep a message buffer for each user in which conversations
   ;;       may be saved... during games store messages as SGF comments.
   (message "igs[%s]: %s" (match-string 1 string) (match-string 2 string)))
+
+(defun igs-handle-shout (string)
+  ;; !GAO!: miss click  :)
+  ;; !Myselium1!: was a nice game...Dominico to bad you missed the left corner-side.
+  (unless (string-match "^\\([^:]*\\): \\(.*\\)$" string)
+    (error "igs: malformed shout string %S" string))
+  (message "IGS[%s]: %s" (match-string 1 string) (match-string 2 string)))
 
 (defun igs-apply-move (move)
   (if (aget (igs-current-game) :board)
