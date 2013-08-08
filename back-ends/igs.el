@@ -33,6 +33,9 @@
 (require 'go-api)
 (require 'list-buffer)
 
+(defvar igs-ignore-shouts t
+  "Ignore shouts on the IGS server.")
+
 (defvar igs-telnet-command "telnet"
   "Telnet command used by igs.")
 
@@ -146,7 +149,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
         (:kibitz (message "igs-kibitz: %s" content))
         (:tell   (igs-handle-tell content))
         (:beep   nil)
-        (:shout  (igs-handle-shout content))
+        (:shout  (unless igs-ignore-shouts (igs-handle-shout content)))
         (t       (message "igs-unknown: [%s]%s" type content)))
       (when (and *igs-time-last-sent*
                  (> (time-to-seconds (time-since *igs-time-last-sent*))
