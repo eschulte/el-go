@@ -1,6 +1,13 @@
 #+Options: ^:nil                                      -*- mode:org -*-
 
-* Development [5/6]
+* Development [5/7]
+** TODO retain comments
+[[file:back-ends/igs.el::%3B%3B%20TODO:%20keep%20a%20message%20buffer%20for%20each%20user%20in%20which%20conversations][file:back-ends/igs.el::;; TODO: keep a message buffer for each user in which conversations]]
+
+Should save user comments both in a buffer associated with the board
+buffer and s.t. they may be collected in the SGF file associated with
+the game.
+
 ** TODO scale image sizes
 See the TODO and note in file:go-board-faces.el.
 
