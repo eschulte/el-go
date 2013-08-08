@@ -44,7 +44,14 @@ The function should take two arguments, the current row and
 column respectively and may access the current buffer list
 through the `*buffer-list*' variable.")
 
-(defun list-buffer-create (buffer list &optional headers enter-function)
+(defvar *refresh-function* nil
+  "Function used to refresh a list element or the whole list.
+The function should take two arguments, the current row and
+column respectively and may access the current buffer list
+through the `*buffer-list*' variable.")
+
+(defun list-buffer-create
+  (buffer list &optional headers enter-function refresh-function)
   (pop-to-buffer buffer)
   (list-mode)
   (set (make-local-variable '*buffer-width*) (window-total-width))
@@ -52,8 +59,13 @@ through the `*buffer-list*' variable.")
   (set (make-local-variable '*buffer-headers*)
        (mapcar (curry #'format "%s") headers))
   (set (make-local-variable '*enter-function*)
-       (or enter-function (lambda (row col)
-                            (message "%S" (nth col (nth row *buffer-list*))))))
+       (or enter-function
+           (lambda (row col)
+             (message "enter %S" (nth col (nth row *buffer-list*))))))
+  (set (make-local-variable '*refresh-function*)
+       (or refresh-function
+           (lambda (row col)
+             (message "refresh %S" (nth col (nth row *buffer-list*))))))
   ;; refresh every time the buffer changes size
   (set (make-local-variable 'window-size-change-functions)
        (cons (lambda (b)
@@ -137,6 +149,10 @@ through the `*buffer-list*' variable.")
   (interactive)
   (funcall *enter-function* (list-current-row) (list-current-col)))
 
+(defun list-refresh ()
+  (interactive)
+  (funcall *refresh-function* (list-current-row) (list-current-col)))
+
 (defun list-filter ()
   (interactive)
   (error "not implemented."))
@@ -168,6 +184,7 @@ through the `*buffer-list*' variable.")
     (define-key map (kbd "<up>")            'list-up)
     (define-key map (kbd "<down>")          'list-down)
     (define-key map (kbd "f")               'list-filter)
+    (define-key map (kbd "r")               'list-refresh)
     (define-key map (kbd "RET")             'list-enter)
     (define-key map (kbd "q")               'bury-buffer)
     map)

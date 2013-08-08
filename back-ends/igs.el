@@ -215,7 +215,9 @@ This is used to re-send messages to keep the IGS server from timing out.")
      '("#" "white" "rk" "black" "rk" "move" "size" "H" "Komi" "by" "fr" "#")
      (lambda (row col)
        (let ((id (car (nth row *buffer-list*))))
-         (with-igs instance (igs-observe id)))))))
+         (with-igs instance (igs-observe id))))
+     (lambda (row col)
+       (igs-get-games instance)))))
 
 
 ;;; Specific handlers
