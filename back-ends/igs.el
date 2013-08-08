@@ -484,8 +484,11 @@ This is used to re-send messages to keep the IGS server from timing out.")
 (defmethod go-quit ((igs igs))
   (with-igs igs
     (if (number igs)
-        (progn (igs-send (format "observe %d" (number igs)))
-               (setf (number igs) nil))
+        (progn
+          ;; TOOD: ensure still on our server-side observation list
+          ;;       (e.g., hasn't been removed after a resignation)
+          (igs-send (format "observe %d" (number igs)))
+          (setf (number igs) nil))
       (igs-send "quit"))))
 
 (defmethod go-score ((igs igs))
