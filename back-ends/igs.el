@@ -220,6 +220,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
        (let ((id (car (nth row *buffer-list*))))
          (with-igs instance (igs-observe id))))
      (lambda (row col)
+       (message "refreshing games list...")
        (igs-get-games instance)))))
 
 
