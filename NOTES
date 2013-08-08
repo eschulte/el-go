@@ -1,6 +1,6 @@
 #+Options: ^:nil                                      -*- mode:org -*-
 
-* Development [4/5]
+* Development [5/6]
 ** TODO scale image sizes
 See the TODO and note in file:go-board-faces.el.
 
@@ -42,11 +42,20 @@ for controlling the shape of the map.
     sudo tcpick -i wlan0 -yP
   #+end_src
 
-** Asynchronous Process Interaction
+** DONE Asynchronous Process Interaction
 Use process filters (see [[info:elisp#Filter%20Functions][info:elisp#Filter Functions]]) to act only on
 whole completed commands.
 
-* Issues [0/1]
+Don't need to use a sentinel, just using the existing process filters,
+and added another case to the filter which will perform long-term
+actions in response to the "prompt" command from IGS.
+
+* Issues [0/2]
+** TODO bug in painting the board
+: Invalid face reference: go-board-filler
+
+Noticed when observing a game from IGS.
+
 ** TODO the black/white turn underlining can get off
 Probably better to explicitly set this every turn, rather than just
 alternating.
