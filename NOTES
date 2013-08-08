@@ -57,7 +57,11 @@ Don't need to use a sentinel, just using the existing process filters,
 and added another case to the filter which will perform long-term
 actions in response to the "prompt" command from IGS.
 
-* Issues [0/2]
+* Issues [0/3]
+** TODO gtp-num-to-char is being called but is undefined
+: mapcar: Symbol's function definition is void: gtp-num-to-char
+: Invalid face reference: go-board-filler
+
 ** TODO bug in painting the board
 : Invalid face reference: go-board-filler
 
