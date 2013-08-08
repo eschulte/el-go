@@ -135,10 +135,8 @@ This is used to re-send messages to keep the IGS server from timing out.")
            (content (match-string 2 string)))
       (case type
         (:prompt
-         (case (if *igs-last-command*
-                   (intern (concat ":" (downcase *igs-last-command*)))
-                 :none)
-           (:games (igs-list-games *igs-instance* *igs-games*))
+         (igs-re-cond (or *igs-last-command* "")
+           ("^games" (igs-list-games *igs-instance* *igs-games*))
            (t nil))
          (setq *igs-last-command* nil))
         (:info   (unless (string= content "yes")
@@ -259,7 +257,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
   (declare (indent 1))
   `(cond ,@(mapcar
             (lambda (part)
-              (cons (if (or (keywordp (car part)))
+              (cons (if (or (keywordp (car part)) (eq t (car part)))
                         (car part)
                       `(string-match ,(car part) ,string))
                     (cdr part)))
