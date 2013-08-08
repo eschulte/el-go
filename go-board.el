@@ -1,8 +1,8 @@
 ;;; go-board.el --- Smart Game Format GO board visualization
 
-;; Copyright (C) 2012 Eric Schulte <eric.schulte@gmx.com>
+;; Copyright (C) 2012-2013 Eric Schulte <schulte.eric@gmail.com>
 
-;; Author: Eric Schulte <eric.schulte@gmx.com>
+;; Author: Eric Schulte <schulte.eric@gmail.com>
 ;; Created: 2012-05-15
 ;; Version: 0.1
 ;; Keywords: game go sgf
@@ -328,7 +328,7 @@
     (pop-to-buffer buffer)
     (plist-put *black* :prisoners 0)
     (plist-put *white* :prisoners 0)
-    (toggle-truncate-lines)
+    (setq truncate-lines t)
     (update-display buffer)))
 
 
