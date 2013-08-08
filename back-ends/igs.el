@@ -332,9 +332,11 @@ This is used to re-send messages to keep the IGS server from timing out.")
   (setq *igs-current-game* number)
   (unless (aget (igs-current-game) :board)
     (setf (aget (igs-current-game) :board)
-          (save-excursion (make-instance 'board
-                            :buffer (go-board *igs-instance*
-                                              (make-instance 'sgf)))))
+          (save-excursion
+            (setf (number *igs-instance*) number)
+            (make-instance 'board
+              :buffer (go-board *igs-instance*
+                                (make-instance 'sgf)))))
     (when (aget (igs-current-game) :board)
       (igs-send (format "moves %s" number)))))
 
@@ -388,7 +390,9 @@ This is used to re-send messages to keep the IGS server from timing out.")
 
 ;;; Class and interface
 (defclass igs ()
-  ((buffer :initarg :buffer :accessor buffer :initform nil)))
+  ((buffer :initarg :buffer :accessor buffer :initform nil)
+   ;; number of an observed IGS game
+   (number :initarg :number :accessor number :initform nil)))
 
 (defmethod go-connect ((igs igs)) (igs-connect igs))
 
@@ -478,7 +482,11 @@ This is used to re-send messages to keep the IGS server from timing out.")
   (signal 'unsupported-back-end-command (list igs :reset)))
 
 (defmethod go-quit ((igs igs))
-  (with-igs igs (igs-send "quit")))
+  (with-igs igs
+    (if (number igs)
+        (progn (igs-send (format "observe %d" (number igs)))
+               (setf (number igs) nil))
+      (igs-send "quit"))))
 
 (defmethod go-score ((igs igs))
   (signal 'unsupported-back-end-command (list igs :score)))

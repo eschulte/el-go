@@ -445,7 +445,6 @@
 (defun go-board-quit ()
   (interactive)
   (when (y-or-n-p "quit: ")
-    (with-backends tr (go-quit tr))
     (kill-buffer (current-buffer))))
 
 (defun go-board-safe-quit ()
