@@ -141,13 +141,35 @@ through the `*buffer-list*' variable.")
   (interactive)
   (error "not implemented."))
 
+(defun list-move-col (direction)
+  (cl-flet ((col () (or (get-text-property (point) :col) start-col)))
+    (let ((start-col (col)))
+      (while (= start-col (col))
+        (case direction
+          (:forward (forward-char))
+          (:backward (backward-char))))
+      (when (eql direction :backward)
+        (let ((end-col (col)))
+          (while (= end-col (col)) (backward-char))
+          (forward-char))))))
+
+(defun list-next-col () (interactive) (list-move-col :forward))
+(defun list-prev-col () (interactive) (list-move-col :backward))
+
 (defvar list-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<up>")    'list-up)
-    (define-key map (kbd "<down>")  'list-down)
-    (define-key map (kbd "f")       'list-filter)
-    (define-key map (kbd "RET")     'list-enter)
-    (define-key map (kbd "q")       'bury-buffer)
+    ;; navigation
+    (define-key map (kbd "j")               'next-line)
+    (define-key map (kbd "k")               'previous-line)
+    (define-key map (kbd "u")               'scroll-down-command)
+    (define-key map (kbd "<tab>")           'list-next-col)
+    (define-key map (kbd "<S-iso-lefttab>") 'list-prev-col)
+    ;; list functions
+    (define-key map (kbd "<up>")            'list-up)
+    (define-key map (kbd "<down>")          'list-down)
+    (define-key map (kbd "f")               'list-filter)
+    (define-key map (kbd "RET")             'list-enter)
+    (define-key map (kbd "q")               'bury-buffer)
     map)
   "Keymap for `list-mode'.")
 
