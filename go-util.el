@@ -140,4 +140,36 @@
 (defun go-clean-text-properties (string)
   (set-text-properties 0 (length string) nil string) string)
 
+(defmacro go-re-cond (string &rest body)
+  (declare (indent 1))
+  `(cond ,@(mapcar
+            (lambda (part)
+              (cons (if (or (keywordp (car part)) (eq t (car part)))
+                        (car part)
+                      `(string-match ,(car part) ,string))
+                    (cdr part)))
+            body)))
+(def-edebug-spec go-re-cond (form body))
+
+(defvar *go-partial-line* nil "Holds partial lines of input from a process.")
+(defun make-go-insertion-filter (func)
+  (lexical-let ((func func))
+    (lambda (proc string)
+      (with-current-buffer (process-buffer proc)
+        (let ((moving (= (point) (process-mark proc))))
+          (save-excursion
+            (goto-char (process-mark proc))
+            (insert string)
+            (set-marker (process-mark proc) (point))
+            (let ((lines (split-string (if *go-partial-line*
+                                           (concat *go-partial-line* string)
+                                         string)
+                                       "[\n\r]")))
+              (if (string-match "[\n\r]$" (car (last lines)))
+                  (setf *go-partial-line* nil)
+                (setf *go-partial-line* (car (last lines)))
+                (setf lines (butlast lines)))
+              (mapc (lambda (s) (funcall func proc s)) lines)))
+          (when moving (goto-char (process-mark proc))))))))
+
 (provide 'go-util)

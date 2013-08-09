@@ -114,9 +114,6 @@ This is used to re-send messages to keep the IGS server from timing out.")
 (defvar *igs-current-game* nil
   "Number of the current IGS game (may change frequently).")
 
-(defvar *igs-partial-line* nil
-  "Holds partial lines of input from an IGS process.")
-
 (defmacro igs-w-proc (proc &rest body)
   (declare (indent 1))
   `(with-current-buffer (process-buffer proc) ,@body))
@@ -138,18 +135,18 @@ This is used to re-send messages to keep the IGS server from timing out.")
            (content (match-string 2 string)))
       (case type
         (:prompt
-         (igs-re-cond (or *igs-last-command* "")
+         (go-re-cond (or *igs-last-command* "")
            ("^games" (igs-list-games *igs-instance* *igs-games*))
            (t nil))
          (setq *igs-last-command* nil))
         (:info
-         (igs-re-cond content
+         (go-re-cond content
            ;; Game NN: name1 vs name2 has adjourned.
            ("^Game \\([0-9]*\\): .*adjourned.$"
             (igs-handle-adjournment (match-string 1 content)))
            ;; {Game NN: name1 vs name2 : color resigns.}
            ("^{Game \\([0-9]*\\): \\(Black\\|White\\) resigns.}$"
-            (igs-handle-resignation (igs-re-cond (match-string 2 content)
+            (igs-handle-resignation (go-re-cond (match-string 2 content)
                                       ("black" :black)
                                       ("white" :white))))
            (t (unless (string= content "yes")
@@ -165,24 +162,6 @@ This is used to re-send messages to keep the IGS server from timing out.")
                  (> (time-to-seconds (time-since *igs-time-last-sent*))
                     igs-server-ping-delay))
         (igs-send "ayt")))))
-
-(defun igs-insertion-filter (proc string)
-  (with-current-buffer (process-buffer proc)
-    (let ((moving (= (point) (process-mark proc))))
-      (save-excursion
-	(goto-char (process-mark proc))
-        (insert string)
-        (set-marker (process-mark proc) (point))
-        (let ((lines (split-string (if *igs-partial-line*
-                                       (concat *igs-partial-line* string)
-                                     string)
-                                   "[\n\r]")))
-          (if (string-match "[\n\r]$" (car (last lines)))
-              (setf *igs-partial-line* nil)
-            (setf *igs-partial-line* (car (last lines)))
-            (setf lines (butlast lines)))
-          (mapc (lambda (s) (igs-process-filter proc s)) lines)))
-      (when moving (goto-char (process-mark proc))))))
 
 (defun igs-connect (igs)
   "Open a connection to `igs-server'."
@@ -202,7 +181,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
         (set (make-local-variable '*igs-last-command*) "")
         (set (make-local-variable '*igs-games*) nil)
         (set (make-local-variable '*igs-current-game*) nil)
-        (set (make-local-variable '*igs-partial-line*) nil)
+        (set (make-local-variable '*go-partial-line*) nil)
         (set (make-local-variable '*igs-time-last-sent*) (current-time))
         (let ((proc (get-buffer-process (current-buffer))))
           (wait "^Login:")
@@ -210,7 +189,8 @@ This is used to re-send messages to keep the IGS server from timing out.")
           (igs-send igs-username)
           (wait "^\#> ")
           (igs-toggle "client" t)
-          (set-process-filter proc 'igs-insertion-filter)))
+          (set-process-filter
+           proc (make-go-insertion-filter #'igs-process-filter))))
       buffer)))
 
 (defun igs-toggle (setting value)
@@ -269,17 +249,6 @@ This is used to re-send messages to keep the IGS server from timing out.")
           igs-player-name-re igs-player-game-info-re
           igs-player-name-re igs-player-game-info-re)
   "Regular expression used to match Game updates.")
-
-(defmacro igs-re-cond (string &rest body)
-  (declare (indent 1))
-  `(cond ,@(mapcar
-            (lambda (part)
-              (cons (if (or (keywordp (car part)) (eq t (car part)))
-                        (car part)
-                      `(string-match ,(car part) ,string))
-                    (cdr part)))
-            body)))
-(def-edebug-spec igs-re-cond (form body))
 
 (defun igs-handle-game (game-string)
   ;; [##] white name [ rk ] black name [ rk ] (Move size H Komi BY FR) (###)
@@ -380,7 +349,7 @@ This is used to re-send messages to keep the IGS server from timing out.")
     ))
 
 (defun igs-handle-move (move-string)
-  (igs-re-cond move-string
+  (go-re-cond move-string
     (igs-move-piece-re (igs-apply-move
                         (igs-to-pos (match-string 1 move-string)
                                     (match-string 2 move-string))))
