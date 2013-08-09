@@ -27,6 +27,7 @@
 
 ;;; Code:
 (eval-when-compile (require 'cl))
+(require 'assoc)
 
 (defun curry (function &rest arguments)
   (lexical-let ((function function)
