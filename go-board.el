@@ -389,7 +389,7 @@
 
 (defun go-board-resign ()
   (interactive)
-  (with-backends back (go-reset back)))
+  (with-backends back (go-resign back)))
 
 (defun go-board-mark-point (point mark)
   (mapc (lambda (ov) (go-board-mark ov mark)) (overlays-at point)))

@@ -30,6 +30,21 @@
 ;; This file should be useful for translating between sgf and the GO
 ;; text protocol (GTP) see http://www.lysator.liu.se/~gunnar/gtp/.
 ;; The GMP command set may be implemented as an extension.
+;;
+;; see http://www.lysator.liu.se/~gunnar/gtp/gtp2-spec-draft2/gtp2-spec.html
+;;
+;; The following commands are required by GTP
+;; - protocol_version
+;; - name
+;; - version
+;; - known_command
+;; - list_commands
+;; - quit
+;; - boardsize
+;; - clear_board
+;; - komi
+;; - play
+;; - genmove
 
 ;; Code:
 (require 'go-api)
