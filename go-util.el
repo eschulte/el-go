@@ -142,13 +142,14 @@
 
 (defmacro go-re-cond (string &rest body)
   (declare (indent 1))
-  `(cond ,@(mapcar
-            (lambda (part)
-              (cons (if (or (keywordp (car part)) (eq t (car part)))
-                        (car part)
-                      `(string-match ,(car part) ,string))
-                    (cdr part)))
-            body)))
+  `(save-match-data
+     (cond ,@(mapcar
+              (lambda (part)
+                (cons (if (or (keywordp (car part)) (eq t (car part)))
+                          (car part)
+                        `(string-match ,(car part) ,string))
+                      (cdr part)))
+              body))))
 (def-edebug-spec go-re-cond (form body))
 
 (defvar *go-partial-line* nil "Holds partial lines of input from a process.")
