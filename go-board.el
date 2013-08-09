@@ -566,6 +566,6 @@
     (update-display)))
 
 (defmethod go-quit ((board board))
-  (with-board board (board-quit)))
+  (with-board board (go-quit)))
 
 (provide 'go-board)

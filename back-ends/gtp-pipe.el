@@ -36,6 +36,9 @@
 (defvar *gtp-pipe-last* nil
   "Last move of the current game.")
 
+(defvar *gtp-pipe-inhibit* nil
+  "Prevent infinite loops of commands.")
+
 (defun gtp-pipe-start (command)
   "Connect a `gtp-pipe' instance to the process created by COMMAND.
 Pass \"netcat -lp 6666\" as COMMAND to listen on a local port, or
@@ -47,22 +50,21 @@ port."
 (defun gtp-pipe-process-filter (proc string)
   (go-re-cond string
     ("^\\(black\\|white\\) \\(.*\\)$"
-     (let ((color (match-string 1 string))
+     (let ((color (go-re-cond (match-string 1 string)
+                    ("black" :B)
+                    ("white" :W)))
            (action (match-string 2 string)))
        (go-re-cond action
-         ("^pass"   (go-pass   *gtp-pipe-board*))
-         ("^resign" (go-resign *gtp-pipe-board*))
-         (t (let ((move (gtp-to-pos (go-re-cond 
-                                        ("black" :B)
-                                      ("white" :W))
-                                    (match-string 2 string))))
+         ("^pass"   (let ((*gtp-pipe-inhibit* t)) (go-pass   *gtp-pipe-board*)))
+         ("^resign" (let ((*gtp-pipe-inhibit* t)) (go-resign *gtp-pipe-board*)))
+         (t (let ((move (gtp-to-pos color action)))
               (setf *gtp-pipe-last* move)
               (setf (go-move *gtp-pipe-board*) move))))))
-    ("^genmove_\\(black\\|white\\)" (message "gtp-pipe: %s's turn"
-                                             (match-string 1 string)))
+    ("^genmove_\\(black\\|white\\)"
+     (message "gtp-pipe: %s's turn" (match-string 1 string)))
     ("^last_move" (go-to-gtp-command *gtp-pipe-last*))
-    ("^quit" (message "gtp-pipe: QUIT") (go-quit *gtp-pipe-board*))
-    ("^undo" (go-undo *gtp-pipe-board*))
+    ("^quit" (let ((*gtp-pipe-inhibit* t)) (go-quit *gtp-pipe-board*)))
+    ("^undo" (let ((*gtp-pipe-inhibit* t)) (go-undo *gtp-pipe-board*)))
     ("^string \\(.*\\)$" (message "gtp-pipe: %S" (match-string 1 string)))
     (t (message "gtp-pipe unknown command: %S" string))))
 
@@ -80,6 +82,7 @@ port."
           (with-current-buffer buf
             (comint-mode)
             (set (make-local-variable '*gtp-pipe-last*) nil)
+            (set (make-local-variable '*gtp-pipe-inhibit*) nil)
             (set (make-local-variable '*gtp-pipe-board*)
                  (save-excursion
                    (make-instance 'board
@@ -91,9 +94,10 @@ port."
 
 (defmethod gtp-command ((gtp-pipe gtp-pipe) command)
   (with-current-buffer (buffer gtp-pipe)
-    (goto-char (process-mark (get-buffer-process (current-buffer))))
-    (insert command)
-    (comint-send-input)))
+    (unless *gtp-pipe-inhibit*
+      (goto-char (process-mark (get-buffer-process (current-buffer))))
+      (insert command)
+      (comint-send-input))))
 
 (defmethod go-comment ((gtp-pipe gtp-pipe))
   (signal 'unsupported-back-end-command (list gtp-pipe :comment)))
@@ -108,6 +112,11 @@ port."
 (defmethod go-name ((gtp-pipe gtp-pipe)) "GTP pipe")
 (defmethod go-size ((gtp-pipe gtp-pipe))
   (read-from-minibuffer "GTP board size: " nil nil 'read))
+
+(defmethod go-quit ((gtp-pipe gtp-pipe))
+  (gtp-command gtp-pipe "quit")
+  (with-current-buffer (buffer gtp-pipe)
+    (signal-process (get-buffer-process) 'KILL)))
 
 (defmethod go-player-name ((gtp-pipe gtp-pipe) color) "GTP pipe")
 
