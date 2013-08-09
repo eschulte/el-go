@@ -36,15 +36,19 @@
 ;; - TODO: the IGS protocol
 
 ;;; Code:
-(require 'go-util         "go-util.el")
-(require 'go-api          "go-api.el")
-(require 'go-board        "go-board.el")
-(require 'go-board-faces  "go-board-faces.el")
-(require 'gtp             "back-ends/gtp.el")
-(require 'gnugo           "back-ends/gnugo.el")
-(require 'sgf             "back-ends/sgf.el")
-(require 'sgf2el          "back-ends/sgf2el.el")
-(require 'igs             "back-ends/igs.el")
+(let ((load-path
+       (cons (file-name-directory (or load-file-name (buffer-file-name)))
+             load-path)))
+  (require 'go-util         "go-util.el")
+  (require 'go-api          "go-api.el")
+  (require 'go-board        "go-board.el")
+  (require 'go-board-faces  "go-board-faces.el")
+  (require 'gtp             "back-ends/gtp.el")
+  (require 'gnugo           "back-ends/gnugo.el")
+  (require 'sgf             "back-ends/sgf.el")
+  (require 'sgf2el          "back-ends/sgf2el.el")
+  (require 'igs             "back-ends/igs.el")
+  (require 'gtp-pipe        "back-ends/gtp-pipe.el"))
 
 (defun go-instantiate (back-end)
   (interactive)
