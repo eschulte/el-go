@@ -57,6 +57,10 @@ Don't need to use a sentinel, just using the existing process filters,
 and added another case to the filter which will perform long-term
 actions in response to the "prompt" command from IGS.
 
+** Potential in-browser implementation
+- direct browser to browser communication https://github.com/js-platform/p2p
+  see also https://hacks.mozilla.org/2013/03/webrtc-data-channels-for-great-multiplayer/
+
 * Issues [0/3]
 ** TODO gtp-num-to-char is being called but is undefined
 : mapcar: Symbol's function definition is void: gtp-num-to-char
