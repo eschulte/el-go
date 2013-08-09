@@ -49,6 +49,7 @@ port."
                          ("black" :B)
                          ("white" :W))
                        (match-string 2 string))))
+    ("^undo" (go-undo *gtp-pipe-board*))
     (t (message "gtp-pipe unknown command: %S" string))))
 
 

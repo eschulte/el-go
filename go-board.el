@@ -550,7 +550,7 @@
 
 ;; non setf'able generic functions
 (defmethod go-undo ((board board))
-  (with-board board (board-undo)))
+  (with-board board (go-board-undo)))
 
 (defmethod go-pass ((board board))
   (with-board board
