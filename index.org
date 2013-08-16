@@ -61,6 +61,10 @@ only really supports watching games, not playing them).
                    current column, and press "enter" to observe the
                    game on the current row.
 
+* Related
+I've written a similar closed source web browser GO board.  Try it out
+at [[file:weboard.html]].
+
 * License
   :PROPERTIES:
   :CUSTOM_ID: license
