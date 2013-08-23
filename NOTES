@@ -61,7 +61,10 @@ actions in response to the "prompt" command from IGS.
 - direct browser to browser communication https://github.com/js-platform/p2p
   see also https://hacks.mozilla.org/2013/03/webrtc-data-channels-for-great-multiplayer/
 
-* Issues [0/3]
+* Issues [0/4]
+** TODO when playing gnugo, ending game may kill Emacs
+After two passes to end a large game, the Emacs process terminated.
+
 ** TODO gtp-num-to-char is being called but is undefined
 : mapcar: Symbol's function definition is void: gtp-num-to-char
 : Invalid face reference: go-board-filler
