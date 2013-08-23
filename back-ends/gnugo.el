@@ -41,6 +41,11 @@
 (defvar gnugo-program "gnugo"
   "Path to gnugo executable.")
 
+(defvar gnugo-options nil
+  "List of default options to gnugo.
+For example, the following changes the level of gnugo.
+  (setq gnugo-options (list \"--level\" \"2\"))")
+
 (defvar gnugo-process-name "gnugo"
   "Name for the gnugo process.")
 
@@ -49,7 +54,7 @@
                        gnugo-process-name
                        gnugo-program nil
                        "--mode" "gtp" "--quiet"
-                       options)))
+                       (or options gnugo-options))))
     (with-current-buffer buffer (comint-mode))
     buffer))
 
