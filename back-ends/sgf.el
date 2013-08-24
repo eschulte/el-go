@@ -194,4 +194,7 @@
 (defmethod go-territory ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :territory)))
 
+(defmethod go-dead ((sgf sgf))
+  (signal 'unsupported-back-end-command (list sgf :dead)))
+
 (provide 'sgf)

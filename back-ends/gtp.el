@@ -162,4 +162,7 @@
 (defmethod go-territory ((gtp gtp))
   (append (gtp-territory gtp :B) (gtp-territory gtp :W)))
 
+(defmethod go-dead ((gtp gtp))
+  (signal 'unsupported-back-end-command (list gtp :dead)))
+
 (provide 'gtp)

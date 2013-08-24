@@ -77,5 +77,6 @@
 (defgeneric go-quit   (back-end) "Quit the BACK-END.")
 (defgeneric go-score  (back-end) "Ask BACK-END to report the score.")
 (defgeneric go-territory (back-end) "Ask BACK-END to report the territory.")
+(defgeneric go-dead (back-end) "Ask BACK-END to dead stones.")
 
 (provide 'go-api)

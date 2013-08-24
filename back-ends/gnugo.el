@@ -107,4 +107,11 @@ For example, the following changes the level of gnugo.
 (defmethod set-player-name ((gnugo gnugo) color name)
   (signal 'unsupported-back-end-command (list gnugo :set-player-name name)))
 
+(defmethod go-dead ((gnugo gnugo))
+  (mapcar (lambda (gtp-point) (gtp-to-pos nil gtp-point))
+          (mapcar #'symbol-name
+                  (read (format "(%s)"
+                                (gnugo-command-to-string
+                                 gnugo "final_status_list dead"))))))
+
 (provide 'gnugo)

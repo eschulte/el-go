@@ -226,6 +226,9 @@ This is used to re-send messages to keep the IGS server from timing out.")
 (defmethod go-territory ((igs igs))
   (signal 'unsupported-back-end-command (list igs :territory)))
 
+(defmethod go-dead ((igs igs))
+  (signal 'unsupported-back-end-command (list igs :dead)))
+
 (defmacro igs-w-proc (proc &rest body)
   (declare (indent 1))
   `(with-current-buffer (process-buffer proc) ,@body))
