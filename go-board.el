@@ -401,12 +401,22 @@
     (setf *turn* (other-color *turn*))
     (when *autoplay*
       (when (equalp :pass (go-board-next))
+        ;; mark open points
         (mapc (lambda (move)
                 (go-board-mark-point (point-of-pos (cddr move))
                                      (go-board-cross (ecase (car move)
                                                        (:B 'black)
                                                        (:W 'white)))))
               (with-backends back (go-territory back)))
+        ;; mark dead stones
+        (mapc (lambda (move)
+                (let* ((point (point-of-pos (cddr move)))
+                       (color (car (get-text-property point :type))))
+                  (go-board-mark-point point
+                                       (go-board-cross (ecase color
+                                                         (:black 'white)
+                                                         (:white 'black))))))
+              (with-backends back (go-dead back)))
         (message "final score: %s" (with-backends back (go-score back)))))))
 
 (defun go-board-undo (&optional num)
