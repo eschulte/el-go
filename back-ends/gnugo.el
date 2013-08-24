@@ -74,13 +74,15 @@ For example, the following changes the level of gnugo.
   (gnugo-wait-for-output gnugo))
 
 (defun gnugo-wait-for-output (gnugo)
-  (with-current-buffer (buffer gnugo)
-    (while (progn
-	     (goto-char comint-last-input-end)
-	     (not (re-search-forward "^= *[^\000]+?\n\n" nil t)))
-      (when (re-search-forward "^? *\\([^\000]+?\\)\n\n" nil t)
-        (error (match-string 1)))
-      (accept-process-output (get-buffer-process (current-buffer))))))
+  (condition-case e
+      (with-current-buffer (buffer gnugo)
+        (while (progn
+                 (goto-char comint-last-input-end)
+                 (not (re-search-forward "^= *[^\000]+?\n\n" nil t)))
+          (when (re-search-forward "^? *\\([^\000]+?\\)\n\n" nil t)
+            (error (match-string 1)))
+          (accept-process-output (get-buffer-process (current-buffer)))))
+    (error (message "gnugo error: %S" e))))
 
 (defun gnugo-last-output (gnugo)
   (with-current-buffer (buffer gnugo)
