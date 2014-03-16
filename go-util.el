@@ -170,3 +170,4 @@
           (when moving (goto-char (process-mark proc))))))))
 
 (provide 'go-util)
+;;; go-util.el ends here

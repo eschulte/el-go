@@ -498,3 +498,4 @@ This is used to re-send messages to keep the IGS server from timing out.")
   (igs-send "games"))
 
 (provide 'igs)
+;;; igs.el ends here

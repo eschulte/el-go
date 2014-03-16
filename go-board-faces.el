@@ -174,3 +174,4 @@
    ((circle (cx . 12.5) (cy . 12.5) (r . 2.5)))))
 
 (provide 'go-board-faces)
+;;; go-board-faces.el ends here

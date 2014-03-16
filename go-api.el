@@ -75,3 +75,4 @@
 (defgeneric go-dead (back-end) "Ask BACK-END to dead stones.")
 
 (provide 'go-api)
+;;; go-api.el ends here

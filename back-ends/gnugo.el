@@ -110,3 +110,4 @@ For example, the following changes the level of gnugo.
                                  gnugo "final_status_list dead"))))))
 
 (provide 'gnugo)
+;;; gnugo.el ends here

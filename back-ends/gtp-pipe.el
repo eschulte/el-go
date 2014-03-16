@@ -119,3 +119,4 @@ port."
   (signal 'unsupported-back-end-command (list gtp-pipe :set-player-name name)))
 
 (provide 'gtp-pipe)
+;;; gtp-pipe.el ends here

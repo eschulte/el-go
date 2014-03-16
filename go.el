@@ -3,9 +3,12 @@
 ;; Copyright (C) 2012  Free Software Foundation, Inc.
 
 ;; Author: Eric Schulte <schulte.eric@gmail.com>
+;; Maintainer: Eric Schulte <schulte.eric@gmail.com>
+;; Version: 0.0.1
+;; Package-Requires: ((emacs "24"))
 ;; Created: 2012-05-15
-;; Version: 0.1
 ;; Keywords: game go sgf
+;; URL: http://eschulte.github.io/el-go/
 
 ;; This software is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -81,4 +84,4 @@
       (setf (index *back-end*) (list 0)))))
 
 (provide 'go)
-
+;;; go.el ends here

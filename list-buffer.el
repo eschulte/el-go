@@ -189,3 +189,4 @@ through the `*buffer-list*' variable.")
   "Major mode for viewing a list.")
 
 (provide 'list-buffer)
+;;; list-buffer.el ends here

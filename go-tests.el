@@ -309,3 +309,4 @@
         (should (kill-buffer (buffer *gnugo*)))))))
 
 (provide 'go-tests)
+;;; go-tests.el ends here

@@ -185,3 +185,4 @@
 (add-to-list 'sgf2el-special-properties (cons :C #'process-comment))
 
 (provide 'sgf2el)
+;;; sgf2el.el ends here

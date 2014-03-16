@@ -161,3 +161,4 @@
   (signal 'unsupported-back-end-command (list gtp :dead)))
 
 (provide 'gtp)
+;;; gtp.el ends here

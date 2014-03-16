@@ -574,3 +574,4 @@
   (with-board board (go-quit)))
 
 (provide 'go-board)
+;;; go-board.el ends here

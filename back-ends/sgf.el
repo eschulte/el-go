@@ -193,3 +193,4 @@
   (signal 'unsupported-back-end-command (list sgf :dead)))
 
 (provide 'sgf)
+;;; sgf.el ends here
