@@ -169,5 +169,9 @@
               (mapc (lambda (s) (funcall func proc s)) lines)))
           (when moving (goto-char (process-mark proc))))))))
 
+(defalias 'go-completing-read (if (fboundp 'org-icompleting-read)
+                                  'org-icompleting-read
+                                'completing-read))
+
 (provide 'go-util)
 ;;; go-util.el ends here

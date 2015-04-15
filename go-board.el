@@ -21,6 +21,7 @@
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Code:
+(require 'go-util)
 (require 'go-api)
 (require 'go-board-faces)
 
@@ -347,7 +348,7 @@
 (defun go-board-act ()
   "Send a command to the current GO board."
   (interactive)
-  (let ((command (org-icompleting-read
+  (let ((command (go-completing-read
                   "Action: " (mapcar #'symbol-name go-board-actions))))
     (case (intern command)
       (move    (message "make a move"))
@@ -360,14 +361,14 @@
   (let* ((color (case *turn* (:B "black") (:W "white")))
          (pos (or pos (cons (char-to-num
                              (aref (downcase
-                                    (org-icompleting-read
+                                    (go-completing-read
                                      (format "[%s] X pos: " color)
                                      (mapcar #'string
                                              (mapcar #'gtp-num-to-char
                                                      (range 1 *size*)))))
                                    0))
                             (1- (string-to-number
-                                 (org-icompleting-read
+                                 (go-completing-read
                                   (format "[%s] Y pos: " color)
                                   (mapcar #'number-to-string
                                           (range 1 *size*))))))))

@@ -52,7 +52,7 @@
   (interactive)
   ;; TODO: read and set handicap.
   (let ((it (make-instance back-end))
-        (size (read (org-icompleting-read
+        (size (read (go-completing-read
                      "board size: "
                      (mapcar #'number-to-string '(19 13 9))))))
     (go-connect it)
@@ -63,7 +63,7 @@
 (defun go-play ()
   "Play a game of GO."
   (interactive)
-  (let ((back-end (case (intern (org-icompleting-read
+  (let ((back-end (case (intern (go-completing-read
                                  "play against: " '("gnugo" "person")))
                     (gnugo  (go-instantiate 'gnugo))
                     (person (go-instantiate 'sgf)))))
