@@ -42,7 +42,7 @@
   (require 'go-board        "go-board.el")
   (require 'go-board-faces  "go-board-faces.el")
   (require 'gtp             "back-ends/gtp.el")
-  (require 'gnugo           "back-ends/gnugo.el")
+  ;; (require 'gnugo           "back-ends/gnugo.el")
   (require 'sgf             "back-ends/sgf.el")
   (require 'sgf2el          "back-ends/sgf2el.el")
   (require 'igs             "back-ends/igs.el")
