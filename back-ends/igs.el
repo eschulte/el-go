@@ -117,25 +117,25 @@ This is used to re-send messages to keep the IGS server from timing out.")
    (number :initarg :number :accessor number :initform nil)
    (active :initarg :active :accessor active :initform t)))
 
-(defmethod go-connect ((igs igs)) (igs-connect igs))
+(cl-defmethod go-connect ((igs igs)) (igs-connect igs))
 
 (defmacro with-igs (igs &rest body)
   (declare (indent 1))
   `(with-current-buffer (buffer ,igs) ,@body))
 
-(defmethod go-level ((igs igs))
+(cl-defmethod go-level ((igs igs))
   (signal 'unsupported-back-end-command (list igs :level)))
 
-(defmethod set-go-level ((igs igs) level)
+(cl-defmethod set-go-level ((igs igs) level)
   (signal 'unsupported-back-end-command (list igs :set-level level)))
 
-(defmethod go-size ((igs igs))
+(cl-defmethod go-size ((igs igs))
   (with-igs igs (aget (igs-current-game) :size)))
 
-(defmethod set-go-size ((igs igs) size)
+(cl-defmethod set-go-size ((igs igs) size)
   (signal 'unsupported-back-end-command (list igs :set-size size)))
 
-(defmethod go-name ((igs igs))
+(cl-defmethod go-name ((igs igs))
   (with-igs igs (let ((game (igs-current-game)))
                   (format "%s(%s) vs %s(%s)"
                           (aget game :white-name)
@@ -143,68 +143,68 @@ This is used to re-send messages to keep the IGS server from timing out.")
                           (aget game :black-name)
                           (aget game :black-rank)))))
 
-(defmethod set-go-name ((igs igs) name)
+(cl-defmethod set-go-name ((igs igs) name)
   (signal 'unsupported-back-end-command (list igs :set-name name)))
 
-(defmethod go-move ((igs igs))
+(cl-defmethod go-move ((igs igs))
   (signal 'unsupported-back-end-command (list igs :move)))
 
-(defmethod set-go-move ((igs igs) move)
+(cl-defmethod set-go-move ((igs igs) move)
   (signal 'unsupported-back-end-command (list igs :set-move move)))
 
-(defmethod go-labels ((igs igs))
+(cl-defmethod go-labels ((igs igs))
   (signal 'unsupported-back-end-command (list igs :labels)))
 
-(defmethod set-go-labels ((igs igs) labels)
+(cl-defmethod set-go-labels ((igs igs) labels)
   (signal 'unsupported-back-end-command (list igs :set-labels labels)))
 
-(defmethod go-comment ((igs igs))
+(cl-defmethod go-comment ((igs igs))
   (signal 'unsupported-back-end-command (list igs :comment)))
 
-(defmethod set-go-comment ((igs igs) comment)
+(cl-defmethod set-go-comment ((igs igs) comment)
   (signal 'unsupported-back-end-command (list igs :set-comment comment)))
 
-(defmethod go-alt ((igs igs))
+(cl-defmethod go-alt ((igs igs))
   (signal 'unsupported-back-end-command (list igs :alt)))
 
-(defmethod set-go-alt ((igs igs) alt)
+(cl-defmethod set-go-alt ((igs igs) alt)
   (signal 'unsupported-back-end-command (list igs :set-alt alt)))
 
-(defmethod go-color ((igs igs))
+(cl-defmethod go-color ((igs igs))
   (signal 'unsupported-back-end-command (list igs :color)))
 
-(defmethod set-go-color ((igs igs) color)
+(cl-defmethod set-go-color ((igs igs) color)
   (signal 'unsupported-back-end-command (list igs :set-color color)))
 
-(defmethod go-player-name ((igs igs) color)
+(cl-defmethod go-player-name ((igs igs) color)
   (with-igs igs (aget (igs-current-game)
                       (case color
                         (:W :white-name)
                         (:B :black-name)))))
 
-(defmethod set-go-player-name ((igs igs) color name)
+(cl-defmethod set-go-player-name ((igs igs) color name)
   (signal 'unsupported-back-end-command (list igs :set-player-name color name)))
 
-(defmethod go-player-time ((igs igs) color)
+(cl-defmethod go-player-time ((igs igs) color)
   (signal 'unsupported-back-end-command (list igs :player-time color)))
 
-(defmethod set-go-player-time ((igs igs) color time)
+(cl-defmethod set-go-player-time ((igs igs) color time)
   (signal 'unsupported-back-end-command (list igs :set-player-time color time)))
 
 ;; non setf'able generic functions
-(defmethod go-undo ((igs igs))
+(cl-defmethod go-undo ((igs igs))
   (signal 'unsupported-back-end-command (list igs :undo)))
 
-(defmethod go-pass ((igs igs))
+(cl-defmethod go-pass ((igs igs))
   (signal 'unsupported-back-end-command (list igs :pass)))
 
-(defmethod go-resign ((igs igs))
+(cl-defmethod go-resign ((igs igs))
   (signal 'unsupported-back-end-command (list igs :resign)))
 
-(defmethod go-reset ((igs igs))
+(cl-defmethod go-reset ((igs igs))
   (signal 'unsupported-back-end-command (list igs :reset)))
 
-(defmethod go-quit ((igs igs))
+(cl-defmethod go-quit ((igs igs))
   (with-igs igs
     (if (number igs)
         (progn
@@ -215,13 +215,13 @@ This is used to re-send messages to keep the IGS server from timing out.")
           (setf (number igs) nil))
       (igs-send "quit"))))
 
-(defmethod go-score ((igs igs))
+(cl-defmethod go-score ((igs igs))
   (signal 'unsupported-back-end-command (list igs :score)))
 
-(defmethod go-territory ((igs igs))
+(cl-defmethod go-territory ((igs igs))
   (signal 'unsupported-back-end-command (list igs :territory)))
 
-(defmethod go-dead ((igs igs))
+(cl-defmethod go-dead ((igs igs))
   (signal 'unsupported-back-end-command (list igs :dead)))
 
 (defmacro igs-w-proc (proc &rest body)

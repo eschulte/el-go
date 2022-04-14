@@ -69,7 +69,7 @@ port."
   ((buffer  :initarg :buffer  :accessor buffer)
    (command :initarg :command :accessor command)))
 
-(defmethod go-connect ((gtp-pipe gtp-pipe))
+(cl-defmethod go-connect ((gtp-pipe gtp-pipe))
   (setf (buffer gtp-pipe)
         (let* ((cmd-&-args (split-string (command gtp-pipe) " " 'omit-nulls))
                (buf (apply #'make-comint "gtp-pipe"
@@ -87,35 +87,35 @@ port."
                                  #'gtp-pipe-process-filter)))
           buf)))
 
-(defmethod gtp-command ((gtp-pipe gtp-pipe) command)
+(cl-defmethod gtp-command ((gtp-pipe gtp-pipe) command)
   (with-current-buffer (buffer gtp-pipe)
     (unless *gtp-pipe-inhibit*
       (goto-char (process-mark (get-buffer-process (current-buffer))))
       (insert command)
       (comint-send-input))))
 
-(defmethod go-comment ((gtp-pipe gtp-pipe))
+(cl-defmethod go-comment ((gtp-pipe gtp-pipe))
   (signal 'unsupported-back-end-command (list gtp-pipe :comment)))
 
-(defmethod set-go-comment ((gtp-pipe gtp-pipe) comment)
+(cl-defmethod set-go-comment ((gtp-pipe gtp-pipe) comment)
   (gtp-command gtp-pipe (format "string %s" comment)))
 
-(defmethod go-color ((gtp-pipe gtp-pipe))
+(cl-defmethod go-color ((gtp-pipe gtp-pipe))
   (with-current-buffer (buffer gtp-pipe)
     (go-color *gtp-pipe-board*)))
 
-(defmethod go-name ((gtp-pipe gtp-pipe)) "GTP pipe")
-(defmethod go-size ((gtp-pipe gtp-pipe))
+(cl-defmethod go-name ((gtp-pipe gtp-pipe)) "GTP pipe")
+(cl-defmethod go-size ((gtp-pipe gtp-pipe))
   (read-from-minibuffer "GTP board size: " nil nil 'read))
 
-(defmethod go-quit ((gtp-pipe gtp-pipe))
+(cl-defmethod go-quit ((gtp-pipe gtp-pipe))
   (gtp-command gtp-pipe "quit")
   (with-current-buffer (buffer gtp-pipe)
     (signal-process (get-buffer-process) 'KILL)))
 
-(defmethod go-player-name ((gtp-pipe gtp-pipe) color) "GTP pipe")
+(cl-defmethod go-player-name ((gtp-pipe gtp-pipe) color) "GTP pipe")
 
-(defmethod set-player-name ((gtp-pipe gtp-pipe) color name)
+(cl-defmethod set-player-name ((gtp-pipe gtp-pipe) color name)
   (signal 'unsupported-back-end-command (list gtp-pipe :set-player-name name)))
 
 (provide 'gtp-pipe)

@@ -80,28 +80,28 @@
 ;;; Class and interface
 (defclass gtp nil nil "Class for the GTP GO GO back end.")
 
-(defgeneric gtp-command (back-end command)
+(cl-defgeneric gtp-command (back-end command)
   "Send gtp COMMAND to OBJECT and return any output.")
 
-(defmethod go-size ((gtp gtp))
+(cl-defmethod go-size ((gtp gtp))
   (read (gtp-command gtp "query_boardsize")))
 
-(defmethod set-go-size ((gtp gtp) size)
+(cl-defmethod set-go-size ((gtp gtp) size)
   (gtp-command gtp (format "boardsize %d" size)))
 
-(defmethod go-level ((gtp gtp))
+(cl-defmethod go-level ((gtp gtp))
   (signal 'unsupported-back-end-command (list gtp :go-level)))
 
-(defmethod set-go-level ((gtp gtp) level)
+(cl-defmethod set-go-level ((gtp gtp) level)
   (gtp-command gtp (format "level %d" level)))
 
-(defmethod go-name ((gtp gtp))
+(cl-defmethod go-name ((gtp gtp))
   (gtp-command gtp "name"))
 
-(defmethod set-go-name ((gtp gtp) name)
+(cl-defmethod set-go-name ((gtp gtp) name)
   (signal 'unsupported-back-end-command (list gtp :set-name name)))
 
-(defmethod go-move ((gtp gtp))
+(cl-defmethod go-move ((gtp gtp))
   (let* ((color (go-color gtp))
          (move (case color
                  (:B (gtp-command gtp "genmove_black"))
@@ -110,54 +110,54 @@
         :pass
       (gtp-to-pos color move))))
 
-(defmethod set-go-move ((gtp gtp) move)
+(cl-defmethod set-go-move ((gtp gtp) move)
   (gtp-command gtp (go-to-gtp-command move)))
 
-(defmethod go-labels ((gtp gtp))
+(cl-defmethod go-labels ((gtp gtp))
   (signal 'unsupported-back-end-command (list gtp :labels)))
 
-(defmethod set-go-labels ((gtp gtp) labels)
+(cl-defmethod set-go-labels ((gtp gtp) labels)
   (signal 'unsupported-back-end-command (list gtp :set-labels labels)))
 
-(defmethod go-comment ((gtp gtp))
+(cl-defmethod go-comment ((gtp gtp))
   (signal 'unsupported-back-end-command (list gtp :comment)))
 
-(defmethod set-go-comment ((gtp gtp) comment)
+(cl-defmethod set-go-comment ((gtp gtp) comment)
   (signal 'unsupported-back-end-command (list gtp :set-comment comment)))
 
-(defmethod go-alt ((gtp gtp))
+(cl-defmethod go-alt ((gtp gtp))
   (signal 'unsupported-back-end-command (list gtp :alt)))
 
-(defmethod set-go-alt ((gtp gtp) alt)
+(cl-defmethod set-go-alt ((gtp gtp) alt)
   (signal 'unsupported-back-end-command (list gtp :set-alt alt)))
 
-(defmethod go-color ((gtp gtp))
+(cl-defmethod go-color ((gtp gtp))
   (case (condition-case err
             (intern (car (split-string (gtp-command gtp "last_move"))))
           (error 'white)) ('white :B) ('black :W)))
 
-(defmethod set-go-color ((gtp gtp) color)
+(cl-defmethod set-go-color ((gtp gtp) color)
   (signal 'unsupported-back-end-command (list gtp :set-color color)))
 
 ;; non setf'able generic functions
-(defmethod go-undo ((gtp gtp)) (gtp-command gtp "undo"))
+(cl-defmethod go-undo ((gtp gtp)) (gtp-command gtp "undo"))
 
-(defmethod go-pass ((gtp gtp))
+(cl-defmethod go-pass ((gtp gtp))
   (gtp-command gtp (format "%s pass" (gtp-expand-color (go-color gtp)))))
 
-(defmethod go-resign ((gtp gtp))
+(cl-defmethod go-resign ((gtp gtp))
   (gtp-command gtp (format "%s resign" (gtp-expand-color (go-color gtp)))))
 
-(defmethod go-reset ((gtp gtp)) (gtp-command gtp "clear_board"))
+(cl-defmethod go-reset ((gtp gtp)) (gtp-command gtp "clear_board"))
 
-(defmethod go-quit ((gtp gtp)) (gtp-command gtp "quit"))
+(cl-defmethod go-quit ((gtp gtp)) (gtp-command gtp "quit"))
 
-(defmethod go-score ((gtp gtp)) (gtp-command gtp "final_score"))
+(cl-defmethod go-score ((gtp gtp)) (gtp-command gtp "final_score"))
 
-(defmethod go-territory ((gtp gtp))
+(cl-defmethod go-territory ((gtp gtp))
   (append (gtp-territory gtp :B) (gtp-territory gtp :W)))
 
-(defmethod go-dead ((gtp gtp))
+(cl-defmethod go-dead ((gtp gtp))
   (signal 'unsupported-back-end-command (list gtp :dead)))
 
 (provide 'gtp)

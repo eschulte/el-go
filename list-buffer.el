@@ -88,7 +88,7 @@ through the `*buffer-list*' variable.")
                                           (make-list (- width (length cell))
                                                      ?\ ))
                                 (concat (subseq cell 0 (- width 2)) "… ")))
-                       (incf col)))
+                       (cl-incf col)))
                    widths row))))))
 
 (defun list-buffer-refresh ()

@@ -90,19 +90,19 @@ For example, the following changes the level of gnugo.
 (defclass gnugo (gtp)
   ((buffer :initarg :buffer :accessor buffer)))
 
-(defmethod go-connect ((gnugo gnugo))
+(cl-defmethod go-connect ((gnugo gnugo))
   (setf (buffer gnugo) (gnugo-start-process)))
 
-(defmethod gtp-command ((gnugo gnugo) command)
+(cl-defmethod gtp-command ((gnugo gnugo) command)
   (gnugo-command-to-string gnugo command))
 
-(defmethod go-player-name ((gnugo gnugo) color)
+(cl-defmethod go-player-name ((gnugo gnugo) color)
   "GNU GO")
 
-(defmethod set-player-name ((gnugo gnugo) color name)
+(cl-defmethod set-player-name ((gnugo gnugo) color name)
   (signal 'unsupported-back-end-command (list gnugo :set-player-name name)))
 
-(defmethod go-dead ((gnugo gnugo))
+(cl-defmethod go-dead ((gnugo gnugo))
   (mapcar (lambda (gtp-point) (gtp-to-pos nil gtp-point))
           (mapcar #'symbol-name
                   (read (format "(%s)"

@@ -22,7 +22,6 @@
 
 ;;; Code:
 (eval-when-compile (require 'cl))
-(require 'assoc)
 
 (defun curry (function &rest arguments)
   (lexical-let ((function function)
@@ -43,7 +42,7 @@
              :initial-value function))
 
 (defun indexed (list)
-  (loop for el in list as i from 0 collect (list i el)))
+  (cl-loop for el in list as i from 0 collect (list i el)))
 
 (defun rcons (x lst)
   (append lst (list x)))
@@ -54,12 +53,12 @@
     (list 'callf2 'rcons x place)))
 
 (defun range (a &optional b)
-  (block nil
+  (cl-block nil
     (let (tmp)
       (unless b
-        (cond ((> a 0) (decf a))
-              ((= a 0) (return nil))
-              ((> 0 a) (incf a)))
+        (cond ((> a 0) (cl-decf a))
+              ((= a 0) (cl-return nil))
+              ((> 0 a) (cl-incf a)))
         (setq b a a 0))
       (if (> a b) (setq tmp a a b b tmp))
       (let ((res (number-sequence a b)))

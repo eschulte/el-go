@@ -69,7 +69,7 @@
     (delete-region (point-min) (point-max))
     (insert (pp (self sgf)))))
 
-(defmethod current ((sgf sgf))
+(cl-defmethod current ((sgf sgf))
   (sgf-ref (self sgf) (index sgf)))
 
 (defun set-current (sgf new)
@@ -77,7 +77,7 @@
 
 (defsetf current set-current)
 
-(defmethod root ((sgf sgf))
+(cl-defmethod root ((sgf sgf))
   (sgf-ref (self sgf) '(0)))
 
 (defun set-root (sgf new)
@@ -87,41 +87,41 @@
 
 (defsetf root set-root)
 
-(defmethod next ((sgf sgf))
-  (incf (car (last (index sgf)))))
+(cl-defmethod next ((sgf sgf))
+  (cl-incf (car (last (index sgf)))))
 
-(defmethod prev ((sgf sgf))
+(cl-defmethod prev ((sgf sgf))
   (decf (car (last (index sgf)))))
 
 
 ;;; interface
-(defmethod go-size ((sgf sgf))
+(cl-defmethod go-size ((sgf sgf))
   (or (aget (root sgf) :S)
       (aget (root sgf) :SZ)))
 
-(defmethod set-go-size ((sgf sgf) size)
+(cl-defmethod set-go-size ((sgf sgf) size)
   (cond
    ((aget (root sgf)  :S) (setf (cdr (assoc  :S (root sgf))) size))
    ((aget (root sgf) :SZ) (setf (cdr (assoc :SZ (root sgf))) size))
    (t                     (push (cons :S size) (root sgf)))))
 
-(defmethod go-level ((sgf sgf))
+(cl-defmethod go-level ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :go-level)))
 
-(defmethod set-go-level ((sgf sgf) level)
+(cl-defmethod set-go-level ((sgf sgf) level)
   (signal 'unsupported-back-end-command (list sgf :set-go-level level)))
 
-(defmethod go-name ((sgf sgf))
+(cl-defmethod go-name ((sgf sgf))
   (or (aget (root sgf) :GN)
       (aget (root sgf) :EV)))
 
-(defmethod set-go-name ((sgf sgf) name)
+(cl-defmethod set-go-name ((sgf sgf) name)
   (cond
    ((aget (root sgf) :GN) (setf (cdr (assoc :GN (root sgf))) name))
    ((aget (root sgf) :EV) (setf (cdr (assoc :EV (root sgf))) name))
    (t                     (push (cons :GN name) (root sgf)))))
 
-(defmethod go-move ((sgf sgf))
+(cl-defmethod go-move ((sgf sgf))
   (next sgf)
   (let ((turn (current sgf)))
     (if turn
@@ -130,66 +130,66 @@
       (error "sgf: no more moves"))))
 
 ;; TODO: currently this only works with linear sgf files w/o alternatives
-(defmethod set-go-move ((sgf sgf) move)
+(cl-defmethod set-go-move ((sgf sgf) move)
   (next sgf)
   (if (current sgf)
       (setf (current sgf) (list move))
     (setf (self sgf) (rcons (list move) (self sgf)))))
 
-(defmethod go-labels ((sgf sgf))
+(cl-defmethod go-labels ((sgf sgf))
   (let ((turn (current sgf)))
     (if turn
         (remove-if-not (lambda (pair) (member (car pair) '(:LB :LW))) turn)
       (prev sgf)
       (error "sgf: no more moves"))))
 
-(defmethod set-go-lables ((sgf sgf) labels)
+(cl-defmethod set-go-lables ((sgf sgf) labels)
   (if (current sgf)
       (setf (current sgf) (cons (or (assoc :B (current sgf))
                                     (assoc :W (current sgf)))
                                 labels))
     (rpush labels (sgf-ref (self sgf) (butlast (index sgf))))))
 
-(defmethod go-comment ((sgf sgf))
+(cl-defmethod go-comment ((sgf sgf))
   (aget (current sgf) :C))
 
-(defmethod set-go-comment ((sgf sgf) comment)
+(cl-defmethod set-go-comment ((sgf sgf) comment)
   (if (aget (current sgf) :C)
       (setf (cdr (assoc :C (current sgf))) comment)
     (push (cons :C comment) (current sgf))))
 
-(defmethod go-alt ((sgf sgf))
+(cl-defmethod go-alt ((sgf sgf))
   (error "sgf: go-alt not yet supported"))
 
-(defmethod set-go-alt ((sgf sgf) alt)
+(cl-defmethod set-go-alt ((sgf sgf) alt)
   (error "sgf: set-go-alt not yet supported"))
 
-(defmethod go-color ((sgf sgf))
+(cl-defmethod go-color ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :move)))
 
-(defmethod set-go-color ((sgf sgf) color)
+(cl-defmethod set-go-color ((sgf sgf) color)
   (signal 'unsupported-back-end-command (list sgf :set-color color)))
 
 ;; non setf'able generic functions
-(defmethod go-undo ((sgf sgf)) (prev sgf))
+(cl-defmethod go-undo ((sgf sgf)) (prev sgf))
 
-(defmethod go-pass ((sgf sgf))
+(cl-defmethod go-pass ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :pass)))
 
-(defmethod go-resign ((sgf sgf))
+(cl-defmethod go-resign ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :resign)))
 
-(defmethod go-quit ((sgf sgf))
+(cl-defmethod go-quit ((sgf sgf))
   (when (y-or-n-p "Save game to file: ")
     (sgf-to-file sgf (read-file-name "Save game to: "))))
 
-(defmethod go-score ((sgf sgf))
+(cl-defmethod go-score ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :score)))
 
-(defmethod go-territory ((sgf sgf))
+(cl-defmethod go-territory ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :territory)))
 
-(defmethod go-dead ((sgf sgf))
+(cl-defmethod go-dead ((sgf sgf))
   (signal 'unsupported-back-end-command (list sgf :dead)))
 
 (provide 'sgf)

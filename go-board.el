@@ -142,7 +142,7 @@
     (dotimes (n (length board) board)
       (when (and (equal (aref board n) color) (not (alive-p board n)))
         (push n cull)))
-    (incf (go-player-get (other-color color) :prisoners) (length cull))
+    (cl-incf (go-player-get (other-color color) :prisoners) (length cull))
     (dolist (n cull cull) (setf (aref board n) nil))))
 
 (defun board-to-pieces (board)
@@ -490,88 +490,88 @@
   (declare (indent 1))
   `(with-current-buffer (buffer ,board) ,@body))
 
-(defmethod go-size ((board board))
+(cl-defmethod go-size ((board board))
   (with-board board *size*))
 
-(defmethod set-go-size ((board board) size)
+(cl-defmethod set-go-size ((board board) size)
   (with-board board (setq *size* size)))
 
-(defmethod go-name ((board board))
+(cl-defmethod go-name ((board board))
   (un-ear-muffs (buffer-name (buffer board))))
 
-(defmethod set-go-name ((board board) name)
+(cl-defmethod set-go-name ((board board) name)
   (with-board board (rename-buffer name 'unique)))
 
-(defmethod go-move ((board board))
+(cl-defmethod go-move ((board board))
   (signal 'unsupported-back-end-command (list board :move)))
 
-(defmethod set-go-move ((board board) move)
+(cl-defmethod set-go-move ((board board) move)
   (with-board board
     (setf *turn* (other-color *turn*))
     (apply-turn-to-board (list move))
     (goto-char (point-of-pos (cddr move)))
     (with-trackers tr (setf (go-move tr) move))))
 
-(defmethod go-labels ((board board))
+(cl-defmethod go-labels ((board board))
   (signal 'unsupported-back-end-command (list board :labels)))
 
-(defmethod set-go-labels ((board board) labels)
+(cl-defmethod set-go-labels ((board board) labels)
   (signal 'unsupported-back-end-command (list board :set-labels labels)))
 
-(defmethod go-comment ((board board))
+(cl-defmethod go-comment ((board board))
   (signal 'unsupported-back-end-command (list board :comment)))
 
-(defmethod set-go-comment ((board board) comment)
+(cl-defmethod set-go-comment ((board board) comment)
   (signal 'unsupported-back-end-command (list board :set-comment comment)))
 
-(defmethod go-alt ((board board))
+(cl-defmethod go-alt ((board board))
   (signal 'unsupported-back-end-command (list board :alt)))
 
-(defmethod set-go-alt ((board board) alt)
+(cl-defmethod set-go-alt ((board board) alt)
   (signal 'unsupported-back-end-command (list board :set-alt alt)))
 
-(defmethod go-color ((board board))
+(cl-defmethod go-color ((board board))
   (with-board board *turn*))
 
-(defmethod set-go-color ((board board) color)
+(cl-defmethod set-go-color ((board board) color)
   (with-board board (setq *turn* color)))
 
-(defmethod go-player-name ((board board) color)
+(cl-defmethod go-player-name ((board board) color)
   (with-board board (go-player-get color :name)))
 
-(defmethod set-go-player-name ((board board) color name)
+(cl-defmethod set-go-player-name ((board board) color name)
   (with-board board (go-player-set color :name name)))
 
-(defmethod go-player-time ((board board) color)
+(cl-defmethod go-player-time ((board board) color)
   (with-board board (go-player-get color :time)))
 
-(defmethod set-go-player-time ((board board) color time)
+(cl-defmethod set-go-player-time ((board board) color time)
   (with-board board (go-player-set color :time time)))
 
-(defmethod go-player-prisoners ((board board) color)
+(cl-defmethod go-player-prisoners ((board board) color)
   (with-board board (go-player-get color :prisoners)))
 
-(defmethod set-go-player-prisoners ((board board) color prisoners)
+(cl-defmethod set-go-player-prisoners ((board board) color prisoners)
   (with-board board (go-player-set color :prisoners prisoners)))
 
 ;; non setf'able generic functions
-(defmethod go-undo ((board board))
+(cl-defmethod go-undo ((board board))
   (with-board board (go-board-undo)))
 
-(defmethod go-pass ((board board))
+(cl-defmethod go-pass ((board board))
   (with-board board
     (message "pass")
     (setf *turn* (other-color *turn*))))
 
-(defmethod go-resign ((board board))
+(cl-defmethod go-resign ((board board))
   (with-board board (message "%s resign" *turn*)))
 
-(defmethod go-reset ((board board))
+(cl-defmethod go-reset ((board board))
   (with-board board
     (setf *history* nil)
     (update-display)))
 
-(defmethod go-quit ((board board))
+(cl-defmethod go-quit ((board board))
   (with-board board (go-quit)))
 
 (provide 'go-board)

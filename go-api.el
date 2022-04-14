@@ -45,8 +45,8 @@
 (defmacro defgeneric-w-setf (name doc)
   (let ((set-name (intern (concat "set-" (symbol-name name)))))
     `(progn
-       (defgeneric ,name     (back-end) ,doc)
-       (defgeneric ,set-name (back-end new))
+       (cl-defgeneric ,name     (back-end) ,doc)
+       (cl-defgeneric ,set-name (back-end new))
        (defsetf ,name ,set-name))))
 
 ;; setf'able back-end access
@@ -64,15 +64,15 @@
   go-player-prisoners         "Access current BACK-END player prisoners.")
 
 ;; sending messages to the back-end
-(defgeneric go-connect (back-end) "Connect to BACK-END.")
-(defgeneric go-undo   (back-end) "Send undo to BACK-END.")
-(defgeneric go-pass   (back-end) "Send pass to BACK-END.")
-(defgeneric go-resign (back-end) "Send resign to BACK-END.")
-(defgeneric go-reset  (back-end) "Send reset to BACK-END.")
-(defgeneric go-quit   (back-end) "Quit the BACK-END.")
-(defgeneric go-score  (back-end) "Ask BACK-END to report the score.")
-(defgeneric go-territory (back-end) "Ask BACK-END to report the territory.")
-(defgeneric go-dead (back-end) "Ask BACK-END to dead stones.")
+(cl-defgeneric go-connect (back-end) "Connect to BACK-END.")
+(cl-defgeneric go-undo   (back-end) "Send undo to BACK-END.")
+(cl-defgeneric go-pass   (back-end) "Send pass to BACK-END.")
+(cl-defgeneric go-resign (back-end) "Send resign to BACK-END.")
+(cl-defgeneric go-reset  (back-end) "Send reset to BACK-END.")
+(cl-defgeneric go-quit   (back-end) "Quit the BACK-END.")
+(cl-defgeneric go-score  (back-end) "Ask BACK-END to report the score.")
+(cl-defgeneric go-territory (back-end) "Ask BACK-END to report the territory.")
+(cl-defgeneric go-dead (back-end) "Ask BACK-END to dead stones.")
 
 (provide 'go-api)
 ;;; go-api.el ends here
